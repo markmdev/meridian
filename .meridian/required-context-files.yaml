@@ -1,0 +1,20 @@
+# Files that must always be read at session start or after compaction.
+# The smart blocker will ensure all these files are read before allowing other tools.
+
+# Always required
+core:
+  - .meridian/prompts/agent-operating-manual.md
+  - .meridian/CODE_GUIDE.md
+  - .meridian/memory.jsonl
+  - .meridian/task-backlog.yaml
+  - .meridian/relevant-docs.md
+
+# Conditional based on project_type in config.yaml
+# hackathon -> CODE_GUIDE_ADDON_HACKATHON.md
+# production -> CODE_GUIDE_ADDON_PRODUCTION.md
+project_type_addons:
+  hackathon: .meridian/CODE_GUIDE_ADDON_HACKATHON.md
+  production: .meridian/CODE_GUIDE_ADDON_PRODUCTION.md
+
+# Conditional based on tdd_mode in config.yaml
+tdd_addon: .meridian/CODE_GUIDE_ADDON_TDD.md

@@ -1,108 +1,63 @@
 #!/usr/bin/env python3
+"""
+Session Reload Hook - After Compaction
+
+Outputs instructions to read required context files and creates pending reads list.
+"""
 
 import os
 import sys
 import json
 from pathlib import Path
 
-
-def read_file(path: Path) -> str:
-    if path.is_file():
-        return path.read_text()
-    else:
-        # Match bash helper behavior: print a "(missing: ...)" marker
-        return f"(missing: {path})\n"
+# Add lib to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import (
+    get_required_files,
+    cleanup_flag,
+    PENDING_READS_FILE,
+    PRE_COMPACTION_FLAG,
+)
 
 
 def main() -> int:
     claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR", "")
     base_dir = Path(claude_project_dir)
 
-    # Determine project type and TDD mode (defaults)
-    config_file = base_dir / ".meridian" / "config.yaml"
-    project_type = "standard"
-    tdd_mode = "false"
+    # Get required files from config
+    required_files = get_required_files(base_dir)
 
-    if config_file.is_file():
-        try:
-            for line in config_file.read_text().splitlines():
-                stripped = line.lstrip()
-                if stripped.startswith("project_type:"):
-                    pt_value = stripped.split(":", 1)[1].strip().lower()
-                    if pt_value in {"hackathon", "standard", "production"}:
-                        project_type = pt_value
-                    else:
-                        project_type = "standard"
-                elif stripped.startswith("tdd_mode:"):
-                    tdd_value = stripped.split(":", 1)[1].strip().lower()
-                    if tdd_value in {"true", "yes", "on", "1"}:
-                        tdd_mode = "true"
-                    else:
-                        tdd_mode = "false"
-        except Exception:
-            # On parse error, keep defaults
-            project_type = "standard"
-            tdd_mode = "false"
+    # Build file list for prompt
+    file_bullets = "\n".join(f"- `{claude_project_dir}/{f}`" for f in required_files)
 
-    # Build CODE_GUIDE_FILES snippet for insertion into the markdown
-    code_guide_files = f"- `{claude_project_dir}/.meridian/CODE_GUIDE.md`"
+    # Build reload context message
+    output = f"""<reload_context_system_message>
+This conversation was recently compacted. Read these files before continuing:
 
-    if project_type == "hackathon":
-        code_guide_files += (
-            f"\n- `{claude_project_dir}/.meridian/CODE_GUIDE_ADDON_HACKATHON.md`"
-        )
-    elif project_type == "production":
-        code_guide_files += (
-            f"\n- `{claude_project_dir}/.meridian/CODE_GUIDE_ADDON_PRODUCTION.md`"
-        )
+{file_bullets}
 
-    if tdd_mode == "true":
-        code_guide_files += (
-            f"\n- `{claude_project_dir}/.meridian/CODE_GUIDE_ADDON_TDD.md`"
-        )
+Check `{claude_project_dir}/.meridian/task-backlog.yaml` for uncompleted tasks. For each:
+1. Read the context file at `{claude_project_dir}/.meridian/tasks/TASK-###/TASK-###-context.md`
+2. Read the plan file referenced in the backlog's `plan_path` field
 
-    # Load session reload template
-    reload_template_path = (
-        base_dir / ".claude" / "hooks" / "prompts" / "session-reload.md"
-    )
-    reload_context = read_file(reload_template_path)
+The context file contains the previous agent's progress, decisions, and next steps.
 
-    # Expand $CLAUDE_PROJECT_DIR placeholders
-    reload_context = reload_context.replace("$CLAUDE_PROJECT_DIR", claude_project_dir)
+After reviewing, check `{claude_project_dir}/.meridian/relevant-docs.md` for additional required docs.
+</reload_context_system_message>"""
 
-    # Inject the CODE_GUIDE_FILES block
-    reload_context = reload_context.replace("{{CODE_GUIDE_FILES}}", code_guide_files)
+    print(output, end="")
 
-    additional_context = (
-        f"<reload_context_system_message>{reload_context}"
-        f"</reload_context_system_message>"
-    )
-
-    # payload = {
-    #     "systemMessage": (
-    #         "[Meridian] Session restored. Key project files were reloaded so Claude can "
-    #         "continue work without losing context. If you see any errors during this process, "
-    #         "don't worry, they are intentional."
-    #     ),
-    #     "hookSpecificOutput": {
-    #         "hookEventName": "SessionStart",
-    #         "additionalContext": additional_context,
-    #     },
-    #     "suppressOutput": True,
-    # }
-
-    # print(json.dumps(payload, indent=2, ensure_ascii=False))
-
-    print(additional_context, end="")
-
-    # Create flag to force Claude to review context on next tool use
-    needs_context_review = base_dir / ".meridian" / ".needs-context-review"
+    # Create pending reads file with absolute paths
+    pending_reads_path = base_dir / PENDING_READS_FILE
+    absolute_files = [f"{claude_project_dir}/{f}" for f in required_files]
     try:
-        needs_context_review.parent.mkdir(parents=True, exist_ok=True)
-        needs_context_review.touch(exist_ok=True)
+        pending_reads_path.parent.mkdir(parents=True, exist_ok=True)
+        pending_reads_path.write_text(json.dumps(absolute_files))
     except Exception:
-        # Ignore errors to match bash behavior (no explicit error handling)
         pass
+
+    # Clean up flags
+    cleanup_flag(base_dir, PRE_COMPACTION_FLAG)
 
     return 0
 

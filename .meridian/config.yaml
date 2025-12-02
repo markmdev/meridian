@@ -9,3 +9,18 @@ project_type: standard
 # Optional: Test-Driven Development mode.
 # When true, inject CODE_GUIDE_ADDON_TDD.md and follow its rules.
 tdd_mode: false
+
+# Plan review: require plan-reviewer agent before exiting plan mode.
+# When false, ExitPlanMode proceeds without review.
+plan_review_enabled: true
+
+# Implementation review: require implementation-reviewer agent before stopping.
+# When false, pre-stop hook skips the implementation review section.
+implementation_review_enabled: true
+
+# Pre-compaction sync: prompt agent to save context before conversation compacts.
+# When false, no warning is given before compaction.
+pre_compaction_sync_enabled: true
+
+# Token threshold for pre-compaction sync warning (default: 150000).
+pre_compaction_sync_threshold: 150000

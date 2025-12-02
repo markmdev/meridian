@@ -1,3 +1,9 @@
 .DS_Store
 tests
 __pycache__
+
+# Meridian runtime flags
+.meridian/.pending-context-reads
+.meridian/.pre-compaction-synced
+.meridian/.needs-context-review
+.meridian/.plan-review-blocked

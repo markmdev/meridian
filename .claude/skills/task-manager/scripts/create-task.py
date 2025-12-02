@@ -53,13 +53,13 @@ def get_next_task_id() -> str:
 
 def rename_template_files(dest_dir: Path, task_id: str) -> None:
     """
-    After copying the template, rename any YAML/MD files that include 'TASK-000'
+    After copying the template, rename any MD files that include 'TASK-000'
     so they instead include the concrete task_id (e.g., TASK-012).
     """
     if not dest_dir.exists():
         raise FileNotFoundError(f"Destination dir does not exist: {dest_dir}")
 
-    exts = {".yaml", ".yml", ".md"}
+    exts = {".md"}
 
     for path in dest_dir.rglob("*"):
         if not path.is_file():
@@ -95,7 +95,7 @@ def rename_template_files(dest_dir: Path, task_id: str) -> None:
 def create_task_from_template() -> Path:
     """
     Create a new task directory under .meridian/tasks by copying the TASK-000-template.
-    Then rename YAML/MD files to include the new task id instead of TASK-000.
+    Then rename context.md to include the new task id instead of TASK-000.
     Returns the path to the created task directory.
 
     Raises detailed exceptions if anything goes wrong.
@@ -146,7 +146,7 @@ def create_task_from_template() -> Path:
 def main() -> None:
     try:
         new_task_dir = create_task_from_template()
-        print(f"✅ Task created successfully: {new_task_dir.name}. Read files in the folder before writing to them")
+        print(f"Task created: {new_task_dir.name}. Read context.md before editing.")
         print(f"Path: {new_task_dir}")
     except Exception as e:
         # Provide a clear, actionable error message and non-zero exit code

@@ -1,12 +1,21 @@
-# Files that must always be read at session start or after compaction.
-# The smart blocker will ensure all these files are read before allowing other tools.
+# Files that are automatically injected into the agent's context at session start.
+# These files are wrapped in XML tags and included in the conversation.
 
-# Always required
+# Always injected (in this order)
 core:
   - .meridian/memory.jsonl
   - .meridian/task-backlog.yaml
   - .meridian/CODE_GUIDE.md
   - .meridian/prompts/agent-operating-manual.md
+
+# User-provided docs - add any files here to include them in the agent's context.
+# These are injected FIRST, before memory and other core files.
+# Example:
+#   - docs/architecture.md
+#   - docs/api-reference.md
+user_provided_docs:
+  # - docs/architecture.md
+  # - docs/api-reference.md
 
 # Conditional based on project_type in config.yaml
 # hackathon -> CODE_GUIDE_ADDON_HACKATHON.md

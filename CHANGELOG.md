@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.0.7] - 2025-12-09
+
+### Added
+- **user_provided_docs**: New section in `required-context-files.yaml` for custom documentation. User docs are injected first, before memory and core files.
+- **Auto-approve plan copying**: `permission-auto-approver.py` now auto-approves `cp` commands from `~/.claude/plans/` for plan archival.
+- **Task creation reminder**: `create-task.py` now outputs next steps including reminder to copy plan from `~/.claude/plans/`.
+
+### Changed
+- **CLAUDE_PROJECT_DIR enforcement**: All hooks and scripts now require `CLAUDE_PROJECT_DIR` environment variable with no fallbacks. Prevents scripts from creating files in wrong locations when agent cd's to subfolders.
+- **Pre-compaction sync**: Flag is now removed when token count drops below threshold, allowing retriggering if context grows again.
+- **Cleaner context injection**: Removed noisy `=` separator lines from injected context header/footer.
+
+### Removed
+- **relevant-docs.md**: Deprecated file removed. Use `user_provided_docs` in `required-context-files.yaml` instead.
+
+## [0.0.6] - 2025-12-09
+
+### Added
+- **Context injection**: Session hooks (`claude-init.py`, `session-reload.py`) now inject file contents directly via `additionalContext` instead of requiring Read tool calls. Files are wrapped in XML tags with explanatory header and acknowledgment footer.
+- **Planning skill** (`.claude/skills/planning/SKILL.md`): Replaces the Plan agent. Main agent now plans directly while retaining full conversation context. Uses Explore subagents for codebase research.
+- **Plan agent blocker** (`block-plan-agent.py`): Hook that intercepts Plan agent calls and redirects to the planning skill.
+- **Multi-reviewer architecture**: For large projects, spawn multiple focused implementation-reviewers (one per phase) plus integration reviewer(s). All reviewers run in parallel and write output to `.meridian/implementation-reviews/`.
+- **Mandatory Integration phase**: Every multi-module plan must include an explicit Integration phase covering wiring, entry points, config, data flow, and error propagation.
+- **Strict quality checks**: Implementation reviewer now flags hardcoded values, TODO/FIXME comments, and unused/orphaned code.
+
+### Changed
+- **Planning workflow**: Main agent creates plans directly using the planning skill instead of delegating to a Plan subagent. This preserves full conversation context—important details discussed with the user won't be lost during planning.
+- **Plan content policy**: Plans now describe WHAT and WHY, not HOW. No code snippets or pseudocode (even in English). Describe the destination, not the driving directions.
+- **Context acknowledgment flow**: `post-compact-guard.py` simplified to block first tool call and require acknowledgment of injected context before proceeding.
+- **Task status filtering**: Changed from whitelist (`in-progress`, `active`) to blacklist approach (not in `done`, `completed`, `finished`, `cancelled`, `archived`).
+- **Implementation reviewer output**: Now writes reviews to files (`$CLAUDE_PROJECT_DIR/.meridian/implementation-reviews/`) instead of returning directly. Uses `CLAUDE_PROJECT_DIR` for absolute paths.
+
+### Removed
+- **Plan agent** (`.claude/agents/plan.md`): Replaced by the planning skill. The skill provides the same methodology but allows the main agent to retain conversation context.
+
+### Fixed
+- Token calculation double-counting: Removed duplicated ephemeral values from calculation
+- TASK-TASK prefix bug: Fixed duplicate prefix in context file paths
+- Absolute path handling: All agents now use `CLAUDE_PROJECT_DIR` environment variable
+- Logging always happens: Token logging now occurs even when pre-compaction flag is active
+- Context files added to required reads after compaction
+
 ## [0.0.5] - 2025-12-03
 
 ### Added

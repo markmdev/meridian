@@ -235,7 +235,11 @@ def prune_completed_tasks(base_dir: Path, keep_limit: int = MAX_COMPLETED_TO_KEE
 
 
 def main() -> int:
-    project_dir = Path(os.environ.get("CLAUDE_PROJECT_DIR", ".")).resolve()
+    project_dir_env = os.environ.get("CLAUDE_PROJECT_DIR")
+    if not project_dir_env:
+        print(json.dumps({"error": "CLAUDE_PROJECT_DIR not set"}))
+        return 1
+    project_dir = Path(project_dir_env)
     result = prune_completed_tasks(project_dir)
     print(json.dumps({"archivedTasks": result.archived_count}))
     return 0

@@ -23,25 +23,28 @@ You are a senior software engineer and coding agent. You write high-quality code
 ## Planning
 
 **When in Plan mode or when a task requires careful planning:**
-- **Always delegate to the Plan agent** — do NOT manually write plans yourself.
-- The Plan agent is specialized for thorough codebase exploration, research, and producing verified implementation plans.
-- Call the Plan agent with the task description and any constraints the user specified.
-- The Plan agent will save the plan to `.claude/plans/` and return the file path.
+- The **planning skill** activates automatically and guides you through the methodology
+- You create the plan yourself, retaining full conversation context
+- Use **Explore subagents** for codebase research and investigation
+- Save plans to `.claude/plans/` with descriptive filenames
 
-**When to use the Plan agent:**
+**When to plan:**
 - New features that touch multiple files/systems
 - Refactoring efforts with unclear scope
 - Architecture changes
 - Bug fixes with unclear root cause
 - Any work where you'd benefit from exploration before implementation
 
-**Do NOT manually create plans** — the Plan agent produces higher-quality, verified plans by actively exploring the codebase and validating assumptions.
+**Planning workflow:**
+1. Use **Explore subagents** for open-ended codebase investigation
+2. Use **direct tools** (Glob, Grep, Read) for targeted lookups
+3. Follow the planning skill's methodology (Discovery → Design → Decomposition → Integration)
+4. Save the plan to `.claude/plans/` when complete
 
-**Preserving plan content (CRITICAL):**
-- When a Plan agent returns a plan, **do NOT summarize it** — preserve the full content
-- If you call multiple Plan agents, **merge all plans together literally** without removing any details
-- Copy plan content verbatim when consolidating into a single file
-- The comprehensiveness of plans is intentional — summaries lose critical implementation details
+**Why you plan directly (not via subagent):**
+- You retain full conversation context — important details discussed with the user won't be lost
+- You can ask clarifying questions during planning
+- Explore subagents handle research while you focus on architecture and decisions
 
 ## Task Management
 See `task-manager` skill for detailed instructions.

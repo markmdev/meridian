@@ -29,8 +29,9 @@ def main():
     if input_data.get("hook_event_name") != "PreToolUse":
         sys.exit(0)
 
-    cwd = input_data.get("cwd", os.getcwd())
-    claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR", cwd)
+    claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    if not claude_project_dir:
+        sys.exit(0)  # Can't operate without project dir
     base_dir = Path(claude_project_dir)
 
     # No acknowledgment flag = allow everything

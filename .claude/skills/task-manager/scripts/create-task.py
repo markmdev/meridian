@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import sys
@@ -12,19 +13,11 @@ class WorkflowError(Exception):
 
 
 def get_project_root() -> Path:
-    """Get the project root directory (where .meridian/ exists)."""
-    current = Path.cwd()
-
-    # Check if we're already at project root
-    if (current / ".meridian").exists():
-        return current
-
-    # Check parent directories
-    for parent in current.parents:
-        if (parent / ".meridian").exists():
-            return parent
-
-    raise FileNotFoundError("Could not find project root (no .meridian/ folder found)")
+    """Get the project root directory using CLAUDE_PROJECT_DIR."""
+    project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    if not project_dir:
+        raise EnvironmentError("CLAUDE_PROJECT_DIR environment variable is not set")
+    return Path(project_dir)
 
 
 def get_next_task_id() -> str:
@@ -146,8 +139,13 @@ def create_task_from_template() -> Path:
 def main() -> None:
     try:
         new_task_dir = create_task_from_template()
-        print(f"Task created: {new_task_dir.name}. Read context.md before editing.")
+        print(f"Task created: {new_task_dir.name}")
         print(f"Path: {new_task_dir}")
+        print()
+        print("Next steps:")
+        print(f"1. Copy your plan from ~/.claude/plans/ to {new_task_dir}/")
+        print(f"2. Fill in {new_task_dir.name}-context.md with task details")
+        print("3. Update .meridian/task-backlog.yaml with the new task")
     except Exception as e:
         # Provide a clear, actionable error message and non-zero exit code
         print(f"❌ Error: {e}", file=sys.stderr)

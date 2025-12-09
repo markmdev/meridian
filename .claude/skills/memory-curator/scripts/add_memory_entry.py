@@ -47,11 +47,11 @@ ID_PATTERN = re.compile(r"^mem-(\d{4,})$")
 
 
 def get_default_memory_path() -> Path:
-    """Get the default memory path using CLAUDE_PROJECT_DIR if available."""
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR", "")
-    if project_dir:
-        return Path(project_dir) / MEMORY_RELATIVE_PATH
-    return Path(MEMORY_RELATIVE_PATH)
+    """Get the default memory path using CLAUDE_PROJECT_DIR."""
+    project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    if not project_dir:
+        raise EnvironmentError("CLAUDE_PROJECT_DIR environment variable is not set")
+    return Path(project_dir) / MEMORY_RELATIVE_PATH
 
 
 def parse_args() -> argparse.Namespace:

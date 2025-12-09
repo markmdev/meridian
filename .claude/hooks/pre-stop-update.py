@@ -30,8 +30,9 @@ def main():
     if input_data.get("stop_hook_active"):
         sys.exit(0)
 
-    cwd = input_data.get("cwd", os.getcwd())
-    claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR", cwd)
+    claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    if not claude_project_dir:
+        sys.exit(0)  # Can't operate without project dir
     base_dir = Path(claude_project_dir)
 
     config = get_project_config(base_dir)

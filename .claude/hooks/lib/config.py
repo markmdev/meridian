@@ -152,7 +152,6 @@ def get_required_files(base_dir: Path) -> list[str]:
             ".meridian/CODE_GUIDE.md",
             ".meridian/memory.jsonl",
             ".meridian/task-backlog.yaml",
-            ".meridian/relevant-docs.md",
         ]
 
     content = config_path.read_text()
@@ -416,22 +415,11 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     """
     parts = []
 
-    # Header explanation
+    # Header
     parts.append("<injected-project-context>")
     parts.append("")
-    parts.append("=" * 80)
-    parts.append("IMPORTANT: PROJECT CONTEXT INJECTION")
-    parts.append("=" * 80)
-    parts.append("")
-    parts.append("This context has been automatically injected at session start.")
-    parts.append("It contains critical project information you MUST understand before working:")
-    parts.append("")
-    parts.append("- Memory: Past decisions, lessons learned, architectural patterns")
-    parts.append("- Tasks: Current work in progress with context and plans")
-    parts.append("- Code Guide: Coding conventions and standards for this project")
-    parts.append("- Operating Manual: How you should behave as an agent")
-    parts.append("")
-    parts.append("READ AND INTERNALIZE this context before responding to the user.")
+    parts.append("This context contains critical project information you MUST understand before working.")
+    parts.append("Read and internalize it before responding to the user.")
     parts.append("")
 
     # Get in-progress tasks
@@ -440,7 +428,17 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     # Build ordered file list
     files_to_inject = []
 
-    # 1. Memory (most important - past decisions)
+    # 0. User-provided docs (injected first, before everything else)
+    config_path = base_dir / REQUIRED_CONTEXT_CONFIG
+    if config_path.exists():
+        content = config_path.read_text()
+        user_docs = parse_yaml_list(content, 'user_provided_docs')
+        for doc_path in user_docs:
+            full_path = base_dir / doc_path
+            if full_path.exists():
+                files_to_inject.append((doc_path, full_path))
+
+    # 1. Memory (past decisions)
     memory_path = base_dir / ".meridian" / "memory.jsonl"
     if memory_path.exists():
         files_to_inject.append((".meridian/memory.jsonl", memory_path))
@@ -511,10 +509,6 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append("")
 
     # Footer with acknowledgment request
-    parts.append("=" * 80)
-    parts.append("END OF PROJECT CONTEXT")
-    parts.append("=" * 80)
-    parts.append("")
     parts.append("You have received the complete project context above.")
     parts.append("This information is CRITICAL for working correctly on this project.")
     parts.append("")

@@ -1,44 +1,6 @@
 ---
 name: implementation-reviewer
-description: Use this agent after implementation is complete to verify the work matches the original plan. The agent compares actual implementation against the plan, identifies deviations, finds forgotten items, and ensures quality standards were met. Acts as a final quality gate before considering work "done".
-
-Examples:
-
-<example>
-Context: User has finished implementing a feature.
-user: "I've finished implementing the OAuth2 feature. Can you verify it matches the plan?"
-assistant: "I'll use the implementation-reviewer agent to compare your implementation against the original plan and identify any gaps or deviations."
-<commentary>
-Implementation is complete and needs verification. Use the implementation-reviewer to systematically check each plan step was executed correctly.
-</commentary>
-</example>
-
-<example>
-Context: User wants to verify a refactoring effort.
-user: "The database centralization refactor is done. Here's the plan we followed and the implementation notes."
-assistant: "I'll launch the implementation-reviewer agent to verify the refactoring matches the plan and nothing was missed."
-<commentary>
-Refactoring efforts often have subtle omissions. The implementation-reviewer will trace through each planned change and verify completion.
-</commentary>
-</example>
-
-<example>
-Context: User made intentional changes during implementation.
-user: "Finished the API versioning. We deviated from step 3—documented in CHANGELOG.md. Please verify the rest."
-assistant: "I'll use the implementation-reviewer agent to verify the implementation, treating the documented deviation in step 3 as an accepted change."
-<commentary>
-User has flagged a known deviation with documentation. The implementation-reviewer will verify the deviation is properly documented and check all other steps strictly.
-</commentary>
-</example>
-
-<example>
-Context: User provides additional context files.
-user: "Review my auth implementation against the plan. Also check our security-guidelines.md and the API design doc I'm attaching."
-assistant: "I'll use the implementation-reviewer agent with the security guidelines and API design doc as mandatory reading to verify your implementation."
-<commentary>
-Additional context files help the reviewer check implementation against broader standards, not just the plan.
-</commentary>
-</example>
+description: Verify implementation matches the plan. Use after implementation is complete, before stopping. Pass scope (files/folders), relevant plan section, and review type (phase or integration). Writes review to file and returns the path.
 tools: Glob, Grep, Read, Write, Bash, BashOutput
 model: opus
 color: orange
@@ -204,32 +166,23 @@ You MUST actively verify against the codebase:
 
 ## MCP Tools
 
-Use external knowledge sources to verify implementation correctness:
+Use these tools to verify implementation correctness:
 
-### Context7 (Library Documentation)
+### Context7 (Documentation Lookup)
 
-Use to verify implementations use libraries correctly:
-
-- `resolve_library_id`: Find the correct library identifier
-- `get_library_docs`: Fetch up-to-date documentation
+Query documentation for any public repo. Use it to look up APIs, find usage examples, verify correct library usage.
 
 **When to use:**
-- Verify library APIs are used as documented (not just as planned)
-- Check if implementation follows current best practices
-- Confirm correct error handling patterns for libraries
+- Verify library APIs are used correctly
+- Check if implementation follows documented best practices
 
-### DeepWiki (Open Source Project Knowledge)
+### DeepWiki (Ask Questions)
 
-Use to verify integration implementations:
-
-- `read_wiki_structure`: Explore available documentation
-- `read_wiki_contents`: Read specific documentation pages
-- `ask_question`: Query for specific information
+Ask questions and get answers about any public repo. Use it when something is unclear or you need to understand how a library/system works.
 
 **When to use:**
 - Verify third-party integrations follow recommended patterns
-- Check if implementation handles edge cases documented in external projects
-- Confirm webhook/callback implementations match expected behavior
+- Ask about edge cases or expected behavior
 
 ## Status Classification
 

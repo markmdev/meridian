@@ -99,7 +99,7 @@ def should_allow(data: dict, project_dir: Path) -> bool:
     if not tool_name:
         return False
 
-    base_dir = project_dir or Path.cwd()
+    base_dir = project_dir
 
     if tool_name in {"Write", "Edit", "Read", "Grep"}:
         allowed = ALLOWED_ACTIONS[tool_name]
@@ -116,7 +116,14 @@ def should_allow(data: dict, project_dir: Path) -> bool:
 
     if tool_name == "Bash":
         command = tool_input.get("command", "")
-        return any(substr in command for substr in BASH_SUBSTRINGS)
+        if any(substr in command for substr in BASH_SUBSTRINGS):
+            return True
+        # Allow cp from ~/.claude/plans/ (plan archival)
+        if command.strip().startswith("cp "):
+            home = str(Path.home())
+            if "/.claude/plans/" in command or f"{home}/.claude/plans/" in command:
+                return True
+        return False
 
     return False
 
@@ -128,7 +135,9 @@ def main():
         return
 
     project_dir_env = os.environ.get("CLAUDE_PROJECT_DIR")
-    project_dir = Path(project_dir_env) if project_dir_env else Path.cwd()
+    if not project_dir_env:
+        return  # Can't auto-approve without knowing project dir
+    project_dir = Path(project_dir_env)
 
     try:
         payload = json.loads(raw_input)

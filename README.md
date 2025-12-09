@@ -9,7 +9,7 @@ Meridian keeps Claude Code predictable without changing how you talk to it. You 
 * **Plug‑in rules**: baseline `CODE_GUIDE.md` + project‑type add‑ons + optional **TDD** override.
 * **Zero behavior change**: no commands, no scripts, no special phrasing. You talk to Claude normally; Meridian handles everything behind the scenes.
 
-**Current version:** `0.0.5` (updated 2025‑12‑03). See [CHANGELOG.md](CHANGELOG.md) for details.
+**Current version:** `0.0.7` (updated 2025‑12‑09). See [CHANGELOG.md](CHANGELOG.md) for details.
 
 > If this setup helps, please ⭐ star the repo and share it.
 > Follow updates: [X (Twitter)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -24,7 +24,7 @@ Default Claude Code often loses context after compaction, forgets history, and d
 
 * **Documents tasks** (brief, approved plan, context) in your repo.
 * **Follows guides** (baseline + add‑ons) every session, re-injected by hooks.
-* **Reads relevant docs** you list on every startup or reload.
+* **Injects your docs** into context at startup (configurable in `required-context-files.yaml`).
 * **Curates memory** of durable decisions (append‑only `memory.jsonl`).
 * **Never loses context after compaction**: hooks reinject the essential docs, standards, and the task Claude was working on so it always returns with full context.
 
@@ -109,9 +109,17 @@ Backlog: `.meridian/task-backlog.yaml` tracks status (`todo`, `in_progress`, `bl
 
 These task folders aren’t just for the developer; Claude actively uses them to restore context after startup or compaction.
 
-### Relevant docs
+### User-provided docs
 
-Document required readings in `.meridian/relevant-docs.md` by **context** instead of one giant list. Each section follows the pattern “When working on `<area>`, read `<files>`.” Hooks remind Claude to open only the sections tied to the work it is currently doing, so it isn’t forced to re-read unrelated docs on every startup.
+Add your own documentation to the agent's context via `.meridian/required-context-files.yaml`:
+
+```yaml
+user_provided_docs:
+  - docs/architecture.md
+  - docs/api-reference.md
+```
+
+These files are injected at the very top of the context, before memory and other core files. Use this for architecture docs, API references, or any project-specific documentation the agent should always have access to.
 
 ### Memory (append‑only)
 
@@ -158,7 +166,7 @@ pre_compaction_sync_threshold: 150000  # token threshold for warning
 ## How it actually runs (Claude does the work)
 
 1. **Startup/Reload**
-   Hooks inject the Agent Operating Manual, guides, memory, backlog, and relevant docs. A smart context guard tracks which files Claude reads and blocks other tools until all required files are reviewed.
+   Hooks inject the Agent Operating Manual, guides, memory, backlog, and task context directly into the conversation via `additionalContext`. A context guard blocks the first tool call until Claude acknowledges it has read the injected context.
 
 2. **Plan**
    You describe the task in Plan mode; Claude proposes a plan. If `plan_review_enabled`, a plan-reviewer agent validates the plan before Claude can exit plan mode.
@@ -167,7 +175,7 @@ pre_compaction_sync_threshold: 150000  # token threshold for warning
    A hook reminds Claude to create a task folder (`TASK-###-context.md`) and update the backlog with the plan path.
 
 4. **Implement**
-   Claude writes code following the guides, reads docs listed in `relevant-docs.md`, updates `TASK-###-context.md`, and—if needed—adds memory entries via the script.
+   Claude writes code following the guides, updates `TASK-###-context.md`, and—if needed—adds memory entries via the script.
 
    * **If TDD is on:** Claude writes a failing test first, makes it pass, then refactors (per slice).
 
@@ -175,7 +183,7 @@ pre_compaction_sync_threshold: 150000  # token threshold for warning
    When token usage approaches the threshold (default 150k), a hook prompts Claude to save current progress to the context file—preserving context for the agent that continues after compaction.
 
 6. **Compaction/Resume**
-   Reload hook re-injects guidelines, memory, docs, and the task context. The smart guard ensures Claude reads all required files before continuing work.
+   Reload hook re-injects guidelines, memory, and task context via `additionalContext`. Context guard requires acknowledgment before continuing work.
 
 7. **Stop**
    Stop hook blocks exit until Claude verifies tests/lint/build are clean and task/memory/doc updates are saved. If `implementation_review_enabled`, requires implementation-reviewer agent.
@@ -187,19 +195,22 @@ pre_compaction_sync_threshold: 150000  # token threshold for warning
 ## Hooks (what each one enforces)
 
 * **`claude-init.py`** — on session start
-  Injects the manual, guides, memory, backlog, and relevant docs. Reads required files from `.meridian/required-context-files.yaml`. Creates a pending-reads list for the smart context guard.
+  Injects project context (manual, guides, memory, backlog, task context) directly via `additionalContext`. Files are wrapped in XML tags. Creates acknowledgment flag for the context guard.
 
 * **`startup-prune-completed-tasks.py`** — on startup/clear
   Keeps only the 10 most recent completed tasks in `task-backlog.yaml`, moves older `done/completed` entries into `task-backlog-archive.yaml`, and relocates their folders under `.meridian/tasks/archive/`.
 
 * **`session-reload.py`** — on compaction/resume
-  Re-injects essential context Claude needs after compaction. Injects in-progress tasks with XML tags at top of context. Creates pending-reads list for smart context guard.
+  Re-injects essential context via `additionalContext` after compaction. In-progress tasks and their context files are included automatically. Creates acknowledgment flag for the context guard.
 
-* **`post-compact-guard.py`** — smart context guard (before tool use)
-  Tracks which required files have been read. Allows Read tool for pending files; blocks other tools until all required files are read. Eliminates the "read files twice" problem.
+* **`post-compact-guard.py`** — context acknowledgment guard (before tool use)
+  Blocks the first tool call after session start until agent acknowledges the injected context. Ensures Claude reads and understands memory, tasks, CODE_GUIDE, and operating manual before proceeding.
 
 * **`pre-compaction-sync.py`** — before tool use (token monitoring)
   Monitors token usage from transcript. When approaching compaction threshold (default 150k), prompts Claude to save current work to context file. Configurable via `pre_compaction_sync_threshold`.
+
+* **`block-plan-agent.py`** — before Task tool use
+  Blocks calls to the deprecated Plan agent and redirects to use the planning skill instead. Ensures main agent retains full conversation context during planning.
 
 * **`plan-review.py`** — before exiting Plan mode
   Requires plan-reviewer agent to validate the plan before implementation. Configurable via `plan_review_enabled`.
@@ -218,6 +229,9 @@ These guardrails turn guidance into **deterministic behavior**.
 ---
 
 ## Skills (how Claude writes things down)
+
+* **planning**
+  Guides Claude through comprehensive implementation planning. Activates in Plan mode. Claude plans directly (retaining full conversation context) and uses Explore subagents for codebase research.
 
 * **task‑manager**
   Script `create-task.py` creates `TASK-###` from a template and enforces filenames.

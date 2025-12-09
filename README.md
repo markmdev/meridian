@@ -1,274 +1,495 @@
 ![Logo](https://github.com/user-attachments/assets/9eb140c8-b938-4e77-ab94-0461a6d919fd)
-# **Meridian**: zero‑config Claude Code setup for Tasks, Memory & Guardrails
 
-Meridian keeps Claude Code predictable without changing how you talk to it. You still chat normally while it preserves context, enforces rules, writes tasks, and supports optional TDD.
+# Meridian
 
-* **Zero‑config install**: copy two folders, make scripts executable, and go.
-* **Deterministic behavior**: hooks *enforce* the right steps (not just suggest them).
-* **Persistent context**: tasks, memory, and docs live in your repo.
-* **Plug‑in rules**: baseline `CODE_GUIDE.md` + project‑type add‑ons + optional **TDD** override.
-* **Zero behavior change**: no commands, no scripts, no special phrasing. You talk to Claude normally; Meridian handles everything behind the scenes.
+**Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.7` (updated 2025‑12‑09). See [CHANGELOG.md](CHANGELOG.md) for details.
+**Current version:** `0.0.7` (2025-12-09) | [Changelog](CHANGELOG.md)
 
-> If this setup helps, please ⭐ star the repo and share it.
-> Follow updates: [X (Twitter)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
+> If Meridian helps your work, please **star the repo** and share it.
+> Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
 
 ---
 
-## Why this setup exists
+## The Problem
 
-Default Claude Code often loses context after compaction, forgets history, and drifts from standards. Claude is customizable: **hooks** and **skills** let you shape behavior, but you need a structure that **can’t be skipped**.
+Claude Code is powerful, but on complex tasks it struggles with:
 
-**Meridian** adds lightweight guardrails so Claude:
+| Problem | What happens |
+|---------|--------------|
+| **Context loss** | After compaction, Claude forgets decisions, requirements, and what it was working on |
+| **No built-in memory** | Claude can't remember lessons learned — it repeats the same mistakes because it doesn't know it already made them |
+| **Forgets prompt details** | With large context, Claude starts ignoring parts of your `CLAUDE.md` instructions |
+| **Shallow planning** | Plans lack depth, miss integration steps, and break during implementation |
+| **No task continuity** | When you return to a task next session, Claude doesn't know what was done, decided, or tried |
 
-* **Documents tasks** (brief, approved plan, context) in your repo.
-* **Follows guides** (baseline + add‑ons) every session, re-injected by hooks.
-* **Injects your docs** into context at startup (configurable in `required-context-files.yaml`).
-* **Curates memory** of durable decisions (append‑only `memory.jsonl`).
-* **Never loses context after compaction**: hooks reinject the essential docs, standards, and the task Claude was working on so it always returns with full context.
-
-You keep chatting normally; Claude does the rest.
-
----
-
-## Zero‑config (really)
-
-* No API keys or service wiring required.
-* No code changes to your project.
-* No subagent orchestration to maintain.
-
-Just copy two folders, make scripts executable, and continue working with Claude as usual.
-No workflow changes for the developer: no slash commands, no scripts, no special instructions. You interact with Claude exactly as you already do.
+You can write instructions in `CLAUDE.md`, but with large context Claude starts forgetting details from the prompt.
 
 ---
 
-## Quick start
+## What Meridian Does
 
-```bash
-# 0) Get this setup
-git clone <THIS_REPO_URL> meridian-setup
-cd meridian-setup
+Meridian uses Claude Code's hooks system to enforce behaviors automatically:
 
-# 1) Copy to your project root
-cp -R .claude .meridian /path/to/your/project
-cd /path/to/your/project
+| Capability | How it works |
+|------------|--------------|
+| **Context survives compaction** | Hooks re-inject memory, task state, guidelines, and your docs after every compaction |
+| **Persistent memory** | Lessons learned, architectural decisions, and mistakes are saved to `memory.jsonl` — Claude reads them every session |
+| **Task continuity** | Each task has a context file tracking what was done, decisions made, and next steps — Claude picks up where it left off |
+| **Pre-compaction warning** | Monitors token usage and prompts Claude to save context before compaction happens |
+| **Detailed plans that work** | Planning skill guides Claude through thorough discovery, design, and integration planning |
+| **Quality gates** | Plan-reviewer and implementation-reviewer agents validate work before proceeding |
+| **MCP integrations** | Context7 and DeepWiki provide up-to-date library docs and repository knowledge for planning and review |
+| **Your custom docs injected** | Add your architecture docs, API references, etc. to `required-context-files.yaml` — they're injected every session |
 
-# 2) Make hooks & skills executable
-find .claude -type f -name '*.py' -print0 | xargs -0 chmod +x
+**Your behavior doesn't change.** You talk to Claude the same way. Meridian works behind the scenes.
 
-# 3) (Optional) choose project type / TDD in config
-#    .meridian/config.yaml → project_type: hackathon|standard|production; tdd_mode: true|false
+---
+
+## When Meridian Shines
+
+Meridian is designed for **large, complex, long-running tasks** where:
+- Work spans multiple sessions
+- Context loss would be costly
+- Quality matters
+- You want Claude to learn from past mistakes
+
+For simple tasks (quick edits, one-off questions), Meridian won't help much — but it won't hurt either. It stays out of the way.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Claude["Claude Code"]
+        User[Developer]
+    end
+
+    subgraph Hooks["Hooks (Enforce Workflow)"]
+        H1[SessionStart]
+        H2[PreToolUse]
+        H3[PostToolUse]
+        H4[Stop]
+    end
+
+    subgraph Skills["Skills (Structured Workflows)"]
+        S1[planning]
+        S2[task-manager]
+        S3[memory-curator]
+    end
+
+    subgraph Agents["Agents (Quality Gates)"]
+        A1[plan-reviewer]
+        A2[implementation-reviewer]
+    end
+
+    subgraph Files[".meridian/ (Persistent State)"]
+        F1[memory.jsonl]
+        F2[task-backlog.yaml]
+        F3[tasks/TASK-###/]
+        F4[CODE_GUIDE.md]
+        F5[config.yaml]
+    end
+
+    User -->|talks to| Claude
+    Claude -->|triggers| Hooks
+    H1 -->|injects context| Files
+    H2 -->|enforces review| Agents
+    H3 -->|reminds task creation| Skills
+    H4 -->|requires updates| Files
+    Skills -->|read/write| Files
+    Agents -->|validate against| Files
 ```
 
-Open your repo in **Claude Code** and talk to Claude as always.
-Hooks inject the system prompt, guides, tasks, memory, and docs—and **Claude** follows them.
+### How Components Work Together
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant CC as Claude Code
+    participant Hook as Hooks
+    participant Skill as Skills
+    participant Agent as Agents
+    participant Files as .meridian/
+
+    Note over Dev,Files: Session Start
+    Dev->>CC: Opens project
+    CC->>Hook: SessionStart triggers
+    Hook->>Files: Reads memory, tasks, guides
+    Hook->>CC: Injects context
+    Hook->>CC: Blocks until acknowledged
+
+    Note over Dev,Files: Planning Phase
+    Dev->>CC: Describes complex task
+    CC->>Skill: Uses planning skill
+    Skill->>CC: Guides through methodology
+    CC->>Hook: Tries to exit plan mode
+    Hook->>Agent: Spawns plan-reviewer
+    Agent->>Files: Reads CODE_GUIDE, memory
+    Agent->>CC: Returns score + findings
+    alt Score < 9
+        CC->>CC: Iterates on plan
+    else Score >= 9
+        Hook->>CC: Allows exit
+    end
+
+    Note over Dev,Files: Implementation Phase
+    CC->>Hook: PreToolUse triggers
+    Hook->>Files: Checks token count
+    alt Approaching limit
+        Hook->>CC: Prompts to save context
+        CC->>Files: Updates TASK-###-context.md
+    end
+    CC->>CC: Implements plan
+
+    Note over Dev,Files: Completion
+    Dev->>CC: Requests stop
+    CC->>Hook: Stop triggers
+    Hook->>CC: Blocks until updates done
+    CC->>Agent: Spawns implementation-reviewer
+    Agent->>Files: Compares to plan
+    Agent->>CC: Returns score + findings
+    CC->>Files: Updates task status
+    CC->>Skill: Uses memory-curator
+    Skill->>Files: Appends to memory.jsonl
+    Hook->>CC: Allows stop
+```
 
 ---
 
-## Talk in **Plan mode** (important)
+## Quick Start
 
-**Describe work in Plan mode** so Claude proposes a plan you can approve.
-When you approve the plan, a hook forces Claude to create a task (`TASK-###` folder with brief/plan/context) and update the backlog every single time.
+```bash
+# Clone Meridian
+git clone https://github.com/markmdev/meridian.git
+cd meridian
 
-Why Plan mode?
+# Copy to your project
+cp -R .claude .meridian .mcp.json /path/to/your/project
+cd /path/to/your/project
 
-* Planning quality improves (fewer back‑and‑forths).
-* Exiting Plan mode is a reliable signal for the hook to persist the task plan.
-* Your repo becomes the *single source of truth* for ongoing work.
+# Make scripts executable
+find .claude -type f -name '*.py' -print0 | xargs -0 chmod +x
 
-> Shortcut: **Shift + Tab** to switch modes in Claude Code.
+# (Optional) Configure project type
+# Edit .meridian/config.yaml → project_type: hackathon|standard|production
+```
+
+Open your project in Claude Code. Hooks activate automatically, MCP servers connect.
 
 ---
 
-## What this setup includes
+## Why Not Just CLAUDE.md?
 
-### Main agent manual
+| | `CLAUDE.md` | Meridian |
+|-|-------------|----------|
+| **Large context** | Claude forgets prompt details as context grows | Hooks reinforce key behaviors throughout the session |
+| **Memory** | None | `memory.jsonl` persists lessons across sessions |
+| **Task continuity** | None — each session starts fresh | Context files track progress, decisions, next steps |
+| **Quality gates** | None | Plan review + implementation review before proceeding |
+| **Library docs** | Claude's training data (potentially outdated) | MCP servers provide current documentation |
+| **Custom docs** | Must be read manually each session | Injected automatically via `required-context-files.yaml` |
 
-The core system prompt that sets behavior and guardrails.
-**Default file:** `.meridian/prompts/agent-operating-manual.md`
+`CLAUDE.md` is a static prompt. Meridian hooks actively enforce behaviors and inject context throughout the session.
 
-### Guides
+---
 
-* **Baseline:** `.meridian/CODE_GUIDE.md` — organized by sections (General, Frontend, Backend) with focused, principle-based guidance for Next.js/React + Node/TS.
-* **Add‑ons (auto‑injected by config):**
+## Components Deep Dive
 
-  * `CODE_GUIDE_ADDON_HACKATHON.md` — loosens requirements for simpler projects. Includes graduation checklist.
-  * `CODE_GUIDE_ADDON_PRODUCTION.md` — tightens requirements for production needs. Principles only, no specific tool prescriptions.
-  * `CODE_GUIDE_ADDON_TDD.md` — **overrides all testing rules**; tests first (Red→Green→Refactor), even in hackathon mode.
+<details>
+<summary><strong>Hooks — Enforce Workflow</strong></summary>
 
-### Tasks (after every **approved plan**)
+Hooks are Python scripts triggered at Claude Code lifecycle events. They can inject context, block actions, or modify behavior.
 
-Each task lives in `.meridian/tasks/TASK-###/`:
+| Hook | Trigger | What it does |
+|------|---------|--------------|
+| `claude-init.py` | SessionStart (startup) | Injects memory, tasks, CODE_GUIDE into context |
+| `session-reload.py` | SessionStart (compact) | Re-injects context after compaction |
+| `post-compact-guard.py` | PreToolUse | Blocks first tool until agent acknowledges context |
+| `pre-compaction-sync.py` | PreToolUse | Warns when approaching token limit, prompts context save |
+| `block-plan-agent.py` | PreToolUse (Task) | Redirects deprecated Plan agent to planning skill |
+| `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
+| `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create task folder |
+| `pre-stop-update.py` | Stop | Requires task/memory updates and implementation review |
+| `startup-prune-completed-tasks.py` | SessionStart | Archives old completed tasks |
+| `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
 
-* `TASK-###-context.md`: the primary source of truth for task state and history — origin, decisions, blockers, session progress, and `MEMORY:` markers
+All hooks live in `.claude/hooks/` and share utilities from `.claude/hooks/lib/config.py`.
 
-Plans are managed by Claude Code and stored in `.claude/plans/`. The backlog references each plan via `plan_path`.
+</details>
 
-Backlog: `.meridian/task-backlog.yaml` tracks status (`todo`, `in_progress`, `blocked`, `done`) and `plan_path`.
+<details>
+<summary><strong>Skills — Structured Workflows</strong></summary>
 
-These task folders aren’t just for the developer; Claude actively uses them to restore context after startup or compaction.
+Skills are reusable instruction sets that activate when invoked.
 
-### User-provided docs
+### Planning Skill
 
-Add your own documentation to the agent's context via `.meridian/required-context-files.yaml`:
+Guides Claude through comprehensive planning so plans don't break during implementation:
+1. **Deep Discovery** — Spawn Explore subagents to understand the codebase before writing anything
+2. **Design** — Choose approach, define target state, verify assumptions against actual code
+3. **Decomposition** — Break into subtasks with clear dependencies
+4. **Integration** — Explicitly plan how modules connect (mandatory for multi-module plans)
+
+Plans describe **what and why**, not how. The plan-reviewer agent validates plans against the actual codebase before implementation begins.
+
+### Task Manager Skill
+
+Creates and manages task folders. Each task has a context file (`TASK-###-context.md`) that serves as the **single source of truth** for that work:
+- What was done and what's left
+- Key decisions and why they were made
+- Problems encountered and how they were solved
+- Links to plan and related files
+
+**Why this matters:** When you return to a task (or Claude resumes after compaction), the context file tells Claude exactly where things stand. No re-explaining, no lost progress.
+
+### Memory Curator Skill
+
+Manages `memory.jsonl` via scripts (never edit manually):
+```bash
+# Add entry
+python3 .claude/skills/memory-curator/scripts/add_memory_entry.py \
+  --summary "Lesson learned about X" \
+  --tags architecture,pattern \
+  --links "TASK-042 src/service.ts"
+
+# Edit entry
+python3 .claude/skills/memory-curator/scripts/edit_memory_entry.py \
+  --id mem-0042 --summary "Updated summary"
+
+# Delete entry
+python3 .claude/skills/memory-curator/scripts/delete_memory_entry.py \
+  --id mem-0042
+```
+
+</details>
+
+<details>
+<summary><strong>Agents — Quality Gates</strong></summary>
+
+Agents are specialized subagents that validate work.
+
+### Plan Reviewer
+
+Validates plans before implementation:
+- Verifies file paths and API assumptions against codebase
+- Checks for missing steps, dependencies, integration plan
+- Uses Context7 and DeepWiki to verify library claims
+- Returns score (must reach 9+ to proceed) + findings
+
+### Implementation Reviewer
+
+Validates implementations after completion:
+- Compares actual code against plan
+- Flags hardcoded values, TODOs, unused exports
+- Checks integration (no orphaned modules)
+- Returns score (must reach 9+ to ship) + findings
+
+**Multi-Reviewer Strategy:** For large plans, spawn multiple focused reviewers in parallel — one per plan phase plus integration reviewer(s).
+
+</details>
+
+<details>
+<summary><strong>MCP Servers — External Knowledge</strong></summary>
+
+MCP (Model Context Protocol) servers give Claude access to up-to-date external knowledge. Meridian includes two:
+
+### Context7
+
+Queries documentation for any public library. Claude uses this to:
+- Verify library APIs exist and work as expected
+- Find correct usage patterns and examples
+- Check for deprecations or breaking changes
+
+### DeepWiki
+
+Asks questions about any public GitHub repository. Claude uses this to:
+- Understand how external libraries work internally
+- Verify integration patterns are correct
+- Research best practices for specific tools
+
+**Why MCPs matter:** Claude's training data has a cutoff date. When planning or reviewing, Claude can verify claims against current documentation instead of relying on potentially outdated knowledge.
+
+**Configuration:** `.mcp.json` in project root:
+```json
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "deepwiki": {
+      "type": "http",
+      "url": "https://mcp.deepwiki.com/mcp"
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Configuration</strong></summary>
+
+### Project Config (`.meridian/config.yaml`)
 
 ```yaml
+# Project type → which CODE_GUIDE addon to load
+project_type: standard  # hackathon | standard | production
+
+# TDD mode → tests first
+tdd_mode: false
+
+# Quality gates
+plan_review_enabled: true
+implementation_review_enabled: true
+
+# Context preservation
+pre_compaction_sync_enabled: true
+pre_compaction_sync_threshold: 150000  # tokens
+```
+
+### Required Context Files (`.meridian/required-context-files.yaml`)
+
+```yaml
+# Always injected
+core:
+  - .meridian/memory.jsonl
+  - .meridian/task-backlog.yaml
+  - .meridian/CODE_GUIDE.md
+  - .meridian/prompts/agent-operating-manual.md
+
+# Your custom docs (injected FIRST, before core files)
+# Add architecture docs, API references, design specs — anything Claude should always know
 user_provided_docs:
   - docs/architecture.md
   - docs/api-reference.md
+
+# Auto-loaded based on project_type
+project_type_addons:
+  hackathon: .meridian/CODE_GUIDE_ADDON_HACKATHON.md
+  production: .meridian/CODE_GUIDE_ADDON_PRODUCTION.md
 ```
 
-These files are injected at the very top of the context, before memory and other core files. Use this for architecture docs, API references, or any project-specific documentation the agent should always have access to.
+**`user_provided_docs`**: Add any project-specific documentation here. These files are injected at the very top of context (before memory and core files), so Claude always has access to your architecture decisions, API contracts, or any other docs you want it to reference.
 
-### Memory (append‑only)
+### CODE_GUIDE System
 
-`memory.jsonl` stores durable decisions and patterns. Claude reads it automatically.
+- **Baseline** (`CODE_GUIDE.md`) — Default standards for Next.js/React + Node/TS
+- **Hackathon Addon** — Relaxes rules for fast prototypes
+- **Production Addon** — Tightens rules for production systems
+- **TDD Addon** — Overrides all testing rules with test-first workflow
 
-This memory exists primarily for Claude’s benefit: issues it encountered, architectural decisions, pitfalls, and patterns it should not repeat.
+Precedence: Baseline → Project Type Addon → TDD Addon
 
-* Claude uses the script (never edits manually):
+</details>
 
-  ```
-  .claude/skills/memory-curator/scripts/add_memory_entry.py \
-    --summary "Decision/Pattern…" --tags architecture,pattern --links "TASK-012 services/x.ts"
-  ```
+<details>
+<summary><strong>File Structure</strong></summary>
 
----
-
-## Project types (what they mean)
-
-Set in `.meridian/config.yaml`:
-
-```yaml
-project_type: standard   # hackathon | standard | production
-tdd_mode: false          # true enables TDD add-on and overrides testing rules
-
-# Optional review toggles
-plan_review_enabled: true           # require plan-reviewer before exiting plan mode
-implementation_review_enabled: true # require implementation-reviewer before stopping
-
-# Pre-compaction context preservation
-pre_compaction_sync_enabled: true   # prompt to save context before compaction
-pre_compaction_sync_threshold: 150000  # token threshold for warning
+```
+your-project/
+├── .mcp.json                   # MCP server configuration
+├── .claude/
+│   ├── settings.json          # Hook configuration
+│   ├── hooks/
+│   │   ├── lib/config.py      # Shared utilities
+│   │   ├── claude-init.py     # Session start
+│   │   ├── session-reload.py  # Post-compaction
+│   │   ├── post-compact-guard.py
+│   │   ├── pre-compaction-sync.py
+│   │   ├── plan-review.py
+│   │   ├── plan-approval-reminder.py
+│   │   ├── pre-stop-update.py
+│   │   ├── block-plan-agent.py
+│   │   ├── startup-prune-completed-tasks.py
+│   │   └── permission-auto-approver.py
+│   ├── skills/
+│   │   ├── planning/SKILL.md
+│   │   ├── task-manager/
+│   │   │   ├── SKILL.md
+│   │   │   └── scripts/create-task.py
+│   │   └── memory-curator/
+│   │       ├── SKILL.md
+│   │       └── scripts/
+│   │           ├── add_memory_entry.py
+│   │           ├── edit_memory_entry.py
+│   │           └── delete_memory_entry.py
+│   └── agents/
+│       ├── plan-reviewer.md
+│       └── implementation-reviewer.md
+├── .meridian/
+│   ├── config.yaml                   # Project configuration
+│   ├── required-context-files.yaml   # What gets injected
+│   ├── CODE_GUIDE.md                 # Baseline standards
+│   ├── CODE_GUIDE_ADDON_HACKATHON.md
+│   ├── CODE_GUIDE_ADDON_PRODUCTION.md
+│   ├── CODE_GUIDE_ADDON_TDD.md
+│   ├── memory.jsonl                  # Persistent lessons/decisions
+│   ├── task-backlog.yaml             # Task index
+│   ├── tasks/
+│   │   ├── TASK-000-template/        # Template for new tasks
+│   │   ├── TASK-001/
+│   │   │   └── TASK-001-context.md
+│   │   └── archive/                  # Old completed tasks
+│   └── prompts/
+│       └── agent-operating-manual.md # Agent behavior instructions
+└── your-code/
 ```
 
-* **hackathon**: a loosened mode for simpler projects and fast iteration. Use it whenever you don't need production-grade quality.
-* **standard**: the baseline defaults, balanced for most work.
-* **production**: a stricter mode for production-grade needs (security, reliability, performance).
-
-**TDD (`tdd_mode: true`)**: Tests are written **first** for each behavior slice; this **overrides** any testing guidance from hackathon/production/baseline.
-
-**Precedence:** baseline → project‑type add‑on → **TDD** (if enabled; TDD wins on test rules).
-
----
-
-## How it actually runs (Claude does the work)
-
-1. **Startup/Reload**
-   Hooks inject the Agent Operating Manual, guides, memory, backlog, and task context directly into the conversation via `additionalContext`. A context guard blocks the first tool call until Claude acknowledges it has read the injected context.
-
-2. **Plan**
-   You describe the task in Plan mode; Claude proposes a plan. If `plan_review_enabled`, a plan-reviewer agent validates the plan before Claude can exit plan mode.
-
-3. **Approve plan**
-   A hook reminds Claude to create a task folder (`TASK-###-context.md`) and update the backlog with the plan path.
-
-4. **Implement**
-   Claude writes code following the guides, updates `TASK-###-context.md`, and—if needed—adds memory entries via the script.
-
-   * **If TDD is on:** Claude writes a failing test first, makes it pass, then refactors (per slice).
-
-5. **Approaching Compaction**
-   When token usage approaches the threshold (default 150k), a hook prompts Claude to save current progress to the context file—preserving context for the agent that continues after compaction.
-
-6. **Compaction/Resume**
-   Reload hook re-injects guidelines, memory, and task context via `additionalContext`. Context guard requires acknowledgment before continuing work.
-
-7. **Stop**
-   Stop hook blocks exit until Claude verifies tests/lint/build are clean and task/memory/doc updates are saved. If `implementation_review_enabled`, requires implementation-reviewer agent.
-
-> You don't perform these steps manually—**Claude does**. You chat, approve, and review as normal.
-
----
-
-## Hooks (what each one enforces)
-
-* **`claude-init.py`** — on session start
-  Injects project context (manual, guides, memory, backlog, task context) directly via `additionalContext`. Files are wrapped in XML tags. Creates acknowledgment flag for the context guard.
-
-* **`startup-prune-completed-tasks.py`** — on startup/clear
-  Keeps only the 10 most recent completed tasks in `task-backlog.yaml`, moves older `done/completed` entries into `task-backlog-archive.yaml`, and relocates their folders under `.meridian/tasks/archive/`.
-
-* **`session-reload.py`** — on compaction/resume
-  Re-injects essential context via `additionalContext` after compaction. In-progress tasks and their context files are included automatically. Creates acknowledgment flag for the context guard.
-
-* **`post-compact-guard.py`** — context acknowledgment guard (before tool use)
-  Blocks the first tool call after session start until agent acknowledges the injected context. Ensures Claude reads and understands memory, tasks, CODE_GUIDE, and operating manual before proceeding.
-
-* **`pre-compaction-sync.py`** — before tool use (token monitoring)
-  Monitors token usage from transcript. When approaching compaction threshold (default 150k), prompts Claude to save current work to context file. Configurable via `pre_compaction_sync_threshold`.
-
-* **`block-plan-agent.py`** — before Task tool use
-  Blocks calls to the deprecated Plan agent and redirects to use the planning skill instead. Ensures main agent retains full conversation context during planning.
-
-* **`plan-review.py`** — before exiting Plan mode
-  Requires plan-reviewer agent to validate the plan before implementation. Configurable via `plan_review_enabled`.
-
-* **`plan-approval-reminder.py`** — after exiting Plan mode
-  Instructs Claude to archive the plan (copy from `~/.claude/plans/` to task folder), create `TASK-###` via **task‑manager**, and update the backlog.
-
-* **`pre-stop-update.py`** — on stop
-  Blocks until Claude updates task files/backlog/memory and verifies tests/lint/build. Optionally requires implementation-reviewer (configurable via `implementation_review_enabled`).
-
-* **`permission-auto-approver.py`** — on `PermissionRequest`
-  Auto-allows whitelisted Meridian actions (task-manager, memory-curator, backlog updates, etc.).
-
-These guardrails turn guidance into **deterministic behavior**.
-
----
-
-## Skills (how Claude writes things down)
-
-* **planning**
-  Guides Claude through comprehensive implementation planning. Activates in Plan mode. Claude plans directly (retaining full conversation context) and uses Explore subagents for codebase research.
-
-* **task‑manager**
-  Script `create-task.py` creates `TASK-###` from a template and enforces filenames.
-  Skill doc `SKILL.md` defines when to create tasks, status transitions, and templates.
-
-* **memory‑curator**
-  Scripts `add_memory_entry.py`, `edit_memory_entry.py`, and `delete_memory_entry.py` handle append/update/delete flows for `.meridian/memory.jsonl` (never edit manually).
-  Skill doc `SKILL.md` explains when to capture memories, the summary/tag format, and how to run the helper scripts.
+</details>
 
 ---
 
 ## FAQ
 
-**Is “hackathon” only for hackathons?**
-No. It’s just a label for the *looser* mode—use it for any simpler project where production strength isn’t required.
+**Who is Meridian for?**
 
-**Why not subagents?**
-They don’t share the full live context, re‑read docs (token waste), can’t be resumed after interrupts, and their actions may not make it back into memory. This setup focuses on making every single interaction more efficient and traceable. You can still add subagents for specialized work if you like.
+Anyone using Claude Code for complex, multi-session work. Solo developers and teams alike benefit from enforced workflows and persistent context.
 
-**Will TDD slow me down?**
-In hackathon mode, tests remain minimal but are still **first**. For critical paths, TDD tends to reduce regressions and rework.
+**Does Meridian change how I interact with Claude?**
 
-**Can I add project‑specific rules?**
-Yes—edit `CODE_GUIDE.md` (e.g., “use Drizzle instead of Prisma”). Because the guide is injected each session, Claude will follow it.
+No. You talk to Claude the same way. Meridian works behind the scenes through hooks.
+
+**What happens on simple tasks?**
+
+Nothing. Hooks fire but don't block anything meaningful. The overhead is minimal.
+
+**Can I customize the CODE_GUIDE?**
+
+Yes. Edit `.meridian/CODE_GUIDE.md` to add project-specific rules. It's injected every session.
+
+**Can I disable features?**
+
+Yes. In `.meridian/config.yaml`:
+```yaml
+plan_review_enabled: false
+implementation_review_enabled: false
+pre_compaction_sync_enabled: false
+```
+
+**How is this different from subagents?**
+
+Subagents don't share live context, re-read docs (token waste), and can't be resumed after interrupts. Meridian keeps Claude as the primary agent and injects context directly.
+
+**What are the MCP servers for?**
+
+Context7 and DeepWiki give Claude access to current library documentation. Claude's training data has a cutoff, so when it needs to verify an API exists or check usage patterns, it queries these servers instead of guessing.
 
 ---
 
-## Contribute & License
+## Contributing
 
-PRs and issues welcome
-License: MIT
+PRs and issues welcome at [github.com/markmdev/meridian](https://github.com/markmdev/meridian)
+
+**License:** MIT
 
 ---
 
-## Star & share
+## Star & Share
 
-If Meridian improves your Claude sessions:
+If Meridian improves your Claude Code sessions:
 
-* ⭐ **Star this repo** so others can find it.
-* Share your first `TASK-###` flow with me on [X](http://x.com/markmdev) or [LinkedIn](http://linkedin.com/in/markmdev).
+- **Star this repo** so others can find it
+- Share your experience on [X (@markmdev)](http://x.com/markmdev) or [LinkedIn](http://linkedin.com/in/markmdev)

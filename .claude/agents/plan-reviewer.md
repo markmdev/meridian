@@ -119,6 +119,22 @@ Check for:
 - Are rollback/recovery strategies adequate?
 - What happens if the plan fails midway?
 
+### Plans Should NOT Contain Code
+
+Good plans describe WHAT and WHY, not HOW. Do NOT flag as issues:
+- Lack of code snippets or implementations
+- Lack of pseudocode or step-by-step logic
+- Absence of detailed algorithms
+
+Plans SHOULD contain:
+- What needs to exist and why
+- File locations and module structure
+- Function/type contracts (signature, purpose)
+- References to existing patterns to follow
+- Integration points and acceptance criteria
+
+If a plan includes actual code or pseudocode, flag it as **low severity** suggestion to remove it—code makes plans rigid and bloated.
+
 ## Research Protocol
 
 You MUST actively explore the codebase:

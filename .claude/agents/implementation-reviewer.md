@@ -66,13 +66,15 @@ If context files are specified, read them FIRST before beginning verification.
 
 **You MUST write your review to a file** instead of returning it directly. This prevents overwhelming the main agent with multiple large reviews.
 
+**IMPORTANT**: Use the `CLAUDE_PROJECT_DIR` environment variable for the absolute path. This ensures the file is created in the project root regardless of current directory.
+
 1. Generate a random filename: `review-{random-8-chars}.md`
-2. Write your full review to: `.meridian/implementation-reviews/{filename}`
-3. Return ONLY the file path in your response
+2. Write your full review to: `$CLAUDE_PROJECT_DIR/.meridian/implementation-reviews/{filename}`
+3. Return ONLY the absolute file path in your response
 
 Example response:
 ```
-Review written to: .meridian/implementation-reviews/review-a8f3b2c1.md
+Review written to: /absolute/path/to/project/.meridian/implementation-reviews/review-a8f3b2c1.md
 ```
 
 Use the Write tool to create the review file. The file should contain your full JSON review output.

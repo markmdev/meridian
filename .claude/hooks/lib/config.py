@@ -13,6 +13,7 @@ REQUIRED_CONTEXT_CONFIG = ".meridian/required-context-files.yaml"
 PENDING_READS_DIR = ".meridian/.pending-context-reads"
 PRE_COMPACTION_FLAG = ".meridian/.pre-compaction-synced"
 PLAN_REVIEW_FLAG = ".meridian/.plan-review-blocked"
+CONTEXT_ACK_FLAG = ".meridian/.context-acknowledgment-pending"
 
 
 # =============================================================================
@@ -397,3 +398,135 @@ def build_task_xml(tasks: list[dict], claude_project_dir: str) -> str:
 
     xml_parts.append("</in_progress_tasks>")
     return "\n".join(xml_parts)
+
+
+# =============================================================================
+# CONTEXT INJECTION HELPERS
+# =============================================================================
+def build_injected_context(base_dir: Path, claude_project_dir: str, source: str = "startup") -> str:
+    """Build the full injected context string with XML-wrapped file contents.
+
+    Args:
+        base_dir: Base directory of the project
+        claude_project_dir: CLAUDE_PROJECT_DIR environment variable value
+        source: Source of the injection (startup, resume, clear, compact)
+
+    Returns:
+        Full context string ready for additionalContext injection
+    """
+    parts = []
+
+    # Header explanation
+    parts.append("<injected-project-context>")
+    parts.append("")
+    parts.append("=" * 80)
+    parts.append("IMPORTANT: PROJECT CONTEXT INJECTION")
+    parts.append("=" * 80)
+    parts.append("")
+    parts.append("This context has been automatically injected at session start.")
+    parts.append("It contains critical project information you MUST understand before working:")
+    parts.append("")
+    parts.append("- Memory: Past decisions, lessons learned, architectural patterns")
+    parts.append("- Tasks: Current work in progress with context and plans")
+    parts.append("- Code Guide: Coding conventions and standards for this project")
+    parts.append("- Operating Manual: How you should behave as an agent")
+    parts.append("")
+    parts.append("READ AND INTERNALIZE this context before responding to the user.")
+    parts.append("")
+
+    # Get in-progress tasks
+    in_progress_tasks = get_in_progress_tasks(base_dir)
+
+    # Build ordered file list
+    files_to_inject = []
+
+    # 1. Memory (most important - past decisions)
+    memory_path = base_dir / ".meridian" / "memory.jsonl"
+    if memory_path.exists():
+        files_to_inject.append((".meridian/memory.jsonl", memory_path))
+
+    # 2. Task context files (current work)
+    for task in in_progress_tasks:
+        task_id = task.get('id', '')
+        task_path = task.get('path', '')
+        if task_path and task_id:
+            id_part = task_id if task_id.startswith('TASK-') else f"TASK-{task_id}"
+            context_file = base_dir / task_path / f"{id_part}-context.md"
+            if context_file.exists():
+                files_to_inject.append((f"{task_path}{id_part}-context.md", context_file))
+
+    # 3. Task backlog
+    backlog_path = base_dir / ".meridian" / "task-backlog.yaml"
+    if backlog_path.exists():
+        files_to_inject.append((".meridian/task-backlog.yaml", backlog_path))
+
+    # 4. Plan files for in-progress tasks
+    for task in in_progress_tasks:
+        plan_path = task.get('plan_path', '')
+        if plan_path:
+            if plan_path.startswith('/'):
+                full_path = Path(plan_path)
+            else:
+                full_path = base_dir / plan_path
+            if full_path.exists():
+                files_to_inject.append((plan_path, full_path))
+
+    # 5. CODE_GUIDE and addons
+    code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
+    if code_guide_path.exists():
+        files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path))
+
+    # Get project config for addons
+    project_config = get_project_config(base_dir)
+
+    if project_config['project_type'] == 'hackathon':
+        addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_HACKATHON.md"
+        if addon_path.exists():
+            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_HACKATHON.md", addon_path))
+    elif project_config['project_type'] == 'production':
+        addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_PRODUCTION.md"
+        if addon_path.exists():
+            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path))
+
+    if project_config['tdd_mode']:
+        tdd_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_TDD.md"
+        if tdd_path.exists():
+            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_TDD.md", tdd_path))
+
+    # 6. Agent operating manual
+    manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
+    if manual_path.exists():
+        files_to_inject.append((".meridian/prompts/agent-operating-manual.md", manual_path))
+
+    # Inject each file with XML tags
+    for rel_path, full_path in files_to_inject:
+        try:
+            content = full_path.read_text()
+            parts.append(f'<file path="{rel_path}">')
+            parts.append(content.rstrip())
+            parts.append('</file>')
+            parts.append("")
+        except IOError:
+            parts.append(f'<file path="{rel_path}" error="Could not read file" />')
+            parts.append("")
+
+    # Footer with acknowledgment request
+    parts.append("=" * 80)
+    parts.append("END OF PROJECT CONTEXT")
+    parts.append("=" * 80)
+    parts.append("")
+    parts.append("You have received the complete project context above.")
+    parts.append("This information is CRITICAL for working correctly on this project.")
+    parts.append("")
+    parts.append("Before doing anything else:")
+    parts.append("1. Confirm you have read and understood the memory entries")
+    parts.append("2. Confirm you understand any in-progress tasks and their current state")
+    parts.append("3. Confirm you will follow the CODE_GUIDE conventions")
+    parts.append("4. Confirm you will operate according to the agent-operating-manual")
+    parts.append("")
+    parts.append("Acknowledge this context by briefly stating what you understand about")
+    parts.append("the current project state, then ask the user what they'd like to work on.")
+    parts.append("")
+    parts.append("</injected-project-context>")
+
+    return "\n".join(parts)

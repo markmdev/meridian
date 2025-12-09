@@ -7,3 +7,4 @@ __pycache__
 .meridian/.pre-compaction-synced
 .meridian/.needs-context-review
 .meridian/.plan-review-blocked
+.meridian/.pre-compaction-sync.log

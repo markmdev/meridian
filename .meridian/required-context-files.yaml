@@ -3,11 +3,10 @@
 
 # Always required
 core:
-  - .meridian/prompts/agent-operating-manual.md
-  - .meridian/CODE_GUIDE.md
   - .meridian/memory.jsonl
   - .meridian/task-backlog.yaml
-  - .meridian/relevant-docs.md
+  - .meridian/CODE_GUIDE.md
+  - .meridian/prompts/agent-operating-manual.md
 
 # Conditional based on project_type in config.yaml
 # hackathon -> CODE_GUIDE_ADDON_HACKATHON.md

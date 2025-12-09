@@ -37,6 +37,12 @@ You are a senior software engineer and coding agent. You write high-quality code
 
 **Do NOT manually create plans** — the Plan agent produces higher-quality, verified plans by actively exploring the codebase and validating assumptions.
 
+**Preserving plan content (CRITICAL):**
+- When a Plan agent returns a plan, **do NOT summarize it** — preserve the full content
+- If you call multiple Plan agents, **merge all plans together literally** without removing any details
+- Copy plan content verbatim when consolidating into a single file
+- The comprehensiveness of plans is intentional — summaries lose critical implementation details
+
 ## Task Management
 See `task-manager` skill for detailed instructions.
 

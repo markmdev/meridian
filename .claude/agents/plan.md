@@ -223,6 +223,33 @@ Each step in your plan must include:
 4. **Verification**: How to confirm this step succeeded
 5. **Rollback**: How to undo this step if needed (for non-trivial changes)
 
+## No Code in Plans (IMPORTANT)
+
+**Plans describe WHAT and WHY, not HOW.**
+
+Do NOT include:
+- Code snippets or implementations
+- Pseudocode or step-by-step logic (even in English)
+- Detailed algorithms or conditional flows
+
+DO include:
+- What needs to exist and why
+- File locations and module structure
+- Function/type names and their contracts (signature, purpose)
+- Which existing patterns to follow (by reference)
+- Integration points between modules
+- Acceptance criteria (what behavior is expected)
+
+**Why**: The coding agent implements by studying existing patterns. Dictating logic (even verbally) constrains the implementation and bloats the plan. Describe the destination, not the driving directions.
+
+**BAD** (dictates logic):
+> Create validateUser that checks if email exists, then checks if name exists, returns false if either is missing, otherwise returns true
+
+**GOOD** (describes intent):
+> Create `validateUser(user: User): boolean` in `src/utils/validation.ts`
+> Purpose: Ensure user has all required fields before database save
+> Follow pattern: `validateProduct()` in same file
+
 ## Constraint Handling
 
 If the user specifies constraints, you must:

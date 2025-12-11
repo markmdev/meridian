@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Iterable, List
@@ -20,12 +19,33 @@ from typing import Iterable, List
 MEMORY_RELATIVE_PATH = ".meridian/memory.jsonl"
 
 
+def get_project_root() -> Path:
+    """
+    Walk up from cwd to find project root.
+    Project root must contain both .claude/ and .meridian/ directories.
+    """
+    current = Path.cwd().resolve()
+    max_depth = 20  # Safety limit
+
+    for _ in range(max_depth):
+        has_claude = (current / ".claude").is_dir()
+        has_meridian = (current / ".meridian").is_dir()
+        if has_claude and has_meridian:
+            return current
+        if current.parent == current:  # Reached filesystem root
+            break
+        current = current.parent
+
+    raise FileNotFoundError(
+        "Could not find project root. "
+        "Project root must contain both .claude/ and .meridian/ directories. "
+        "Make sure you're inside a Meridian project."
+    )
+
+
 def get_default_memory_path() -> Path:
-    """Get the default memory path using CLAUDE_PROJECT_DIR."""
-    project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
-    if not project_dir:
-        raise EnvironmentError("CLAUDE_PROJECT_DIR environment variable is not set")
-    return Path(project_dir) / MEMORY_RELATIVE_PATH
+    """Get the default memory path by finding project root."""
+    return get_project_root() / MEMORY_RELATIVE_PATH
 
 
 def parse_args() -> argparse.Namespace:

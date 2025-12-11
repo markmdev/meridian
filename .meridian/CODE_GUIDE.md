@@ -4,8 +4,24 @@
 ## General
 
 ### TypeScript
-- Enable `strict` mode; treat type errors as build blockers.
-- Use explicit interfaces for props and API contracts; avoid `any`.
+Write code as if these compiler options are enabled:
+- `strict`, `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes`
+- `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`
+
+Type errors are build blockers. Never merge code with type errors.
+
+**Library types**: Always use official `@types/*` packages or built-in types from libraries. Never write custom type definitions for typed libraries — only as a last resort for untyped libraries.
+
+**No `as any`**: Never use `as any` to silence type errors. If you think you need it, you're likely:
+- Missing a type import
+- Fighting the type system instead of fixing the underlying issue
+- Using an untyped library (add types or use a typed alternative)
+
+Only use `as any` when there is genuinely no other option, and document why.
+
+**Reuse existing types**: Before creating new types or interfaces, search the codebase for existing ones. Reuse what exists rather than creating duplicates.
+
+Use explicit interfaces for props and API contracts.
 
 ### Project Structure
 - Organize by feature/domain (e.g., `billing/`, `users/`) rather than technical layers.

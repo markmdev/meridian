@@ -36,11 +36,12 @@ If none of the above is true, do not create an entry.
 Always use the helper script and never edit the file by hand.
 
 ```bash
-python3 $CLAUDE_PROJECT_DIR/.claude/skills/memory-curator/scripts/add_memory_entry.py \
+python3 .claude/skills/memory-curator/scripts/add_memory_entry.py \
   --summary "<see Summary Format below>" \
   --tags architecture,api,lessons-learned \
   --links "TASK-090 services/backend-api/src/stripe/stripe-service.ts"
 ```
+The script auto-detects project root by walking up to find `.claude/` and `.meridian/` directories.
 Note: if `python3` is failing, try using `python` instead.
 
 **The script will:**
@@ -53,7 +54,7 @@ Note: if `python3` is failing, try using `python` instead.
 ### Edit an existing entry
 
 ```bash
-python3 $CLAUDE_PROJECT_DIR/.claude/skills/memory-curator/scripts/edit_memory_entry.py \
+python3 .claude/skills/memory-curator/scripts/edit_memory_entry.py \
   --id mem-0042 \
   --summary "<new summary>" \
   --tags architecture,api \
@@ -65,7 +66,7 @@ python3 $CLAUDE_PROJECT_DIR/.claude/skills/memory-curator/scripts/edit_memory_en
 ### Delete an entry
 
 ```bash
-python3 $CLAUDE_PROJECT_DIR/.claude/skills/memory-curator/scripts/delete_memory_entry.py \
+python3 .claude/skills/memory-curator/scripts/delete_memory_entry.py \
   --id mem-0042
 ```
 - Only delete when an entry is clearly obsolete or incorrect.  

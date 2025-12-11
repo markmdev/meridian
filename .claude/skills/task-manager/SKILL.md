@@ -28,8 +28,9 @@ When in doubt: if the same context.md would serve both pieces of work, continue 
 
 ### Create the task
 ```bash
-python3 $CLAUDE_PROJECT_DIR/.claude/skills/task-manager/scripts/create-task.py
+python3 .claude/skills/task-manager/scripts/create-task.py
 ```
+The script auto-detects project root by walking up to find `.claude/` and `.meridian/` directories.
 Creates `.meridian/tasks/TASK-###/` with:
 - `TASK-###-context.md` — the primary source of truth for task state and history
 

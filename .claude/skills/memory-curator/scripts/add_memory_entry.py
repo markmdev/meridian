@@ -80,7 +80,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--summary", required=True, help="Short markdown summary of the memory item")
     p.add_argument("--tags", action="append", default=[], help="Tags comma or space separated; may repeat the flag")
     p.add_argument("--links", action="append", default=[], help="Links (TASK ids, file paths, URLs). Comma or space separated; may repeat")
-    p.add_argument("--path", default=None, help="Path to memory.jsonl (default: $CLAUDE_PROJECT_DIR/.meridian/memory.jsonl)")
+    p.add_argument("--path", default=None, help="Path to memory.jsonl (default: auto-detected project root/.meridian/memory.jsonl)")
     return p.parse_args()
 
 

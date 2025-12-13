@@ -64,6 +64,22 @@ For each step in the plan, verify:
 - Does it have the prerequisites it needs?
 - Should it come before/after other steps?
 
+### Phase 2.5: Detail Completeness Check (CRITICAL)
+
+**Every item mentioned in Summary or Target State MUST have an explicit implementation step.**
+
+Parse the plan's Summary and Target State sections. For each requirement, feature, or item mentioned:
+- Verify there is a corresponding explicit step in the Steps section
+- Flag as **critical/blocking** if any mentioned item lacks an explicit step
+
+**Examples of violations (flag as critical):**
+- Summary says "integrate Sentry for error tracking" but no step covers Sentry setup
+- Target State mentions "caching layer for API responses" but no step implements caching
+- Summary references "new UserService" but no step creates it
+- Target State says "support for multiple payment providers" but steps only cover one
+
+**This prevents orphaned requirements** — items that are mentioned but never implemented.
+
 ### Phase 3: Integration Verification (CRITICAL)
 
 **Every multi-module plan MUST have an explicit Integration phase.** If missing, flag as critical.

@@ -10,7 +10,7 @@ TASK_BACKLOG = f"{MERIDIAN_DIR}/task-backlog.yaml"
 MEMORY_FILE = f"{MERIDIAN_DIR}/memory.jsonl"
 TASKS_DIR = f"{MERIDIAN_DIR}/tasks"
 
-SKILL_WHITELIST = {"memory-curator", "task-manager"}
+SKILL_WHITELIST = {"memory-curator", "task-manager", "planning", "claudemd-writer"}
 BASH_SUBSTRINGS = {"add_memory_entry.py", "create-task.py"}
 
 ALLOWED_ACTIONS = {

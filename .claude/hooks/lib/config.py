@@ -91,7 +91,6 @@ def get_project_config(base_dir: Path) -> dict:
     """Read project config and return as dict with defaults."""
     config = {
         'project_type': 'standard',
-        'tdd_mode': False,
         'plan_review_enabled': True,
         'implementation_review_enabled': True,
         'pre_compaction_sync_enabled': True,
@@ -109,10 +108,6 @@ def get_project_config(base_dir: Path) -> dict:
         pt = get_config_value(content, 'project_type')
         if pt in ('hackathon', 'standard', 'production'):
             config['project_type'] = pt
-
-        # TDD mode
-        tdd = get_config_value(content, 'tdd_mode')
-        config['tdd_mode'] = tdd.lower() in ('true', 'yes', 'on', '1')
 
         # Plan review
         pr = get_config_value(content, 'plan_review_enabled')
@@ -167,12 +162,6 @@ def get_required_files(base_dir: Path) -> list[str]:
         addon_path = addons[project_type]
         if (base_dir / addon_path).exists():
             files.append(addon_path)
-
-    # Add TDD addon if enabled
-    if project_config['tdd_mode']:
-        tdd_addon = get_config_value(content, 'tdd_addon')
-        if tdd_addon and (base_dir / tdd_addon).exists():
-            files.append(tdd_addon)
 
     return files
 
@@ -485,11 +474,6 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_PRODUCTION.md"
         if addon_path.exists():
             files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path))
-
-    if project_config['tdd_mode']:
-        tdd_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_TDD.md"
-        if tdd_path.exists():
-            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_TDD.md", tdd_path))
 
     # 6. Agent operating manual
     manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"

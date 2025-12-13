@@ -6,10 +6,6 @@
 # - production  → use CODE_GUIDE_ADDON_PRODUCTION.md
 project_type: standard
 
-# Optional: Test-Driven Development mode.
-# When true, inject CODE_GUIDE_ADDON_TDD.md and follow its rules.
-tdd_mode: false
-
 # Plan review: require plan-reviewer agent before exiting plan mode.
 # When false, ExitPlanMode proceeds without review.
 plan_review_enabled: true
@@ -24,3 +20,14 @@ pre_compaction_sync_enabled: true
 
 # Token threshold for pre-compaction sync warning (default: 150000).
 pre_compaction_sync_threshold: 144000
+
+# Sibling repositories for cross-repo context.
+# Paths relative to project root or absolute.
+sibling_repos: []
+# Example:
+#   - name: backend-api
+#     path: ../backend
+#     description: "API server - endpoints, data models"
+#   - name: ios-app
+#     path: ../ios
+#     description: "iOS implementation - reference for features"

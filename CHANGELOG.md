@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.0.8] - 2025-12-13
+
+### Added
+- **Code reviewer agent** (`.claude/agents/code-reviewer.md`): Line-by-line review of all code changes. Reviews for bugs, security, performance, and CODE_GUIDE compliance. Handles different git states (feature branch, uncommitted, staged).
+- **Completeness reviewer**: New `review_type: completeness` for implementation-reviewer verifies every plan item was implemented.
+- **CLAUDE.md writer skill** (`.claude/skills/claudemd-writer/`): Comprehensive guidance for writing effective CLAUDE.md files. Covers hierarchical injection, "less is more" principle, what/how/why structure.
+- **Plan mode tracker** (`plan-mode-tracker.py`): UserPromptSubmit hook detects Plan mode entry and prompts agent to invoke planning skill.
+- **Session cleanup hook** (`session-cleanup.py`): Cleans up plan-mode state on session end, compaction, and /clear.
+- **Path guard hook** (`meridian-path-guard.py`): Blocks writes to `.meridian/` or `.claude/` folders outside project root. Prevents agents from creating duplicate config folders in subfolders.
+- **Human actions docs workflow**: Pre-stop hook now prompts agent to create actionable docs in `.meridian/human-actions-docs/` when work requires human setup (env vars, service accounts, etc.).
+- **Dependency management guidance**: Agent operating manual now includes strict workflow for adding dependencies—always query registry, never rely on training data for versions.
+- **CI failure fix cycle**: Agent operating manual documents how to handle test/lint/build failures (read full output, fix root cause, verify).
+- **Testing strategy in planning**: Planning skill now includes testing requirements section with `AskUserQuestion` for test depth preferences.
+
+### Changed
+- **Multi-reviewer strategy expanded**: Pre-stop hook now requires 4 parallel reviewers: phase reviewers, integration reviewer, completeness reviewer, and code reviewer. Exact prompts provided for each.
+- **Subagent limits relaxed**: Agent operating manual and planning skill now document that >3 subagents are allowed for thorough exploration and review phases.
+- **"Never without alternatives" audit**: Fixed 7 prohibitions that lacked alternatives across CODE_GUIDE.md and agent-operating-manual.md. Every "never do X" now includes "do Y instead".
+- **Memory-curator scripts**: Fixed misleading help text—scripts use auto-detected project root, not `CLAUDE_PROJECT_DIR` env var.
+- **Detail completeness in planning**: Planning skill now requires explicit steps for every mentioned integration, service, or module.
+
+### Removed
+- **TDD addon** (`CODE_GUIDE_ADDON_TDD.md`): Deprecated. Testing guidance moved to planning skill. Agents should always write tests; depth is task-specific.
+- **TDD references**: Cleaned up from config.py, required-context-files.yaml, config.yaml.
+
 ## [0.0.7] - 2025-12-09
 
 ### Added

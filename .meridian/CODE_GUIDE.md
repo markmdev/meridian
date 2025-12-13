@@ -34,7 +34,7 @@ Use explicit interfaces for props and API contracts.
 
 ### Security Essentials
 - Load secrets from environment/secret stores; redact in logs.
-- Prefer httpOnly cookies for auth tokens; avoid localStorage unless the tradeoff is understood.
+- Prefer httpOnly cookies for auth tokens over localStorage.
 - Sanitize any third-party HTML before rendering.
 
 ### Testing
@@ -45,6 +45,10 @@ Use explicit interfaces for props and API contracts.
 ### Config & Environment
 - Validate env vars at startup; fail fast on invalid/missing values.
 - Provide `.env.example` with placeholder values; never commit real secrets.
+
+### Module Documentation
+- Use `CLAUDE.md` files to document module context for agents
+- Use the `claudemd-writer` skill for guidance on creating/updating these files
 
 ---
 
@@ -65,7 +69,7 @@ Use explicit interfaces for props and API contracts.
 
 ### Routing & Data Flow
 - Use App Router with nested layouts; colocate components with routes.
-- Avoid data-fetching waterfalls; stream above-the-fold content first.
+- Avoid data-fetching waterfalls — use parallel fetching or Suspense boundaries to stream above-the-fold content first.
 
 ### Styling
 - Pick one approach (CSS Modules, Tailwind, or CSS-in-JS) and stay consistent.
@@ -91,7 +95,7 @@ Use explicit interfaces for props and API contracts.
 ### Architecture
 - Prefer ESM with `"type": "module"`.
 - Group by domain with clear application/infra separation.
-- Export via index barrels; avoid deep cross-domain imports.
+- Export via index barrels; import from domain-level exports, not deep paths like `../../../other-domain/internal/`.
 
 ### Logging & Observability
 - Use structured JSON logging (e.g., pino) with level, timestamp, requestId.

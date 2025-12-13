@@ -144,8 +144,6 @@ def main():
                 "- Issues discovered or blockers encountered\n"
                 "- What needs to be done next\n"
                 "- Any important information that would be difficult to rediscover\n\n"
-                "**If the context file exceeds 500 lines**, compact it to ~300 lines by summarizing the oldest entries first. "
-                "Preserve recent entries in full detail.\n\n"
                 "After updating the context file, you may continue your work."
             )
         }

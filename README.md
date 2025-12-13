@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.7` (2025-12-09) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.8` (2025-12-13) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -214,6 +214,9 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `pre-stop-update.py` | Stop | Requires task/memory updates and implementation review |
 | `startup-prune-completed-tasks.py` | SessionStart | Archives old completed tasks |
 | `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
+| `meridian-path-guard.py` | PermissionRequest | Blocks .meridian/.claude writes outside project root |
+| `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
+| `session-cleanup.py` | SessionEnd | Cleans up session state files |
 
 All hooks live in `.claude/hooks/` and share utilities from `.claude/hooks/lib/config.py`.
 
@@ -286,7 +289,15 @@ Validates implementations after completion:
 - Checks integration (no orphaned modules)
 - Returns score (must reach 9+ to ship) + findings
 
-**Multi-Reviewer Strategy:** For large plans, spawn multiple focused reviewers in parallel — one per plan phase plus integration reviewer(s).
+**Multi-Reviewer Strategy:** For large plans, spawn multiple focused reviewers in parallel — phase reviewers, integration reviewer, completeness reviewer, and code reviewer.
+
+### Code Reviewer
+
+Line-by-line review of all code changes:
+- Reviews every changed line for bugs, security, performance
+- Checks CODE_GUIDE compliance
+- Handles different git states (feature branch, uncommitted, staged)
+- Returns score (must reach 9+) + findings
 
 </details>
 
@@ -338,9 +349,6 @@ Asks questions about any public GitHub repository. Claude uses this to:
 # Project type → which CODE_GUIDE addon to load
 project_type: standard  # hackathon | standard | production
 
-# TDD mode → tests first
-tdd_mode: false
-
 # Quality gates
 plan_review_enabled: true
 implementation_review_enabled: true
@@ -379,9 +387,8 @@ project_type_addons:
 - **Baseline** (`CODE_GUIDE.md`) — Default standards for Next.js/React + Node/TS
 - **Hackathon Addon** — Relaxes rules for fast prototypes
 - **Production Addon** — Tightens rules for production systems
-- **TDD Addon** — Overrides all testing rules with test-first workflow
 
-Precedence: Baseline → Project Type Addon → TDD Addon
+Precedence: Baseline → Project Type Addon
 
 </details>
 
@@ -404,28 +411,32 @@ your-project/
 │   │   ├── pre-stop-update.py
 │   │   ├── block-plan-agent.py
 │   │   ├── startup-prune-completed-tasks.py
-│   │   └── permission-auto-approver.py
+│   │   ├── permission-auto-approver.py
+│   │   ├── meridian-path-guard.py
+│   │   ├── plan-mode-tracker.py
+│   │   └── session-cleanup.py
 │   ├── skills/
 │   │   ├── planning/SKILL.md
 │   │   ├── task-manager/
 │   │   │   ├── SKILL.md
 │   │   │   └── scripts/create-task.py
-│   │   └── memory-curator/
-│   │       ├── SKILL.md
-│   │       └── scripts/
-│   │           ├── add_memory_entry.py
-│   │           ├── edit_memory_entry.py
-│   │           └── delete_memory_entry.py
+│   │   ├── memory-curator/
+│   │   │   ├── SKILL.md
+│   │   │   └── scripts/
+│   │   │       ├── add_memory_entry.py
+│   │   │       ├── edit_memory_entry.py
+│   │   │       └── delete_memory_entry.py
+│   │   └── claudemd-writer/SKILL.md
 │   └── agents/
 │       ├── plan-reviewer.md
-│       └── implementation-reviewer.md
+│       ├── implementation-reviewer.md
+│       └── code-reviewer.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected
 │   ├── CODE_GUIDE.md                 # Baseline standards
-│   ├── CODE_GUIDE_ADDON_HACKATHON.md
-│   ├── CODE_GUIDE_ADDON_PRODUCTION.md
-│   ├── CODE_GUIDE_ADDON_TDD.md
+│   ├── CODE_GUIDE_ADDON_HACKATHON.md # Relaxed rules for prototypes
+│   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
 │   ├── memory.jsonl                  # Persistent lessons/decisions
 │   ├── task-backlog.yaml             # Task index
 │   ├── tasks/

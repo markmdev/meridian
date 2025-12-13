@@ -125,6 +125,39 @@ Do NOT assume integration is "obvious." Plan it explicitly:
 
 ---
 
+## Phase 5: Testing Strategy
+
+**Every plan must include a testing approach.** Use `AskUserQuestion` to clarify testing depth for the task.
+
+### Ask the User
+
+Present these options:
+1. **Light** (happy path only) — For: prototypes, internal tools, low-risk changes
+2. **Standard** (happy path + key edge cases) — For: most features, typical development
+3. **Thorough** (comprehensive coverage) — For: critical paths, security, payment flows
+4. **Skip** (no tests) — For: user explicitly requests, throwaway code
+
+### Include in Plan
+
+After user answers, add to your plan:
+- What test types are needed (unit, integration, E2E)
+- Which components/functions need test coverage
+- Key scenarios to test
+- Any mocking/setup requirements
+
+### Detail Completeness Rule
+
+**If a plan mentions something, there MUST be an explicit step for it.**
+
+Examples of violations:
+- Plan says "integrate Sentry" but no step for Sentry setup
+- Plan mentions "add caching" but no step defines the caching implementation
+- Plan references "new UserService" but no step creates it
+
+**Never assume implicit implementation.** If it's mentioned in Summary or Target State, it needs a corresponding step.
+
+---
+
 ## No Code in Plans
 
 **Plans describe WHAT and WHY, not HOW.**
@@ -223,4 +256,6 @@ Before finalizing:
 - [ ] **Integration phase is included** (for multi-module plans)
 - [ ] **All modules are wired to entry points** (nothing orphaned)
 - [ ] Discovery was thorough (not superficial)
+- [ ] **Every item in Summary/Target State has an explicit step** (no orphaned requirements)
+- [ ] **Testing approach defined** (after asking user for depth preference)
 </planning_skill>

@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--path",
         default=None,
-        help="Path to memory.jsonl (default: $CLAUDE_PROJECT_DIR/.meridian/memory.jsonl)",
+        help="Path to memory.jsonl (default: auto-detected project root/.meridian/memory.jsonl)",
     )
     return parser.parse_args()
 

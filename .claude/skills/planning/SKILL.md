@@ -35,6 +35,92 @@ Do this:
 
 ---
 
+## Phase 0: Requirements Interview (MANDATORY)
+
+**Before any exploration, interview the user thoroughly.** A brilliant plan built on wrong assumptions is worthless. Use `AskUserQuestion` to understand the task deeply.
+
+### Interview Principles
+
+- **Don't accept surface-level answers.** Dig deeper with follow-up questions.
+- **Ask non-obvious questions.** If you think you already know the answer, you're asking the wrong question.
+- **Interview iteratively.** Ask 2-3 questions → get answers → ask deeper follow-ups → repeat.
+- **Challenge the problem.** Sometimes the stated problem isn't the real problem.
+
+### Question Framework
+
+For each task, cover these dimensions:
+
+**The "What" (Functional)**
+- Walk me through exactly what should happen, step by step
+- What inputs/outputs? What formats/constraints?
+- How will you verify this works? What does success look like?
+- Are there variations for different user types/scenarios?
+
+**The "Why" (Context)**
+- What problem does this solve? Why now?
+- Who is this for? How will they use it?
+- What happens if we don't do this?
+- Is this part of a larger initiative I should know about?
+
+**The "What If" (Edge Cases)**
+- What happens when input is empty/invalid/huge?
+- What if the operation fails partway through?
+- Concurrent users? Race conditions?
+- Network failures? Timeouts?
+
+**The "How" (Technical)**
+- Any existing patterns I should follow?
+- Specific libraries/approaches you want or want to avoid?
+- Performance/scale requirements?
+- Database/API implications?
+
+**The "Where" (Boundaries)**
+- What's explicitly OUT of scope?
+- Related features I should NOT touch?
+- Future phases to design for (or explicitly not)?
+
+**The "Constraints" (Trade-offs)**
+- Time pressure? Can we cut scope?
+- Technical debt acceptable for speed?
+- Backward compatibility requirements?
+- Security/compliance considerations?
+
+### Interview Flow
+
+1. **Initial clarification** (2-3 questions on the most unclear aspects)
+2. **Review answers** and identify gaps
+3. **Deep follow-ups** (dig into specifics revealed by answers)
+4. **Edge case exploration** ("What should happen if...?")
+5. **Constraint confirmation** ("Any time/performance/compatibility needs?")
+6. **Summary for confirmation** ("To confirm: [understanding]. Correct?")
+
+**Only proceed to Discovery after the user confirms your understanding.**
+
+### When to Interview More vs Less
+
+**Interview extensively:**
+- New features with user-facing impact
+- Architectural decisions
+- Changes to critical paths (auth, payments, data)
+- Vague or open-ended requests
+- Anything touching multiple systems
+
+**Interview lightly:**
+- User provided detailed specifications
+- Bug fix with clear reproduction
+- Refactoring with no behavior change
+- User explicitly says "just do it"
+
+### Anti-patterns
+
+- ❌ Batching 10 questions at once — shallow and overwhelming
+- ❌ Asking "Any other requirements?" — too vague to be useful
+- ❌ Assuming edge cases are obvious — they never are
+- ❌ Skipping interview because task seems familiar — this codebase is different
+- ❌ Yes/no questions — open-ended reveals more
+
+---
+
 ## Phase 1: Deep Discovery (Most Important)
 
 This is where plans succeed or fail. Spend significant effort here.
@@ -225,8 +311,15 @@ Adapt this structure to fit your task — simple tasks need simple plans:
 ## Target State
 [What "done" looks like]
 
+## Requirements (from Interview)
+[Key requirements confirmed with user]
+- Functional: [what it does]
+- Edge cases: [how to handle X, Y, Z]
+- Constraints: [time/performance/compatibility]
+- Out of scope: [what we explicitly won't do]
+
 ## Discovery Findings
-[Key things learned during exploration that inform the plan]
+[Key things learned during codebase exploration]
 
 ## Steps
 
@@ -249,10 +342,12 @@ Adapt this structure to fit your task — simple tasks need simple plans:
 
 Before finalizing:
 
+- [ ] **Requirements interview completed** — user confirmed understanding
 - [ ] Every file path has been verified (or confirmed as new)
 - [ ] Every function/API referenced actually exists
 - [ ] Steps have clear dependencies and ordering
 - [ ] All user constraints are addressed
+- [ ] **Edge cases documented** — based on interview answers
 - [ ] **Integration phase is included** (for multi-module plans)
 - [ ] **All modules are wired to entry points** (nothing orphaned)
 - [ ] Discovery was thorough (not superficial)

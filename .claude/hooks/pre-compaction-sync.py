@@ -115,14 +115,12 @@ def main():
     already_synced = flag_exists(base_dir, PRE_COMPACTION_FLAG)
     total_tokens = get_total_tokens(transcript_path, base_dir, threshold)
 
-    # Under threshold: remove flag if it exists (so we can retrigger later) and allow
-    if total_tokens < threshold:
-        if already_synced:
-            cleanup_flag(base_dir, PRE_COMPACTION_FLAG)
+    # Already synced this session: allow (fires only once per session)
+    if already_synced:
         sys.exit(0)
 
-    # If already synced this session and still over threshold, allow
-    if already_synced:
+    # Under threshold: allow without creating flag
+    if total_tokens < threshold:
         sys.exit(0)
 
     # Over threshold: create flag and block

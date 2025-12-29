@@ -2,9 +2,19 @@
 from __future__ import annotations
 
 import re
+import secrets
 import shutil
+import string
 import sys
 from pathlib import Path
+
+SUFFIX_LENGTH = 4
+
+
+def _generate_suffix(length: int = SUFFIX_LENGTH) -> str:
+    """Generate a random alphanumeric suffix for worktree-safe IDs."""
+    chars = string.ascii_lowercase + string.digits
+    return ''.join(secrets.choice(chars) for _ in range(length))
 
 
 class WorkflowError(Exception):
@@ -47,16 +57,17 @@ def get_next_task_id() -> str:
     task_ids = []
     for item in tasks_dir.iterdir():
         if item.is_dir() and item.name.startswith("TASK-"):
-            match = re.match(r"TASK-(\d+)$", item.name)
+            # Match both old format (TASK-001) and new format (TASK-001-x7k3)
+            match = re.match(r"TASK-(\d+)(?:-[a-z0-9]+)?$", item.name)
             if match:
                 task_ids.append(int(match.group(1)))
 
-    # Return next ID
+    # Return next ID with random suffix for worktree safety
     if not task_ids:
-        return "TASK-001"
+        return f"TASK-001-{_generate_suffix()}"
 
     next_id = max(task_ids) + 1
-    return f"TASK-{next_id:03d}"
+    return f"TASK-{next_id:03d}-{_generate_suffix()}"
 
 
 def rename_template_files(dest_dir: Path, task_id: str) -> None:

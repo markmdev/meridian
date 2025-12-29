@@ -35,6 +35,8 @@ import argparse
 import json
 import os
 import re
+import secrets
+import string
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -43,7 +45,15 @@ from typing import Iterable, List
 
 MEMORY_RELATIVE_PATH = ".meridian/memory.jsonl"
 ID_PREFIX = "mem-"
-ID_PATTERN = re.compile(r"^mem-(\d{4,})$")
+# Match both old format (mem-0001) and new format (mem-0001-x7k3)
+ID_PATTERN = re.compile(r"^mem-(\d{4,})(?:-[a-z0-9]+)?$")
+SUFFIX_LENGTH = 4
+
+
+def _generate_suffix(length: int = SUFFIX_LENGTH) -> str:
+    """Generate a random alphanumeric suffix for worktree-safe IDs."""
+    chars = string.ascii_lowercase + string.digits
+    return ''.join(secrets.choice(chars) for _ in range(length))
 
 
 def get_project_root() -> Path:
@@ -165,7 +175,7 @@ def _next_id(path: Path) -> str:
             m = ID_PATTERN.match(raw_id)
             if m:
                 n = int(m.group(1)) + 1
-                return f"{ID_PREFIX}{n:04d}"
+                return f"{ID_PREFIX}{n:04d}-{_generate_suffix()}"
         except Exception:
             # Fall back to scanning if the last line was malformed
             pass
@@ -189,7 +199,7 @@ def _next_id(path: Path) -> str:
                         continue
         except Exception:
             pass
-    return f"{ID_PREFIX}{(max_n + 1):04d}"
+    return f"{ID_PREFIX}{(max_n + 1):04d}-{_generate_suffix()}"
 
 
 def append_entry(path: Path, summary: str, tags: List[str], links: List[str]) -> MemoryEntry:

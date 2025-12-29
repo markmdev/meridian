@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.0.9] - 2025-12-28
+
+### Added
+- **Requirements Interview phase**: Planning skill now has mandatory Phase 0 that requires thorough user interview before any exploration. Covers functional requirements, edge cases, technical implementation, UI/UX, constraints, and scope boundaries.
+- **Professional Judgment section**: Agent operating manual now instructs agents to push back on wrong/suboptimal user suggestions. Explain what's wrong, why, propose 2+ alternatives, let user decide.
+- **Worktree-safe IDs**: Memory entries (`mem-0001-x7k3`) and task folders (`TASK-001-x7k3`) now include random 4-char suffixes to prevent ID collisions when running parallel Claude sessions via git worktrees.
+- **Interview mindset guidance**: Agents should assume they don't know enough, ask non-obvious questions, go deep not broad, interview continuously.
+
+### Changed
+- **"Clarify → then act" → "Interview → then act"**: Core behavior now emphasizes iterative questioning (2-3 questions → answers → deeper follow-ups) before implementation.
+- **Plan structure template**: Now includes "Requirements (from Interview)" section documenting functional requirements, edge cases, constraints, and out-of-scope items confirmed with user.
+- **Quality checklist**: Added "Requirements interview completed" and "Edge cases documented" checkboxes.
+
+### Fixed
+- **Pre-compaction sync double-fire bug**: Removed logic that cleaned flag when tokens dropped below threshold. Hook now fires exactly once per session when crossing threshold.
+
 ## [0.0.8] - 2025-12-13
 
 ### Added
@@ -34,7 +50,7 @@
 
 ### Changed
 - **CLAUDE_PROJECT_DIR enforcement**: All hooks and scripts now require `CLAUDE_PROJECT_DIR` environment variable with no fallbacks. Prevents scripts from creating files in wrong locations when agent cd's to subfolders.
-- **Pre-compaction sync**: Flag is now removed when token count drops below threshold, allowing retriggering if context grows again.
+- **Pre-compaction sync**: Improved token calculation and logging.
 - **Cleaner context injection**: Removed noisy `=` separator lines from injected context header/footer.
 
 ### Removed

@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.9` (2025-12-28) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.10` (2025-12-29) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -216,6 +216,7 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
 | `meridian-path-guard.py` | PermissionRequest | Blocks .meridian/.claude writes outside project root |
 | `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
+| `task-file-tracker.py` | PostToolUse (Read/Write/Edit) | Tracks task file access for injection after compaction |
 | `session-cleanup.py` | SessionEnd | Cleans up session state files |
 
 All hooks live in `.claude/hooks/` and share utilities from `.claude/hooks/lib/config.py`.
@@ -414,6 +415,7 @@ your-project/
 │   │   ├── permission-auto-approver.py
 │   │   ├── meridian-path-guard.py
 │   │   ├── plan-mode-tracker.py
+│   │   ├── task-file-tracker.py
 │   │   └── session-cleanup.py
 │   ├── skills/
 │   │   ├── planning/SKILL.md

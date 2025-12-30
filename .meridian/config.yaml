@@ -21,6 +21,16 @@ pre_compaction_sync_enabled: true
 # Token threshold for pre-compaction sync warning (default: 150000).
 pre_compaction_sync_threshold: 144000
 
+# Folders to ignore for CLAUDE.md review suggestions.
+# When agent modifies files, stop hook suggests reviewing CLAUDE.md files
+# on the path to those files. These folders are excluded.
+# Default: .git, .meridian, node_modules, __pycache__, .venv, venv, dist, build
+# claudemd_ignored_folders:
+#   - .git
+#   - .meridian
+#   - node_modules
+#   - vendor
+
 # Sibling repositories for cross-repo context.
 # Paths relative to project root or absolute.
 sibling_repos: []

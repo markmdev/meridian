@@ -14,6 +14,7 @@ PENDING_READS_DIR = ".meridian/.pending-context-reads"
 PRE_COMPACTION_FLAG = ".meridian/.pre-compaction-synced"
 PLAN_REVIEW_FLAG = ".meridian/.plan-review-blocked"
 CONTEXT_ACK_FLAG = ".meridian/.context-acknowledgment-pending"
+ACTIVE_TASK_FILES = ".meridian/.active-task-files"
 
 
 # =============================================================================
@@ -216,6 +217,39 @@ def create_flag(base_dir: Path, flag_path: str) -> None:
 def flag_exists(base_dir: Path, flag_path: str) -> bool:
     """Check if a flag file exists."""
     return (base_dir / flag_path).exists()
+
+
+# =============================================================================
+# ACTIVE TASK FILES TRACKING
+# =============================================================================
+def get_active_task_files(base_dir: Path, clear_after_read: bool = False) -> list[str]:
+    """Get list of actively accessed task files.
+
+    Args:
+        base_dir: Project root directory
+        clear_after_read: If True, delete the tracking file after reading
+
+    Returns:
+        List of relative file paths that were accessed
+    """
+    tracking_file = base_dir / ACTIVE_TASK_FILES
+
+    if not tracking_file.exists():
+        return []
+
+    try:
+        content = tracking_file.read_text().strip()
+        files = [f for f in content.split('\n') if f.strip()]
+
+        if clear_after_read:
+            try:
+                tracking_file.unlink()
+            except Exception:
+                pass
+
+        return files
+    except Exception:
+        return []
 
 
 # =============================================================================
@@ -432,7 +466,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if memory_path.exists():
         files_to_inject.append((".meridian/memory.jsonl", memory_path))
 
-    # 2. Task context files (current work)
+    # 2. Task context files (current work - from backlog)
     for task in in_progress_tasks:
         task_id = task.get('id', '')
         task_path = task.get('path', '')
@@ -441,6 +475,16 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             context_file = base_dir / task_path / f"{id_part}-context.md"
             if context_file.exists():
                 files_to_inject.append((f"{task_path}{id_part}-context.md", context_file))
+
+    # 2.5. Actively accessed task files (tracked during session, cleared after injection)
+    already_injected = {rel for rel, _ in files_to_inject}
+    active_files = get_active_task_files(base_dir, clear_after_read=True)
+    for rel_path in active_files:
+        if rel_path not in already_injected:
+            full_path = base_dir / rel_path
+            if full_path.exists():
+                files_to_inject.append((rel_path, full_path))
+                already_injected.add(rel_path)
 
     # 3. Task backlog
     backlog_path = base_dir / ".meridian" / "task-backlog.yaml"

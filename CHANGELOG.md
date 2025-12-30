@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.10] - 2025-12-29
+
+### Added
+- **CLAUDE.md review suggestions**: Stop hook detects changed files via `git status` and lists all CLAUDE.md files on path from root to changed folders. Shows (exists) or (missing - create if needed) for each.
+- **Configurable CLAUDE.md ignored folders**: New `claudemd_ignored_folders` in config.yaml to skip folders from review suggestions (defaults: node_modules, .git, dist, build, coverage, __pycache__, .next, .nuxt, .output, .cache, .turbo, .parcel-cache, .vite, .svelte-kit).
+- **Task file auto-tracking**: New `task-file-tracker.py` PostToolUse hook tracks when agent accesses files in `.meridian/tasks/**`. Tracked files are automatically injected after compaction even if the task isn't in `task-backlog.yaml`. Tracking file cleared after injection.
+
+### Changed
+- **Stop hook enhanced**: Now includes CLAUDE.md review section prompting agent to create/update module documentation for changed areas.
+- **Context acknowledgment message**: Now reminds agent to retry the blocked action after acknowledging context (prevents skipping steps after compaction).
+
 ## [0.0.9] - 2025-12-28
 
 ### Added

@@ -54,7 +54,9 @@ def main():
                 "3. The **CODE_GUIDE** conventions for this project\n"
                 "4. The **agent-operating-manual** instructions\n\n"
                 "Briefly summarize what you understand about the current project state, "
-                "then ask the user what they'd like to work on."
+                "then ask the user what they'd like to work on.\n\n"
+                "**IMPORTANT**: After acknowledging, you MUST retry the same action that was just blocked. "
+                "Do not skip it or move on to something else."
             )
         }
     }

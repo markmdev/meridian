@@ -6,15 +6,196 @@ Prompts agent to update task files, memory, and optionally run implementation re
 """
 
 import json
+import subprocess
 import sys
 import os
 from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, get_additional_review_files
+from config import get_project_config, get_additional_review_files, parse_yaml_list, MERIDIAN_CONFIG
 
 REQUIRED_SCORE = 9
+
+# Default folders to ignore for CLAUDE.md review
+DEFAULT_IGNORED_FOLDERS = [
+    ".git",
+    ".meridian",
+    "node_modules",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "dist",
+    "build",
+]
+
+
+def get_changed_files(base_dir: Path) -> list[str]:
+    """Get list of changed files using git (staged + unstaged + untracked)."""
+    try:
+        # Get modified/staged files
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=base_dir,
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if result.returncode != 0:
+            return []
+
+        files = []
+        for line in result.stdout.split('\n'):
+            if not line.strip():
+                continue
+            # Format: XY filename or XY "filename with spaces"
+            # Skip first 3 chars (status + space)
+            filename = line[3:].strip().strip('"')
+            # Handle renames (old -> new)
+            if ' -> ' in filename:
+                filename = filename.split(' -> ')[1]
+            files.append(filename)
+
+        return files
+    except Exception:
+        return []
+
+
+def get_claudemd_ignored_folders(base_dir: Path) -> list[str]:
+    """Get list of folders to ignore for CLAUDE.md review from config."""
+    config_path = base_dir / MERIDIAN_CONFIG
+    if not config_path.exists():
+        return DEFAULT_IGNORED_FOLDERS
+
+    try:
+        content = config_path.read_text()
+        custom = parse_yaml_list(content, 'claudemd_ignored_folders')
+        if custom:
+            return custom
+    except Exception:
+        pass
+
+    return DEFAULT_IGNORED_FOLDERS
+
+
+def should_ignore_folder(folder: str, ignored_folders: list[str]) -> bool:
+    """Check if a folder path should be ignored."""
+    parts = Path(folder).parts
+    for part in parts:
+        if part in ignored_folders:
+            return True
+    return False
+
+
+def is_root_level_doc_or_config(filepath: str) -> bool:
+    """Check if file is a root-level documentation or config file (not code)."""
+    root_docs = {
+        'README.md', 'CHANGELOG.md', 'LICENSE', 'LICENSE.md', 'CONTRIBUTING.md',
+        'package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
+        'tsconfig.json', 'pyproject.toml', 'requirements.txt', 'Makefile',
+    }
+    filename = Path(filepath).name
+    # Root-level docs and configs
+    if filepath in root_docs:
+        return True
+    # Dotfiles at root (config files like .gitignore, .eslintrc, etc.)
+    if Path(filepath).parent == Path('.') and filename.startswith('.'):
+        return True
+    return False
+
+
+def get_claudemd_review_info(base_dir: Path) -> dict | None:
+    """
+    Analyze changed files and return CLAUDE.md review info.
+
+    Returns dict with:
+      - folders: list of modified folder paths
+      - files_by_folder: dict mapping folder to list of changed files
+      - claudemd_files: list of (path, exists) tuples for all CLAUDE.md on path
+
+    Returns None if no review needed.
+    """
+    changed_files = get_changed_files(base_dir)
+    if not changed_files:
+        return None
+
+    ignored_folders = get_claudemd_ignored_folders(base_dir)
+
+    # Filter out ignored folders and root-level docs
+    relevant_files = []
+    for f in changed_files:
+        folder = str(Path(f).parent)
+        if folder == '.':
+            # Root level file - skip docs/config, include code
+            if not is_root_level_doc_or_config(f):
+                relevant_files.append(f)
+        elif not should_ignore_folder(folder, ignored_folders):
+            relevant_files.append(f)
+
+    if not relevant_files:
+        return None
+
+    # Group files by folder
+    files_by_folder: dict[str, list[str]] = {}
+    for f in relevant_files:
+        folder = str(Path(f).parent)
+        if folder == '.':
+            folder = './'
+        if folder not in files_by_folder:
+            files_by_folder[folder] = []
+        files_by_folder[folder].append(f)
+
+    # For each folder, find all CLAUDE.md files on the path
+    claudemd_paths = set()
+    claudemd_paths.add('./CLAUDE.md')  # Always include root
+
+    for folder in files_by_folder.keys():
+        if folder == './':
+            continue
+
+        # Walk up the path
+        current = Path(folder)
+        while str(current) != '.':
+            claudemd_paths.add(str(current / 'CLAUDE.md'))
+            current = current.parent
+
+    # Check which CLAUDE.md files exist
+    claudemd_files = []
+    for path in sorted(claudemd_paths, key=lambda p: p.count('/')):
+        exists = (base_dir / path).exists()
+        claudemd_files.append((path, exists))
+
+    return {
+        'folders': sorted(files_by_folder.keys()),
+        'files_by_folder': files_by_folder,
+        'claudemd_files': claudemd_files,
+    }
+
+
+def format_claudemd_section(info: dict) -> str:
+    """Format the CLAUDE.md review section for the hook message."""
+    lines = ["**CLAUDE.md Review Required**\n"]
+
+    # List modified folders
+    lines.append(f"Modified folders: {', '.join(info['folders'])}\n")
+
+    # List changed files
+    lines.append("Files changed:")
+    for folder, files in sorted(info['files_by_folder'].items()):
+        for f in files:
+            lines.append(f"- {f}")
+    lines.append("")
+
+    # List CLAUDE.md files to review
+    lines.append("Review/create these CLAUDE.md files:")
+    for path, exists in info['claudemd_files']:
+        status = "(exists)" if exists else "(missing - create if needed)"
+        lines.append(f"- {path} {status}")
+    lines.append("")
+
+    lines.append("Use `claudemd-writer` skill for guidance on what to include.\n")
+
+    return '\n'.join(lines)
 
 
 def main():
@@ -38,6 +219,9 @@ def main():
     config = get_project_config(base_dir)
     files_list = '\n'.join(get_additional_review_files(base_dir, absolute=True))
 
+    # Get CLAUDE.md review info
+    claudemd_info = get_claudemd_review_info(base_dir)
+
     # Base message
     reason = (
         "[SYSTEM]: Before stopping, check whether you need to update "
@@ -55,8 +239,16 @@ def main():
         f"`{claude_project_dir}/.meridian/tasks/TASK-###/TASK-###-context.md` with details such as: the current implementation "
         "step, key decisions made, issues discovered, complex problems solved, and any other important information from this "
         "session. Save information that would be difficult to rediscover in future sessions. If nothing significant happened, you may skip the update.\n\n"
-        "**CLAUDE.md FILES**: If you created or significantly modified any modules during this session, consider whether a "
-        "`CLAUDE.md` file would help future agents. Use the `claudemd-writer` skill for guidance.\n\n"
+        "**CLAUDE.md FILES**: "
+    )
+
+    # Add dynamic CLAUDE.md section if there are relevant changes
+    if claudemd_info:
+        reason += format_claudemd_section(claudemd_info)
+    else:
+        reason += "No code changes detected that require CLAUDE.md review.\n\n"
+
+    reason += (
         "**HUMAN ACTIONS**: If this work requires human actions (e.g., create external service accounts, add environment variables, "
         "configure third-party integrations), create a doc in `.meridian/human-actions-docs/` with concise actionable steps. "
         "Assume the user knows the tools; focus on what to do, not why.\n\n"

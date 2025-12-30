@@ -31,6 +31,16 @@ pre_compaction_sync_threshold: 144000
 #   - node_modules
 #   - vendor
 
+# Beads integration: Git-backed graph issue tracker for AI agents.
+# When enabled, agent MUST actively use Beads to manage work:
+# - Check `bd ready` for unblocked tasks
+# - Create issues for new work and discovered bugs
+# - Track dependencies between issues
+# - Update status as work progresses
+# - Run `bd sync` before stopping
+# See: https://github.com/steveyegge/beads
+beads_enabled: false
+
 # Sibling repositories for cross-repo context.
 # Paths relative to project root or absolute.
 sibling_repos: []

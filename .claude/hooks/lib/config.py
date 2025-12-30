@@ -96,6 +96,7 @@ def get_project_config(base_dir: Path) -> dict:
         'implementation_review_enabled': True,
         'pre_compaction_sync_enabled': True,
         'pre_compaction_sync_threshold': 150000,
+        'beads_enabled': False,
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -132,6 +133,11 @@ def get_project_config(base_dir: Path) -> dict:
                 config['pre_compaction_sync_threshold'] = int(threshold)
             except ValueError:
                 pass
+
+        # Beads integration
+        beads = get_config_value(content, 'beads_enabled')
+        if beads:
+            config['beads_enabled'] = beads.lower() == 'true'
 
     except IOError:
         pass
@@ -423,6 +429,158 @@ def build_task_xml(tasks: list[dict], claude_project_dir: str) -> str:
 
 
 # =============================================================================
+# BEADS INTEGRATION
+# =============================================================================
+BEADS_PROMPT = """
+<beads-issue-tracker>
+
+**Beads is ENABLED for this project.** You MUST actively use Beads to manage all work.
+
+Beads is a Git-backed graph issue tracker designed for AI coding agents. It provides persistent memory across sessions, dependency tracking, and structured workflows. All work should be tracked as Beads issues.
+
+## Understanding Project State (Start Here)
+
+At the beginning of each session, understand what's happening in the project:
+
+| Command | Purpose |
+|---------|---------|
+| `bd ready --json` | **Start here** — shows unblocked issues ready for work |
+| `bd list --status in_progress --json` | What's currently being worked on |
+| `bd blocked --json` | Issues waiting on dependencies |
+| `bd list --json` | All open issues |
+| `bd show <id> --json` | Deep dive into specific issue (description, deps, history) |
+| `bd dep tree <id>` | Visualize dependency graph for an issue |
+
+Use these commands to understand context from previous sessions — what was in progress, what got blocked, what's next.
+
+## When to Create Issues (Be Proactive)
+
+Create Beads issues when:
+- User mentions work to do ("fix X", "add Y", "investigate Z")
+- You discover bugs or problems during implementation
+- Work has dependencies or could block other work
+- Breaking large tasks into trackable sub-tasks
+- Research or exploratory work with fuzzy boundaries
+- Ideas worth capturing for later
+
+**Suggest creating issues during conversations**: "Would you like me to create a Beads issue to track this?"
+
+## Creating Issues (Research First!)
+
+**IMPORTANT**: Before creating an issue, thoroughly research the task:
+- Explore relevant code to understand scope and complexity
+- Identify affected files and modules
+- Note dependencies on other systems or issues
+- Understand edge cases and potential blockers
+- Gather enough context to write a comprehensive description
+
+A well-researched issue saves time later. Don't create vague issues.
+
+```bash
+bd create "Title" --description "Context and details" -t <type> -p <priority> --json
+```
+
+**Types**: `task` (default), `bug`, `feature`, `epic`, `chore`
+
+**Priorities**: `0` (critical) → `4` (backlog), default is `2`
+
+## Managing Dependencies
+
+Dependencies control execution order and show relationships:
+
+| Dependency Type | Meaning |
+|-----------------|---------|
+| `blocks` | Hard dependency — must complete first |
+| `discovered-from` | Found while working on parent task |
+| `parent-child` | Hierarchical (epic → subtasks) |
+| `related` | Soft link, doesn't block |
+
+**Commands**:
+```bash
+bd dep add <child-id> <parent-id>              # child is blocked by parent
+bd dep add <id> <other> --type discovered-from # link discovered work
+bd dep tree <id>                               # visualize dependencies
+```
+
+**Tracking discovered work**: When you find bugs or new work during a task, create an issue with `--deps discovered-from:<current-task-id>` to maintain traceability.
+
+## Workflow Commands
+
+| Command | Purpose |
+|---------|---------|
+| `bd update <id> --status in_progress --json` | Claim a task |
+| `bd update <id> --status blocked --json` | Mark as blocked |
+| `bd update <id> --assignee <name> --json` | Assign to someone |
+| `bd close <id> --reason "What was done" --json` | Complete work |
+| `bd label add <id> <label>` | Add categorization |
+
+## Complex Workflows: Molecules & Gates
+
+### What are Molecules?
+
+A **molecule** is an epic with execution intent — a parent issue with child tasks that form a workflow. Unlike simple epics that just group issues, molecules are designed to be *executed* by agents.
+
+How molecules work:
+- Parent issue contains the overall goal
+- Child issues are the steps to achieve it
+- Dependencies between children control execution order
+- Agent picks up the molecule and executes ready children in parallel
+- When all children close, the molecule is complete
+
+### What are Gates?
+
+A **gate** is a quality checkpoint issue. It's a special issue type that must pass before downstream work can proceed. Gates enforce quality, reviews, or approvals in workflows.
+
+**Examples of gates**:
+- "QA Sign-off" — blocks release until QA approves
+- "Security Review" — blocks deployment until security team reviews
+- "Performance Benchmark" — blocks merge until performance criteria met
+
+### Creating Molecules & Gates
+
+```bash
+# Create the parent molecule (epic)
+bd create "Feature Name" -t epic --description "..." --json
+
+# Create child tasks with parent dependency
+bd create "Step 1" -t task --deps parent:<epic-id> --json
+bd create "Step 2" -t task --deps parent:<epic-id> --json
+bd create "Quality gate" -t gate --deps parent:<epic-id> --json
+
+# Add execution order dependencies between children
+bd dep add <step2-id> <step1-id>     # step2 waits for step1
+bd dep add <gate-id> <step2-id>       # gate waits for step2
+```
+
+Now `bd ready` will show steps in correct order based on dependencies.
+
+## Filtering & Querying
+
+```bash
+bd list --status open --json           # All open issues
+bd list --priority 0 --json            # Critical issues only
+bd list --type bug --json              # All bugs
+bd list --label backend --json         # By label
+bd list --assignee alice --json        # By assignee
+```
+
+## Best Practices
+
+1. **Always use `--json`** flag for programmatic output
+2. **Research before creating** — explore code, understand scope, write detailed descriptions
+3. **Link discovered work** to parent with `discovered-from`
+4. **Break down large work** into dependent sub-issues
+5. **Use molecules for multi-step work** — not just grouping, but execution flow
+6. **Add gates for quality checkpoints** — enforce reviews and approvals
+7. **Update status** as you work (in_progress → blocked → done)
+8. **Check `bd ready`** to find your next task
+9. **Use `bd show`** to understand issue history and context
+
+</beads-issue-tracker>
+"""
+
+
+# =============================================================================
 # CONTEXT INJECTION HELPERS
 # =============================================================================
 def build_injected_context(base_dir: Path, claude_project_dir: str, source: str = "startup") -> str:
@@ -466,7 +624,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if memory_path.exists():
         files_to_inject.append((".meridian/memory.jsonl", memory_path))
 
-    # 2. Task context files (current work - from backlog)
+    # 2. Task backlog
+    backlog_path = base_dir / ".meridian" / "task-backlog.yaml"
+    if backlog_path.exists():
+        files_to_inject.append((".meridian/task-backlog.yaml", backlog_path))
+
+    # 3. Task context files (current work - from backlog)
     for task in in_progress_tasks:
         task_id = task.get('id', '')
         task_path = task.get('path', '')
@@ -476,7 +639,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             if context_file.exists():
                 files_to_inject.append((f"{task_path}{id_part}-context.md", context_file))
 
-    # 2.5. Actively accessed task files (tracked during session, cleared after injection)
+    # 4. Actively accessed task files (tracked during session, cleared after injection)
     already_injected = {rel for rel, _ in files_to_inject}
     active_files = get_active_task_files(base_dir, clear_after_read=True)
     for rel_path in active_files:
@@ -486,12 +649,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
                 files_to_inject.append((rel_path, full_path))
                 already_injected.add(rel_path)
 
-    # 3. Task backlog
-    backlog_path = base_dir / ".meridian" / "task-backlog.yaml"
-    if backlog_path.exists():
-        files_to_inject.append((".meridian/task-backlog.yaml", backlog_path))
-
-    # 4. Plan files for in-progress tasks
+    # 5. Plan files for in-progress tasks
     for task in in_progress_tasks:
         plan_path = task.get('plan_path', '')
         if plan_path:
@@ -502,12 +660,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             if full_path.exists():
                 files_to_inject.append((plan_path, full_path))
 
-    # 5. CODE_GUIDE and addons
+    # 6. CODE_GUIDE and addons
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
     if code_guide_path.exists():
         files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path))
 
-    # Get project config for addons
+    # Get project config for addons and beads
     project_config = get_project_config(base_dir)
 
     if project_config['project_type'] == 'hackathon':
@@ -519,11 +677,6 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         if addon_path.exists():
             files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path))
 
-    # 6. Agent operating manual
-    manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
-    if manual_path.exists():
-        files_to_inject.append((".meridian/prompts/agent-operating-manual.md", manual_path))
-
     # Inject each file with XML tags
     for rel_path, full_path in files_to_inject:
         try:
@@ -534,6 +687,24 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append("")
         except IOError:
             parts.append(f'<file path="{rel_path}" error="Could not read file" />')
+            parts.append("")
+
+    # 7. Beads integration prompt (if enabled)
+    if project_config.get('beads_enabled', False):
+        parts.append(BEADS_PROMPT.strip())
+        parts.append("")
+
+    # 8. Agent operating manual
+    manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
+    if manual_path.exists():
+        try:
+            content = manual_path.read_text()
+            parts.append(f'<file path=".meridian/prompts/agent-operating-manual.md">')
+            parts.append(content.rstrip())
+            parts.append('</file>')
+            parts.append("")
+        except IOError:
+            parts.append(f'<file path=".meridian/prompts/agent-operating-manual.md" error="Could not read file" />')
             parts.append("")
 
     # Footer with acknowledgment request

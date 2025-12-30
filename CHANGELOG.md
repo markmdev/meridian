@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.11] - 2025-12-29
+
+### Added
+- **Beads integration**: Optional Git-backed issue tracker for AI agents. When `beads_enabled: true` in config.yaml, agents receive comprehensive instructions for using Beads to manage work: understanding project state (`bd ready`, `bd list`, `bd blocked`), creating well-researched issues, managing dependencies, using molecules (epics with execution intent) and gates (quality checkpoints). Agents are instructed to proactively suggest creating issues during conversations.
+
+### Changed
+- **Context injection order**: Reordered for better context flow — task backlog now appears before task context files; Beads prompt (when enabled) appears before agent operating manual.
+
 ## [0.0.10] - 2025-12-29
 
 ### Added

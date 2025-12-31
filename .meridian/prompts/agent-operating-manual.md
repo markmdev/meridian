@@ -88,14 +88,21 @@ The goal is partnership: you bring technical expertise, they bring context. Neit
 See `task-manager` skill for detailed instructions.
 
 - All tasks live under `.meridian/tasks/TASK-###/`.
-- Each task folder contains `TASK-###-context.md` — the primary source of truth for task state and history.
-  - A new agent reading this file should immediately understand: what happened, key decisions made, current status, and next steps.
-  - Document all important decisions, tradeoffs, user discussions, blockers, and session progress here.
-  - **Never overwrite previous content** — append new session entries. The context file is a chronological log that preserves the full history of work on the task.
+- Task folders contain plans, design docs, and task-specific artifacts.
 - Plans are managed by Claude Code and stored in `.claude/plans/`. Reference the plan path in `task-backlog.yaml`.
 - Keep `.meridian/task-backlog.yaml` current:
   - Mark completed tasks, add new tasks, update in‑progress status, reorder priorities.
   - Include `plan_path` pointing to the Claude Code plan file.
+
+## Session Context
+
+Use `.meridian/session-context.md` to preserve context across sessions:
+- **What to save**: Key decisions, important discoveries, complex problems solved, context that would be hard to rediscover.
+- **What NOT to save**: Routine progress updates, obvious information, or content better suited for memory.jsonl (durable architectural decisions).
+- **How to save**: Append timestamped entries (format: `YYYY-MM-DD HH:MM`); never overwrite previous content.
+- **Rolling size**: Oldest entries are automatically trimmed when the file exceeds `session_context_max_lines` (default: 1000).
+
+This file is always injected at session start, regardless of whether you're working on a formal task.
 
 ## Documentation & Memory
 - **Memory (`.meridian/memory.jsonl`)**
@@ -104,7 +111,7 @@ See `task-manager` skill for detailed instructions.
 - **Docs (`.md` files)**
   - Update stack or feature guides when behavior changes, interfaces move, or new constraints appear; these docs are injected or referenced during startup, so stale docs mislead future sessions.
 - **Historical lookup**
-  - If work conflicts with earlier decisions or feels redundant, review the relevant `TASK-###` folder before asking questions. Use context notes to add follow-ups or reference prior work.
+  - If work conflicts with earlier decisions or feels redundant, review `session-context.md` and `memory.jsonl` before asking questions.
 
 ## Module Documentation (CLAUDE.md)
 
@@ -269,7 +276,7 @@ Cover ALL relevant categories for the task:
 **NOT done if:**
 - Tests skipped or failing (even "unrelated" ones)
 - Linter warnings ignored
-- Task context file not updated with session progress
+- Session context not updated with important decisions/discoveries
 - Build warnings treated as acceptable
 - "TODO" comments left for critical logic
 
@@ -322,9 +329,8 @@ Verify the contract from the source: existing code (quickest), source code (auth
 
 Before diving into implementation:
 - **Search memory.jsonl** for similar problems — past solutions and pitfalls are documented
-- **Check task history** before asking "why was this done?" — the answer may be in `TASK-###-context.md`
-- **Review related tasks** when work seems to conflict with earlier decisions
-- **Use context notes** to add follow-ups or reference prior work instead of duplicating effort
+- **Read session-context.md** for recent decisions and discoveries
+- **Review task-backlog.yaml** for in-progress work and priorities
 
 ## Dependency Management
 

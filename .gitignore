@@ -9,4 +9,3 @@ __pycache__
 .meridian/.plan-review-blocked
 .meridian/.pre-compaction-sync.log
 .meridian/.plan-mode-state
-.meridian/.active-task-files

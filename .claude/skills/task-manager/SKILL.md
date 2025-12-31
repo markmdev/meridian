@@ -1,6 +1,6 @@
 ---
 name: task-manager
-description: Create and manage development tasks after the user approves a plan. Initializes folders/files, updates the backlog, and keeps progress notes synchronized.
+description: Create and manage development tasks after the user approves a plan. Initializes folders/files and updates the backlog.
 ---
 <task_manager>
 # Task Manager Skill
@@ -12,15 +12,13 @@ Immediately after a plan is approved. The script scaffolds the task folder and r
 
 **Create a NEW task when:**
 - Different objective or deliverable
-- Major pivot in approach (warrants fresh context)
+- Major pivot in approach
 - Unrelated follow-up work
 
 **Continue EXISTING task when:**
 - Same goal, additional work discovered
-- Bug found during implementation (add to current task)
+- Bug found during implementation
 - Scope refinement without changing objective
-
-When in doubt: if the same context.md would serve both pieces of work, continue the existing task.
 
 ---
 
@@ -31,44 +29,9 @@ When in doubt: if the same context.md would serve both pieces of work, continue 
 python3 .claude/skills/task-manager/scripts/create-task.py
 ```
 The script auto-detects project root by walking up to find `.claude/` and `.meridian/` directories.
-Creates `.meridian/tasks/TASK-###/` with:
-- `TASK-###-context.md` — the primary source of truth for task state and history
+Creates `.meridian/tasks/TASK-###/` for storing plans, design docs, and task-specific artifacts.
 
-IDs are zero-padded (`TASK-001`). Read the file before editing.
-
-### Populate context.md
-This is the main file. A new agent reading it should immediately understand the full picture.
-
-**Structure:**
-```markdown
-# TASK-### Context
-
-## Origin
-Why this task was created, key constraints from planning, alternatives considered.
-
-## Status
-- **Current state**: planning | in_progress | blocked | done
-- **Blockers**: none | description
-
-## Key Decisions & Tradeoffs
-- [Decision]: [Rationale]
-
-## Session Log
-### YYYY-MM-DD
-- What was done
-- Issues discovered
-- Next steps
-
-## References
-- Related: TASK-045
-- Docs: design-doc.md
-```
-
-Document:
-- Important decisions and tradeoffs (with rationale)
-- User discussions and their outcomes
-- Issues discovered during implementation
-- Links to related tasks, files, external docs
+IDs are zero-padded with random suffix (`TASK-001-x7k3`) for worktree safety.
 
 ### Register in the backlog
 Add an item to `.meridian/task-backlog.yaml`:
@@ -88,21 +51,16 @@ Allowed values:
 ---
 
 ## During Execution
-- Switch backlog status to `in_progress` when coding starts; use `blocked` with a note in context if waiting.
-- **Append to** `TASK-###-context.md` — never overwrite previous content. The file is a chronological log preserving full task history.
-- Add timestamped entries for each session:
-  - What was done
-  - Decisions made with rationale
-  - Issues discovered
-  - "MEMORY:" candidates (then call `memory-curator`)
-- Use `memory-curator` for durable facts (architecture shifts, lessons learned, traps to avoid). Never edit `.meridian/memory.jsonl` manually.
+- Switch backlog status to `in_progress` when coding starts; use `blocked` if waiting.
+- Save important context to `.meridian/session-context.md` (rolling file, always available).
+- Use `memory-curator` for durable facts (architecture shifts, lessons learned). Never edit `.meridian/memory.jsonl` manually.
 
 ---
 
 ## Finishing
 Mark `done` only when all conditions hold:
 - Code builds, lint/tests pass, migrations applied.
-- Docs updated (README, API refs, etc.) if behavior changed.
+- Docs updated if behavior changed.
 - Backlog entry set to `done`.
 - Durable insights recorded via `memory-curator`.
 
@@ -111,5 +69,4 @@ Mark `done` only when all conditions hold:
 ## Plan or Scope Changes
 - Re-seek approval for any material change.
 - The plan file (in `.claude/plans/`) is managed by Claude Code.
-- Log rationale and links in `TASK-###-context.md`.
 </task_manager>

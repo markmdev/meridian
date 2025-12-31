@@ -5,29 +5,72 @@ description: Manage architectural decisions and insights in memory.jsonl. Use wh
 <memory_curator>
 # Memory Curator Skill
 
-`memory.jsonl` is an audit trail of durable engineering knowledge.
+`memory.jsonl` stores durable engineering knowledge that can't be inferred from code.
 - **Never** write to the file manually. Always use the `add_memory_entry.py` script.
 
 ---
 
-## When to Use (Triage Test — all three are quick yes/no)
-Create a memory entry if at least one is true:
+## The Critical Test
 
-1) Is this an important architectural decision or pattern that will be useful for future reference? Will this decision meaningfully affect how we build other features?  
-2) Is this a problem that is worth remembering and avoiding in the future?
-3) If you never will work on this task again, will this insight be useful for future reference?
+Before adding ANY memory entry, ask:
 
-If none of the above is true, do not create an entry.
+> "If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?"
 
-### Good Examples
-- "Switched from Prisma to Drizzle for type-safe queries. Prisma's generated client caused 3s cold starts in serverless; Drizzle reduced to 200ms. Migration pattern in TASK-045."
-- "Auth tokens must be validated server-side even for internal APIs. TASK-023 security audit found client-side checks were bypassable."
-- "Rate limiting middleware must be first in chain. Discovered after production incident where auth middleware consumed rate limit tokens."
+**If the fix is in the code, don't add to memory.** The code IS the memory.
 
-### Poor Examples (don't create these)
-- "Fixed the bug in UserService" — too vague, no reusable insight
-- "Used React Query for data fetching" — obvious choice, no decision rationale
-- "Implemented TASK-067" — task summary belongs in task files, not memory
+---
+
+## SHOULD Add to Memory
+
+1. **Architectural patterns** that affect how future features are built
+   - Cross-cutting decisions (auth strategy, error handling approach, state management)
+   - Patterns that must be followed consistently across modules
+
+2. **Data model gotchas** not obvious from code
+   - "Plaid sandbox returns per-share cost_basis, production returns total"
+   - "Artemis stores cost_basis per-share, multiply by quantity for total"
+
+3. **External API limitations** requiring workarounds
+   - "Polygon.io doesn't support hourly bars on this plan tier"
+   - "CloudFlare Workers has no filesystem - use build-time bundling"
+
+4. **Cross-agent coordination patterns**
+   - How agents pass context to each other
+   - What data format specialized agents expect
+
+---
+
+## SHOULD NOT Add to Memory
+
+1. **One-time bug fixes** → The fix is in the code
+   - ❌ "Fixed Hermes returning strings instead of numbers" → Code now does parseFloat()
+   - ❌ "Fixed double-counting bug in portfolio calculation" → Code is fixed
+
+2. **SDK/library quirks** → Once code handles it, done
+   - ❌ "AI SDK useChat id prop doesn't transmit to server" → Code passes it in body
+   - ❌ "Drizzle sql<Date> returns strings" → Code wraps in new Date()
+
+3. **Agent behavior rules** → Belong in operating manual
+   - ❌ "Never commit without asking" → Put in agent-operating-manual.md
+   - ❌ "Never skip plan steps" → Put in agent-operating-manual.md
+
+4. **Module-specific implementation details** → Belong in CLAUDE.md
+   - ❌ "This service uses connection pooling" → Document in module's CLAUDE.md
+
+---
+
+## Good Examples
+
+- "Sequential agent pattern: tool-using agent first (mode:'generate'), then structured output agent receives results via promptVariables. Required because generateObject() doesn't support tools."
+- "Portfolio validation must calculate ALL requirements before checking sufficiency. Two-pass approach: first calculate costs, then validate. Otherwise shows $0 transfer needed when insufficient."
+- "LLM agents ignore validation tool errors unless prompt explicitly says what to do when valid=false. Must include iteration pattern with fix-and-retry loop."
+
+## Poor Examples (don't create)
+
+- "Fixed the parseFloat bug in price service" → Code is fixed, no need to remember
+- "Hermes API returns strings not numbers" → Code handles it, done
+- "Used React Query for data fetching" → Obvious, no decision rationale
+- "Implemented TASK-067" → Task summary belongs in task files
 
 ---
 

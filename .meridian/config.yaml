@@ -31,23 +31,16 @@ pre_compaction_sync_threshold: 144000
 #   - node_modules
 #   - vendor
 
+# Session context: Rolling context file for cross-session continuity.
+# Agent saves important information here; oldest lines trimmed when over limit.
+# Set to 0 to disable trimming (unlimited size).
+session_context_max_lines: 1000
+
 # Beads integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Beads to manage work:
 # - Check `bd ready` for unblocked tasks
 # - Create issues for new work and discovered bugs
 # - Track dependencies between issues
 # - Update status as work progresses
-# - Run `bd sync` before stopping
 # See: https://github.com/steveyegge/beads
 beads_enabled: false
-
-# Sibling repositories for cross-repo context.
-# Paths relative to project root or absolute.
-sibling_repos: []
-# Example:
-#   - name: backend-api
-#     path: ../backend
-#     description: "API server - endpoints, data models"
-#   - name: ios-app
-#     path: ../ios
-#     description: "iOS implementation - reference for features"

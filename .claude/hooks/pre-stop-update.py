@@ -176,6 +176,18 @@ def format_claudemd_section(info: dict) -> str:
     """Format the CLAUDE.md review section for the hook message."""
     lines = ["**CLAUDE.md Review Required**\n"]
 
+    # Decision criteria
+    lines.append("**Create/update CLAUDE.md when:**")
+    lines.append("- New module or significant directory added")
+    lines.append("- Public API changed")
+    lines.append("- New patterns established or architectural decisions made")
+    lines.append("")
+    lines.append("**Skip CLAUDE.md for:**")
+    lines.append("- Bug fixes without behavior change")
+    lines.append("- Refactoring that preserves API")
+    lines.append("- Internal implementation details, test files, small utilities")
+    lines.append("")
+
     # List modified folders
     lines.append(f"Modified folders: {', '.join(info['folders'])}\n")
 
@@ -187,13 +199,13 @@ def format_claudemd_section(info: dict) -> str:
     lines.append("")
 
     # List CLAUDE.md files to review
-    lines.append("Review/create these CLAUDE.md files:")
+    lines.append("CLAUDE.md files on modified paths:")
     for path, exists in info['claudemd_files']:
-        status = "(exists)" if exists else "(missing - create if needed)"
+        status = "(exists)" if exists else "(missing)"
         lines.append(f"- {path} {status}")
     lines.append("")
 
-    lines.append("Use `claudemd-writer` skill for guidance on what to include.\n")
+    lines.append("Use `claudemd-writer` skill for guidance on content.\n")
 
     return '\n'.join(lines)
 
@@ -226,19 +238,17 @@ def main():
     reason = (
         "[SYSTEM]: Before stopping, check whether you need to update "
         f"`{claude_project_dir}/.meridian/task-backlog.yaml`, "
-        f"`{claude_project_dir}/.meridian/tasks/TASK-###/TASK-###-context.md` "
-        "(for the current task), "
+        f"`{claude_project_dir}/.meridian/session-context.md`, "
         f"or `{claude_project_dir}/.meridian/memory.jsonl` using the `memory-curator` skill, as well as any other "
         "documents that should reflect what you accomplished during this session (for example design documents, API specifications, etc.).\n"
-        "If nothing significant happened, you may skip the update.\n"
-        "Before invoking the `memory-curator` skill - answer to these 3 questions and invoke the skill only if at least one of the following is true: "
-        "1) Is this an important architectural decision or pattern that will be useful for future reference? Will this decision meaningfully affect how we build other features? "
-        "2) Is this a problem that is worth remembering and avoiding in the future? "
-        "3) If you never will work on this task again, will this insight be useful for future reference?.\n\n"
-        "If you were working on a task, update the status, session progress and next steps in "
-        f"`{claude_project_dir}/.meridian/tasks/TASK-###/TASK-###-context.md` with details such as: the current implementation "
-        "step, key decisions made, issues discovered, complex problems solved, and any other important information from this "
-        "session. Save information that would be difficult to rediscover in future sessions. If nothing significant happened, you may skip the update.\n\n"
+        "If nothing significant happened, you may skip the update.\n\n"
+        "**MEMORY** — Before adding to memory, ask: \"If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?\"\n"
+        "**Add to memory**: Architectural patterns affecting future features, data model gotchas not obvious from code, external API limitations, cross-agent coordination patterns.\n"
+        "**DON'T add**: One-time bug fixes (code is fixed), SDK quirks (code handles it), agent behavior rules (belong in operating manual), module-specific details (belong in CLAUDE.md).\n\n"
+        "**SESSION CONTEXT**: Append a timestamped entry (format: `YYYY-MM-DD HH:MM`) to "
+        f"`{claude_project_dir}/.meridian/session-context.md` with: key decisions made, important discoveries, "
+        "complex problems solved, and context that would be hard to rediscover. This is a rolling file — oldest entries "
+        "are automatically trimmed. If nothing significant happened, you may skip the update.\n\n"
         "**CLAUDE.md FILES**: "
     )
 
@@ -247,6 +257,12 @@ def main():
         reason += format_claudemd_section(claudemd_info)
     else:
         reason += "No code changes detected that require CLAUDE.md review.\n\n"
+
+    # Beads reminder if enabled
+    if config.get('beads_enabled', False):
+        reason += (
+            "**BEADS**: Update Beads issues to reflect work done this session (close completed, update status, create discovered work).\n\n"
+        )
 
     reason += (
         "**HUMAN ACTIONS**: If this work requires human actions (e.g., create external service accounts, add environment variables, "
@@ -334,7 +350,7 @@ def main():
     output = {
         "decision": "block",
         "reason": reason,
-        "systemMessage": "[Meridian] Before stopping, Claude is updating task files, backlog, and memory, verifying tests/lint/build, and running implementation review if needed."
+        "systemMessage": "[Meridian] Before stopping, Claude is updating session context, backlog, and memory, verifying tests/lint/build, and running implementation review if needed."
     }
 
     print(json.dumps(output))

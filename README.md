@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.11` (2025-12-29) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.12` (2025-12-30) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -35,7 +35,7 @@ Meridian uses Claude Code's hooks system to enforce behaviors automatically:
 |------------|--------------|
 | **Context survives compaction** | Hooks re-inject memory, task state, guidelines, and your docs after every compaction |
 | **Persistent memory** | Lessons learned, architectural decisions, and mistakes are saved to `memory.jsonl` — Claude reads them every session |
-| **Task continuity** | Each task has a context file tracking what was done, decisions made, and next steps — Claude picks up where it left off |
+| **Session continuity** | Rolling `session-context.md` tracks decisions, discoveries, and context across sessions — Claude picks up where it left off |
 | **Pre-compaction warning** | Monitors token usage and prompts Claude to save context before compaction happens |
 | **Detailed plans that work** | Planning skill guides Claude through thorough discovery, design, and integration planning |
 | **Quality gates** | Plan-reviewer and implementation-reviewer agents validate work before proceeding |
@@ -139,7 +139,7 @@ sequenceDiagram
     Hook->>Files: Checks token count
     alt Approaching limit
         Hook->>CC: Prompts to save context
-        CC->>Files: Updates TASK-###-context.md
+        CC->>Files: Updates session-context.md
     end
     CC->>CC: Implements plan
 
@@ -216,7 +216,6 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
 | `meridian-path-guard.py` | PermissionRequest | Blocks .meridian/.claude writes outside project root |
 | `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
-| `task-file-tracker.py` | PostToolUse (Read/Write/Edit) | Tracks task file access for injection after compaction |
 | `session-cleanup.py` | SessionEnd | Cleans up session state files |
 
 All hooks live in `.claude/hooks/` and share utilities from `.claude/hooks/lib/config.py`.
@@ -240,17 +239,22 @@ Plans describe **what and why**, not how. The plan-reviewer agent validates plan
 
 ### Task Manager Skill
 
-Creates and manages task folders. Each task has a context file (`TASK-###-context.md`) that serves as the **single source of truth** for that work:
-- What was done and what's left
-- Key decisions and why they were made
-- Problems encountered and how they were solved
-- Links to plan and related files
+Creates and manages task folders (`.meridian/tasks/TASK-###/`) for storing:
+- Plans copied from `.claude/plans/`
+- Design docs and task-specific artifacts
+- Any task-related documentation
 
-**Why this matters:** When you return to a task (or Claude resumes after compaction), the context file tells Claude exactly where things stand. No re-explaining, no lost progress.
+Session context is stored separately in `session-context.md` (always available, not task-dependent).
 
 ### Memory Curator Skill
 
-Manages `memory.jsonl` via scripts (never edit manually):
+Manages `memory.jsonl` via scripts (never edit manually). Uses strict criteria:
+
+**The critical test:** "If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?"
+
+- **Add**: Architectural patterns, data model gotchas, API limitations, cross-agent patterns
+- **Don't add**: One-time bug fixes (code is fixed), SDK quirks (code handles it), agent behavior rules (belong in operating manual)
+
 ```bash
 # Add entry
 python3 .claude/skills/memory-curator/scripts/add_memory_entry.py \
@@ -415,7 +419,6 @@ your-project/
 │   │   ├── permission-auto-approver.py
 │   │   ├── meridian-path-guard.py
 │   │   ├── plan-mode-tracker.py
-│   │   ├── task-file-tracker.py
 │   │   └── session-cleanup.py
 │   ├── skills/
 │   │   ├── planning/SKILL.md
@@ -436,6 +439,7 @@ your-project/
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected
+│   ├── session-context.md            # Rolling context (always injected)
 │   ├── CODE_GUIDE.md                 # Baseline standards
 │   ├── CODE_GUIDE_ADDON_HACKATHON.md # Relaxed rules for prototypes
 │   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
@@ -443,8 +447,7 @@ your-project/
 │   ├── task-backlog.yaml             # Task index
 │   ├── tasks/
 │   │   ├── TASK-000-template/        # Template for new tasks
-│   │   ├── TASK-001/
-│   │   │   └── TASK-001-context.md
+│   │   ├── TASK-001/                 # Plans, docs, artifacts
 │   │   └── archive/                  # Old completed tasks
 │   └── prompts/
 │       └── agent-operating-manual.md # Agent behavior instructions

@@ -134,15 +134,16 @@ def main():
                 f"**CONTEXT PRESERVATION REQUIRED** (Token usage: {total_tokens:,} / {threshold:,})\n\n"
                 "The conversation is approaching compaction. Before continuing, you MUST save your current work "
                 "to preserve context for the agent that will continue after compaction.\n\n"
-                "**Append to the task context file** (never overwrite previous content):\n"
-                f"`{claude_project_dir}/.meridian/tasks/TASK-###/TASK-###-context.md`\n\n"
-                "Add a new dated session entry with:\n"
-                "- Current implementation step and progress\n"
+                "**Append a dated entry to the session context file**:\n"
+                f"`{claude_project_dir}/.meridian/session-context.md`\n\n"
+                "Include:\n"
                 "- Key decisions made this session and their rationale\n"
-                "- Issues discovered or blockers encountered\n"
+                "- Important discoveries or blockers encountered\n"
+                "- Complex problems solved (and how)\n"
                 "- What needs to be done next\n"
-                "- Any important information that would be difficult to rediscover\n\n"
-                "After updating the context file, you may continue your work."
+                "- Context that would be hard to rediscover\n\n"
+                "This is a rolling file — oldest entries are automatically trimmed. "
+                "After updating, you may continue your work."
             )
         }
     }

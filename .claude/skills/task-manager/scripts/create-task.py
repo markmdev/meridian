@@ -170,8 +170,7 @@ def main() -> None:
         print()
         print("Next steps:")
         print(f"1. Copy your plan from ~/.claude/plans/ to {new_task_dir}/")
-        print(f"2. Fill in {new_task_dir.name}-context.md with task details")
-        print("3. Update .meridian/task-backlog.yaml with the new task")
+        print("2. Update .meridian/task-backlog.yaml with the new task")
     except Exception as e:
         # Provide a clear, actionable error message and non-zero exit code
         print(f"❌ Error: {e}", file=sys.stderr)

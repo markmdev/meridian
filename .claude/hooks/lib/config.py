@@ -14,7 +14,7 @@ PENDING_READS_DIR = ".meridian/.pending-context-reads"
 PRE_COMPACTION_FLAG = ".meridian/.pre-compaction-synced"
 PLAN_REVIEW_FLAG = ".meridian/.plan-review-blocked"
 CONTEXT_ACK_FLAG = ".meridian/.context-acknowledgment-pending"
-ACTIVE_TASK_FILES = ".meridian/.active-task-files"
+SESSION_CONTEXT_FILE = ".meridian/session-context.md"
 
 
 # =============================================================================
@@ -96,6 +96,7 @@ def get_project_config(base_dir: Path) -> dict:
         'implementation_review_enabled': True,
         'pre_compaction_sync_enabled': True,
         'pre_compaction_sync_threshold': 150000,
+        'session_context_max_lines': 1000,
         'beads_enabled': False,
     }
 
@@ -131,6 +132,14 @@ def get_project_config(base_dir: Path) -> dict:
         if threshold:
             try:
                 config['pre_compaction_sync_threshold'] = int(threshold)
+            except ValueError:
+                pass
+
+        # Session context max lines
+        max_lines = get_config_value(content, 'session_context_max_lines')
+        if max_lines:
+            try:
+                config['session_context_max_lines'] = int(max_lines)
             except ValueError:
                 pass
 
@@ -226,36 +235,60 @@ def flag_exists(base_dir: Path, flag_path: str) -> bool:
 
 
 # =============================================================================
-# ACTIVE TASK FILES TRACKING
+# SESSION CONTEXT HELPERS
 # =============================================================================
-def get_active_task_files(base_dir: Path, clear_after_read: bool = False) -> list[str]:
-    """Get list of actively accessed task files.
+def trim_session_context(base_dir: Path, max_lines: int) -> None:
+    """Trim session context file to max_lines, preserving header.
+
+    The header (everything up to and including the "---" separator line)
+    is preserved. Lines after the separator are trimmed from the top
+    (oldest first) to keep the file under max_lines total.
 
     Args:
         base_dir: Project root directory
-        clear_after_read: If True, delete the tracking file after reading
-
-    Returns:
-        List of relative file paths that were accessed
+        max_lines: Maximum lines to keep (0 = no trimming)
     """
-    tracking_file = base_dir / ACTIVE_TASK_FILES
+    if max_lines <= 0:
+        return
 
-    if not tracking_file.exists():
-        return []
+    context_file = base_dir / SESSION_CONTEXT_FILE
+    if not context_file.exists():
+        return
 
     try:
-        content = tracking_file.read_text().strip()
-        files = [f for f in content.split('\n') if f.strip()]
+        content = context_file.read_text()
+        lines = content.split('\n')
 
-        if clear_after_read:
-            try:
-                tracking_file.unlink()
-            except Exception:
-                pass
+        if len(lines) <= max_lines:
+            return
 
-        return files
+        # Find header separator (---)
+        separator_idx = -1
+        for i, line in enumerate(lines):
+            if line.strip() == '---':
+                separator_idx = i
+                break
+
+        if separator_idx == -1:
+            # No separator found, just trim from top
+            trimmed = lines[-max_lines:]
+        else:
+            # Preserve header (including separator)
+            header = lines[:separator_idx + 1]
+            body = lines[separator_idx + 1:]
+
+            # Calculate how many body lines we can keep
+            available_for_body = max_lines - len(header)
+            if available_for_body <= 0:
+                # Header alone exceeds max, just keep header
+                trimmed = header
+            else:
+                # Keep newest body lines (from end)
+                trimmed = header + body[-available_for_body:]
+
+        context_file.write_text('\n'.join(trimmed))
     except Exception:
-        return []
+        pass
 
 
 # =============================================================================
@@ -447,6 +480,7 @@ At the beginning of each session, understand what's happening in the project:
 | `bd ready --json` | **Start here** — shows unblocked issues ready for work |
 | `bd list --status in_progress --json` | What's currently being worked on |
 | `bd blocked --json` | Issues waiting on dependencies |
+| `bd stats` | Project health — open/closed/blocked counts |
 | `bd list --json` | All open issues |
 | `bd show <id> --json` | Deep dive into specific issue (description, deps, history) |
 | `bd dep tree <id>` | Visualize dependency graph for an issue |
@@ -482,7 +516,7 @@ bd create "Title" --description "Context and details" -t <type> -p <priority> --
 
 **Types**: `task` (default), `bug`, `feature`, `epic`, `chore`
 
-**Priorities**: `0` (critical) → `4` (backlog), default is `2`
+**Priorities**: `0` (critical) → `4` (backlog), default is `2`. Use 0-4 or P0-P4 — NOT "high"/"medium"/"low".
 
 ## Managing Dependencies
 
@@ -511,7 +545,8 @@ bd dep tree <id>                               # visualize dependencies
 | `bd update <id> --status in_progress --json` | Claim a task |
 | `bd update <id> --status blocked --json` | Mark as blocked |
 | `bd update <id> --assignee <name> --json` | Assign to someone |
-| `bd close <id> --reason "What was done" --json` | Complete work |
+| `bd close <id> --reason "..." --json` | Complete work |
+| `bd close <id1> <id2> ...` | Close multiple issues at once (more efficient) |
 | `bd label add <id> <label>` | Add categorization |
 
 ## Complex Workflows: Molecules & Gates
@@ -629,27 +664,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if backlog_path.exists():
         files_to_inject.append((".meridian/task-backlog.yaml", backlog_path))
 
-    # 3. Task context files (current work - from backlog)
-    for task in in_progress_tasks:
-        task_id = task.get('id', '')
-        task_path = task.get('path', '')
-        if task_path and task_id:
-            id_part = task_id if task_id.startswith('TASK-') else f"TASK-{task_id}"
-            context_file = base_dir / task_path / f"{id_part}-context.md"
-            if context_file.exists():
-                files_to_inject.append((f"{task_path}{id_part}-context.md", context_file))
+    # 3. Session context (rolling cross-session context)
+    session_context_path = base_dir / SESSION_CONTEXT_FILE
+    if session_context_path.exists():
+        files_to_inject.append((SESSION_CONTEXT_FILE, session_context_path))
 
-    # 4. Actively accessed task files (tracked during session, cleared after injection)
-    already_injected = {rel for rel, _ in files_to_inject}
-    active_files = get_active_task_files(base_dir, clear_after_read=True)
-    for rel_path in active_files:
-        if rel_path not in already_injected:
-            full_path = base_dir / rel_path
-            if full_path.exists():
-                files_to_inject.append((rel_path, full_path))
-                already_injected.add(rel_path)
-
-    # 5. Plan files for in-progress tasks
+    # 4. Plan files for in-progress tasks
     for task in in_progress_tasks:
         plan_path = task.get('plan_path', '')
         if plan_path:
@@ -660,7 +680,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             if full_path.exists():
                 files_to_inject.append((plan_path, full_path))
 
-    # 6. CODE_GUIDE and addons
+    # 5. CODE_GUIDE and addons
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
     if code_guide_path.exists():
         files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path))
@@ -689,12 +709,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append(f'<file path="{rel_path}" error="Could not read file" />')
             parts.append("")
 
-    # 7. Beads integration prompt (if enabled)
+    # 6. Beads integration prompt (if enabled)
     if project_config.get('beads_enabled', False):
         parts.append(BEADS_PROMPT.strip())
         parts.append("")
 
-    # 8. Agent operating manual
+    # 7. Agent operating manual
     manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
     if manual_path.exists():
         try:
@@ -721,5 +741,9 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append("the current project state, then ask the user what they'd like to work on.")
     parts.append("")
     parts.append("</injected-project-context>")
+
+    # Trim session context file if over limit
+    max_lines = project_config.get('session_context_max_lines', 1000)
+    trim_session_context(base_dir, max_lines)
 
     return "\n".join(parts)

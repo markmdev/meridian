@@ -8,6 +8,10 @@ import os
 import sys
 from pathlib import Path
 
+# Add lib to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import get_project_config
+
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 STATE_FILE = PROJECT_DIR / ".meridian/.plan-mode-state"
 
@@ -35,8 +39,13 @@ def main():
 
     if previous_mode != current_mode:
         if current_mode == "plan":
+            config = get_project_config(PROJECT_DIR)
+            beads_enabled = config.get('beads_enabled', False)
+
             print("<system-message>")
             print("Plan mode activated. Invoke the `planning` skill before proceeding.")
+            if beads_enabled:
+                print("Beads is enabled — proactively use it to track this work.")
             print("</system-message>")
 
     save_mode(current_mode)

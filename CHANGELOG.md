@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.0.12] - 2025-12-30
+
+### Added
+- **Rolling session context file**: New `.meridian/session-context.md` replaces per-task context files. Always injected at session start regardless of task status. Agent saves key decisions, discoveries, and context that would be hard to rediscover.
+- **Automatic context trimming**: When session context exceeds `session_context_max_lines` (default: 1000), oldest entries are trimmed while preserving the header.
+- **CLAUDE.md decision criteria in stop hook**: Stop hook now shows when to create/update CLAUDE.md (new module, public API change, new patterns) vs when to skip (bug fixes, refactoring, internal details).
+- **Timestamped session entries**: Session context entries now use `YYYY-MM-DD HH:MM` format instead of just dates.
+
+### Changed
+- **Simplified context injection**: Removed per-task context file injection and task file tracking. Session context is always available, even without a formal task.
+- **Stop hook updated**: Now prompts to update `session-context.md` instead of `TASK-###-context.md`.
+- **Pre-compaction sync updated**: Now prompts to save to `session-context.md` before compaction.
+- **Agent operating manual updated**: New "Session Context" section explains how to use the rolling context file.
+- **Plan approval reminder rewritten**: Now explicitly lists all 3 required steps (create task folder, copy plan, add backlog entry) with exact YAML format. Previously agent would only copy the plan and skip the backlog entry.
+- **Memory curator stricter criteria**: New critical test: "If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?" Explicit SHOULD/SHOULD NOT lists. One-time bug fixes, SDK quirks, and agent behavior rules no longer belong in memory.
+- **Stop hook memory guidance updated**: Reflects stricter memory criteria — add patterns affecting future features, don't add one-time fixes.
+- **Beads prompt improvements**: Added `bd stats` for project health, `bd close <id1> <id2> ...` for closing multiple issues, and explicit priority format note (use 0-4 or P0-P4, NOT "high"/"medium"/"low").
+- **Beads reminders in hooks**: When Beads is enabled, reminders appear in context acknowledgment (check project state), stop hook (update issues), and plan mode tracker (use Beads to track work).
+
+### Removed
+- **Task file tracker hook**: `task-file-tracker.py` removed — no longer needed with rolling session context.
+- **Per-task context file injection**: Task context files (`TASK-###-context.md`) are no longer auto-injected. Task folders still exist for plans/docs.
+- **`sibling_repos` config**: Removed unused configuration option that was never implemented.
+
 ## [0.0.11] - 2025-12-29
 
 ### Added

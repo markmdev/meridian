@@ -93,6 +93,11 @@ def is_glob_allowed(tool_input: dict, base_dir: Path) -> bool:
     return False
 
 
+def is_plans_path(path: str) -> bool:
+    """Check if path contains .claude/plans/ anywhere."""
+    return ".claude/plans/" in path or ".claude/plans" in path
+
+
 def should_allow(data: dict, project_dir: Path) -> bool:
     tool_name = data.get("tool_name")
     tool_input = data.get("tool_input") or {}
@@ -100,6 +105,12 @@ def should_allow(data: dict, project_dir: Path) -> bool:
         return False
 
     base_dir = project_dir
+
+    # Auto-approve Write/Edit to any .claude/plans/ path
+    if tool_name in {"Write", "Edit"}:
+        paths = gather_paths(tool_input)
+        if paths and all(is_plans_path(p) for p in paths):
+            return True
 
     if tool_name in {"Write", "Edit", "Read", "Grep"}:
         allowed = ALLOWED_ACTIONS[tool_name]
@@ -115,11 +126,14 @@ def should_allow(data: dict, project_dir: Path) -> bool:
         return tool_input.get("skill") in SKILL_WHITELIST
 
     if tool_name == "Bash":
-        command = tool_input.get("command", "")
+        command = tool_input.get("command", "").strip()
         if any(substr in command for substr in BASH_SUBSTRINGS):
             return True
+        # Allow Beads CLI commands (bd)
+        if command.startswith("bd ") or command == "bd":
+            return True
         # Allow cp from ~/.claude/plans/ (plan archival)
-        if command.strip().startswith("cp "):
+        if command.startswith("cp "):
             home = str(Path.home())
             if "/.claude/plans/" in command or f"{home}/.claude/plans/" in command:
                 return True

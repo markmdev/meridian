@@ -189,7 +189,7 @@ def get_additional_review_files(base_dir: Path, absolute: bool = False) -> list[
         base_dir: Base directory of the project
         absolute: If True, return absolute paths; otherwise relative paths
     """
-    files = [".meridian/CODE_GUIDE.md", ".meridian/memory.jsonl"]
+    files = [".meridian/CODE_GUIDE.md", ".meridian/memory.jsonl", ".meridian/session-context.md"]
     project_config = get_project_config(base_dir)
 
     if project_config['project_type'] == 'hackathon':

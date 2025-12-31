@@ -46,6 +46,16 @@ def main():
     config = get_project_config(base_dir)
     beads_enabled = config.get('beads_enabled', False)
 
+    # Check if sprint workflow is active
+    sprint_active = False
+    session_context = base_dir / ".meridian" / "session-context.md"
+    if session_context.exists():
+        try:
+            content = session_context.read_text()
+            sprint_active = "<!-- BEADS SPRINT WORKFLOW" in content
+        except Exception:
+            pass
+
     reason = (
         "**CONTEXT ACKNOWLEDGMENT REQUIRED**\n\n"
         "Project context has been injected into this session. "
@@ -61,9 +71,28 @@ def main():
             "5. **Beads issue tracker** is enabled — check project state and available work\n\n"
         )
 
+    if sprint_active:
+        reason += (
+            "⚠️ **ACTIVE SPRINT WORKFLOW DETECTED**\n\n"
+            "A Beads Sprint workflow is in progress. Read the workflow section at the bottom of "
+            "`.meridian/session-context.md` to understand:\n"
+            "- Current scope and issues being worked on\n"
+            "- Which issues are completed (checked) vs pending\n"
+            "- Current phase (Planning/Implementation/Review/Verify)\n\n"
+            "Resume from where you left off. Do NOT restart from the beginning.\n\n"
+        )
+
     reason += (
         "Briefly summarize what you understand about the current project state, "
-        "then ask the user what they'd like to work on.\n\n"
+        "then "
+    )
+
+    if sprint_active:
+        reason += "continue with the active sprint workflow.\n\n"
+    else:
+        reason += "ask the user what they'd like to work on.\n\n"
+
+    reason += (
         "**IMPORTANT**: After acknowledging, you MUST retry the same action that was just blocked. "
         "Do not skip it or move on to something else."
     )

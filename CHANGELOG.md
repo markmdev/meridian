@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.13] - 2025-12-30
+
+### Added
+- **`/bd-sprint` autonomous workflow**: New slash command starts a comprehensive workflow for completing Beads work (epics, issues with dependencies, any scoped work). Appends workflow template to `session-context.md` that survives context compaction.
+- **`/bd-sprint-stop`**: Removes the workflow section when sprint is complete.
+- **Sprint workflow detection**: Acknowledgment hook detects active sprint workflow and prompts agent to resume from where it left off.
+- **Auto-approve for plans**: Write/Edit to paths containing `.claude/plans/` now auto-approved.
+- **Auto-approve for Beads CLI**: All `bd` commands now auto-approved.
+
+### Changed
+- **Planning mandatory in sprint**: Workflow template now explicitly requires planning for every issue — "No exceptions — even if the issue is 'detailed' or 'simple'".
+- **Session context marker clarified**: Changed from `<!-- Session entries below this line... -->` to `<!-- SESSION ENTRIES START - Add timestamped entries below, oldest at top -->`.
+- **Reviewer streaming warning**: Added prominent warning about context pollution when listening to reviewer agent streaming output.
+- **Session-context.md added to reviewer files**: Reviewers now read session context for additional context.
+
+### Technical
+- Slash commands use Python scripts (not bash heredocs) because `$CLAUDE_PROJECT_DIR` unavailable in slash command context.
+- Scripts derive project root from `__file__` path and print template so agent sees it immediately.
+- Workflow section goes at bottom of session-context.md; regular entries go above it.
+
 ## [0.0.12] - 2025-12-30
 
 ### Added

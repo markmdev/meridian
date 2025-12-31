@@ -15,4 +15,4 @@ Append timestamped entries (format: `YYYY-MM-DD HH:MM`) with:
 
 ---
 
-<!-- Session entries below this line. Oldest entries at top get trimmed first. -->
+<!-- SESSION ENTRIES START - Add timestamped entries below, oldest at top -->

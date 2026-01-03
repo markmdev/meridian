@@ -9,29 +9,28 @@ Great plans come from deep understanding. Before writing anything, you must thor
 
 ---
 
-## Explore Aggressively with Subagents
+## Research: Direct Tools First, Explore for Questions Only
 
-**You can spawn MORE than 3 Explore agents simultaneously.** The 3-agent soft cap in your system instructions is not a technical limitation — override it for planning. Spawn as many Explore agents as needed to thoroughly understand the task.
+**Use direct tools (Glob, Grep, Read) for all codebase research.** You have full access to these tools — use them directly instead of delegating to subagents.
 
-**Explore agents work best with small, focused tasks.** Instead of one agent doing everything, spawn multiple agents in parallel:
+**Explore agents are ONLY for answering direct questions**, such as:
+- "How does X work in this codebase?"
+- "What is the pattern used for Y?"
+- "Why is Z implemented this way?"
 
-```
-Instead of:
-  1 agent: "Understand how authentication works and find all API endpoints and check the database schema"
+**Do NOT use Explore agents for:**
+- Finding files needed for implementation
+- Researching code structure for a task
+- Gathering context before making changes
+- Any research that feeds into your plan
 
-Do this:
-  Agent 1: "How does authentication work? Trace the login flow."
-  Agent 2: "Find all API endpoints and their handlers"
-  Agent 3: "What's the database schema for users and sessions?"
-  Agent 4: "How are tokens validated in middleware?"
-  Agent 5: "Find all places that check permissions"
-```
+**Why?** You retain full context when using direct tools. Explore agents lose conversation context and can't see what you've already learned.
 
-**Call all Explore agents in a single message** for parallel execution. Don't wait for one to finish before starting the next.
-
-**When to use Explore vs direct tools:**
-- **Explore agents**: Open-ended investigation, tracing flows, understanding architecture, finding patterns
-- **Direct tools** (Glob, Grep, Read): Targeted lookups when you know exactly what you're looking for
+**Research workflow:**
+1. Use **Glob** to find files by pattern
+2. Use **Grep** to search for code/keywords
+3. Use **Read** to examine file contents
+4. Only spawn **Explore** if you have a specific question you can't answer yourself
 
 ---
 
@@ -39,12 +38,19 @@ Do this:
 
 **Before any exploration, interview the user thoroughly.** A brilliant plan built on wrong assumptions is worthless. Use `AskUserQuestion` to understand the task deeply.
 
+### Interview Depth
+
+**For complex tasks, you may ask up to 40 questions across multiple rounds.** A thorough interview prevents hours of rework. Depth > speed.
+
+Simple bug fix? 2-3 questions. New feature touching multiple systems? 20-40 questions across 5-10 rounds.
+
 ### Interview Principles
 
 - **Don't accept surface-level answers.** Dig deeper with follow-up questions.
 - **Ask non-obvious questions.** If you think you already know the answer, you're asking the wrong question.
-- **Interview iteratively.** Ask 2-3 questions → get answers → ask deeper follow-ups → repeat.
+- **Interview iteratively.** Ask 2-4 questions → get answers → ask deeper follow-ups → repeat.
 - **Challenge the problem.** Sometimes the stated problem isn't the real problem.
+- **Don't batch too many questions.** More than 4 at once leads to shallow answers.
 
 ### Question Framework
 
@@ -126,34 +132,36 @@ For each task, cover these dimensions:
 This is where plans succeed or fail. Spend significant effort here.
 
 ### Understand the Current State
-- **Map the territory**: Identify all files, modules, and systems relevant to the task
-- **Read the actual code**: Don't assume — verify how things work
-- **Trace data flows**: Follow data from input to output
-- **Trace control flows**: Understand the execution path
-- **Find patterns**: How does the codebase handle similar concerns?
-- **Identify constraints**: Technical debt, conventions, limitations, edge cases
 
-### Ask the Right Questions
-Spawn Explore agents to answer:
-- How is this currently implemented?
-- What depends on this? What does this depend on?
-- Where are all the places this gets called/used?
-- What patterns does the codebase use for similar features?
-- What could break if we change this?
-- What tests exist? What do they tell us about expected behavior?
+Use **direct tools** (Glob, Grep, Read) to research the codebase yourself:
+
+- **Map the territory**: Use Glob to find relevant files, Grep to search for patterns
+- **Read the actual code**: Use Read to examine files — don't assume, verify
+- **Trace data flows**: Follow imports and function calls through the code
+- **Trace control flows**: Read entry points and follow execution paths
+- **Find patterns**: Grep for similar implementations in the codebase
+- **Identify constraints**: Read existing code to understand conventions and limitations
+
+### Questions to Answer (using direct tools)
+- How is this currently implemented? → Read the relevant files
+- What depends on this? → Grep for imports/usages
+- Where are all the places this gets called? → Grep for function name
+- What patterns does the codebase use? → Read similar modules
+- What could break if we change this? → Read dependents
+- What tests exist? → Glob for test files, Read them
 
 ### Verify Assumptions
 Every assumption you have about the codebase must be verified:
-- File paths you think exist
-- Functions you think have certain signatures
-- Behavior you think works a certain way
+- File paths you think exist → Glob to confirm
+- Functions you think have certain signatures → Read to verify
+- Behavior you think works a certain way → Read the implementation
 
-**If you can't verify it, you don't know it.** Spawn another Explore agent to find out.
+**If you can't verify it, you don't know it.**
 
 ### Research External Dependencies
 Use MCP tools when you need documentation or have questions:
-- **Context7**: Query documentation for any public repo. Use it to look up APIs, find usage examples, check for deprecations.
-- **DeepWiki**: Ask questions and get answers about any public repo. Use it when something is unclear or you need to understand how a library/system works.
+- **Context7**: Query documentation for any public library. Use it to look up APIs, find usage examples, check for deprecations.
+- **DeepWiki**: Ask questions about any public repo. Use it when something is unclear or you need to understand how a library/system works.
 
 ---
 
@@ -208,6 +216,43 @@ Do NOT assume integration is "obvious." Plan it explicitly:
 - Component exists but is never rendered
 - API endpoint exists but is never routed
 - Config value defined but never read
+
+---
+
+## Phase 4.5: Documentation Planning (MANDATORY)
+
+**Every phase that creates or modifies code MUST include explicit documentation steps.**
+
+Documentation is NOT optional. Plan it explicitly for each phase:
+
+### CLAUDE.md (Agent-Facing)
+For each module/directory affected by that phase:
+- Use `claudemd-writer` skill for guidance
+- Document module purpose, key patterns, gotchas
+- Update existing CLAUDE.md if patterns/APIs change
+
+### Human-Facing Documentation
+For each phase, identify what humans need to know:
+- README updates (new features, changed behavior)
+- API documentation (new/changed endpoints)
+- Configuration docs (new env vars, settings)
+- Migration guides (breaking changes)
+
+**Include in each phase:**
+```markdown
+### Phase N: [Title]
+...implementation steps...
+
+**Documentation:**
+- CLAUDE.md: [which files to create/update, using claudemd-writer]
+- Human docs: [which docs to update and what to add]
+```
+
+**Common documentation failures to prevent:**
+- New module created without CLAUDE.md
+- API changed but docs still show old behavior
+- New config added but not documented
+- Breaking change without migration guide
 
 ---
 
@@ -326,8 +371,16 @@ Adapt this structure to fit your task — simple tasks need simple plans:
 ### Step 1: [Title]
 [What this accomplishes, files involved, changes to make, how to verify]
 
+**Documentation:**
+- CLAUDE.md: [create/update X using claudemd-writer]
+- Human docs: [update Y with Z]
+
 ### Step 2: [Title]
 ...
+
+**Documentation:**
+- CLAUDE.md: [...]
+- Human docs: [...]
 
 ### Integration
 [How modules connect, entry points, configuration]
@@ -353,4 +406,6 @@ Before finalizing:
 - [ ] Discovery was thorough (not superficial)
 - [ ] **Every item in Summary/Target State has an explicit step** (no orphaned requirements)
 - [ ] **Testing approach defined** (after asking user for depth preference)
+- [ ] **Each phase has documentation steps** — CLAUDE.md + human docs explicitly planned
+- [ ] **claudemd-writer skill referenced** for CLAUDE.md updates
 </planning_skill>

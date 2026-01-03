@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.0.14] - 2026-01-03
+
+### Added
+- **Action counter for stop hook**: Stop hook skips if fewer than `stop_hook_min_actions` (default: 10) tool calls since last user input. Prevents hook from firing on trivial interactions.
+- **Interview depth guidance**: Planning skill now explicitly allows up to 40 questions across multiple rounds for complex tasks.
+- **Documentation planning phase**: Planning skill now has mandatory Phase 4.5 requiring explicit CLAUDE.md and human documentation steps for each implementation phase.
+- **Documentation verification in plan reviewer**: Plan reviewer now checks that every phase has documentation steps (Phase 3.5).
+- **Trust plan claims**: Plan reviewer no longer rejects plans claiming packages/versions/models "don't exist" — user may have access to private/internal/beta resources.
+- **Memory context in plan reviewer**: Plan reviewer now reads `memory.jsonl` in Phase 1 for domain knowledge before analyzing plans.
+
+### Changed
+- **Code reviewer rewritten (CodeRabbit-style)**: Complete rewrite with 8-phase deep analysis workflow — Load Context, Change Summary, Deep Research, Walkthrough (forcing function), Sequence Diagrams (forcing function), Find Issues, Create Issues, Cleanup. Reviews now include detailed walkthroughs and sequence diagrams to ensure deep understanding.
+- **Implementation reviewer simplified**: Replaced multi-type reviewers (phase/integration/completeness) with single checklist-based approach. Extract every item from plan → verify each individually → create issues for incomplete items.
+- **Issue-based review system**: Both reviewers now output issues instead of scores. No more 1-10 scoring — just issues or no issues. Loop until all issues resolved.
+- **Beads integration in reviewers**: When `beads_enabled: true`, reviewers create Beads issues directly instead of writing to files.
+- **Direct tools over Explore agents**: Planning skill now instructs to use Glob/Grep/Read directly for codebase research. Explore agents only for answering direct conceptual questions.
+- **Stop hook section reorder**: Sections now ordered by priority (lower in prompt = higher priority): Implementation Review → Memory → Session Context → CLAUDE.md → Beads → Human Actions → Tests/Lint/Build (highest priority).
+- **Stop hook text condensed**: More concise instructions while preserving key information.
+- **Pre-compaction sync improved**: Better guidance on what survives compaction (concrete decisions, file paths, error messages) vs what doesn't (vague summaries, implicit context).
+- **Pre-compaction Beads instructions**: When Beads enabled, prompts agent to create issues for findings discovered during session.
+- **Agent operating manual simplified**: Removed redundant Requirements Interview section (~90 lines), replaced with reference to planning skill Phase 0.
+
+### Technical
+- New `ACTION_COUNTER_FILE` constant and `stop_hook_min_actions` config option in `.claude/hooks/lib/config.py`
+- New `action-counter.py` hook tracks tool calls, resets on UserPromptSubmit
+- Reviewers pass `beads_enabled` flag to control output mode
+- Plan reviewer has new "documentation" finding category
+
 ## [0.0.13] - 2025-12-30
 
 ### Added

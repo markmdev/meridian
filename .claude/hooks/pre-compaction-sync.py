@@ -126,25 +126,45 @@ def main():
     # Over threshold: create flag and block
     create_flag(base_dir, PRE_COMPACTION_FLAG)
 
+    # Build reason message
+    reason = (
+        f"**CONTEXT PRESERVATION REQUIRED** (Token usage: {total_tokens:,} / {threshold:,})\n\n"
+        "The conversation is approaching compaction. Before continuing, you MUST save your current work "
+        "to preserve context for the agent that will continue after compaction.\n\n"
+        "**Append a dated entry to the session context file**:\n"
+        f"`{claude_project_dir}/.meridian/session-context.md`\n\n"
+        "**What survives compaction well (should be included):**\n"
+        "- Concrete decisions with rationale (\"chose X because Y\")\n"
+        "- Specific file paths and line numbers\n"
+        "- Error messages that took time to debug\n"
+        "- Explicit next steps with full context\n"
+        "- Assumptions you're making (stated clearly)\n\n"
+        "**What does NOT survive well:**\n"
+        "- Vague summaries (\"made good progress\")\n"
+        "- References to \"the code we discussed\" without specifics\n"
+        "- Implicit context that requires the full conversation\n"
+        "- Progress updates without decisions\n\n"
+        "Write as if briefing a new agent who has zero context.\n\n"
+    )
+
+    # Add Beads instructions if enabled
+    if config.get('beads_enabled', False):
+        reason += (
+            "**BEADS ISSUES**: Create Beads issues for any findings discovered this session:\n"
+            "- Bugs found but not yet fixed\n"
+            "- Technical debt identified\n"
+            "- Follow-up work needed\n"
+            "- Ideas worth tracking\n\n"
+            "Use `bd create \"Title\" --description \"...\" -t <type> -p <priority>` for each.\n\n"
+        )
+
+    reason += "After updating, you may continue your work."
+
     output = {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
             "permissionDecision": "deny",
-            "permissionDecisionReason": (
-                f"**CONTEXT PRESERVATION REQUIRED** (Token usage: {total_tokens:,} / {threshold:,})\n\n"
-                "The conversation is approaching compaction. Before continuing, you MUST save your current work "
-                "to preserve context for the agent that will continue after compaction.\n\n"
-                "**Append a dated entry to the session context file**:\n"
-                f"`{claude_project_dir}/.meridian/session-context.md`\n\n"
-                "Include:\n"
-                "- Key decisions made this session and their rationale\n"
-                "- Important discoveries or blockers encountered\n"
-                "- Complex problems solved (and how)\n"
-                "- What needs to be done next\n"
-                "- Context that would be hard to rediscover\n\n"
-                "This is a rolling file — oldest entries are automatically trimmed. "
-                "After updating, you may continue your work."
-            )
+            "permissionDecisionReason": reason
         }
     }
 

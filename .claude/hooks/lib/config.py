@@ -15,6 +15,7 @@ PRE_COMPACTION_FLAG = ".meridian/.pre-compaction-synced"
 PLAN_REVIEW_FLAG = ".meridian/.plan-review-blocked"
 CONTEXT_ACK_FLAG = ".meridian/.context-acknowledgment-pending"
 SESSION_CONTEXT_FILE = ".meridian/session-context.md"
+ACTION_COUNTER_FILE = ".meridian/.action-counter"
 
 
 # =============================================================================
@@ -98,6 +99,7 @@ def get_project_config(base_dir: Path) -> dict:
         'pre_compaction_sync_threshold': 150000,
         'session_context_max_lines': 1000,
         'beads_enabled': False,
+        'stop_hook_min_actions': 10,
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -147,6 +149,14 @@ def get_project_config(base_dir: Path) -> dict:
         beads = get_config_value(content, 'beads_enabled')
         if beads:
             config['beads_enabled'] = beads.lower() == 'true'
+
+        # Stop hook minimum actions threshold
+        min_actions = get_config_value(content, 'stop_hook_min_actions')
+        if min_actions:
+            try:
+                config['stop_hook_min_actions'] = int(min_actions)
+            except ValueError:
+                pass
 
     except IOError:
         pass
@@ -483,7 +493,6 @@ At the beginning of each session, understand what's happening in the project:
 | `bd stats` | Project health — open/closed/blocked counts |
 | `bd list --json` | All open issues |
 | `bd show <id> --json` | Deep dive into specific issue (description, deps, history) |
-| `bd dep tree <id>` | Visualize dependency graph for an issue |
 
 Use these commands to understand context from previous sessions — what was in progress, what got blocked, what's next.
 
@@ -533,7 +542,6 @@ Dependencies control execution order and show relationships:
 ```bash
 bd dep add <child-id> <parent-id>              # child is blocked by parent
 bd dep add <id> <other> --type discovered-from # link discovered work
-bd dep tree <id>                               # visualize dependencies
 ```
 
 **Tracking discovered work**: When you find bugs or new work during a task, create an issue with `--deps discovered-from:<current-task-id>` to maintain traceability.
@@ -547,7 +555,6 @@ bd dep tree <id>                               # visualize dependencies
 | `bd update <id> --assignee <name> --json` | Assign to someone |
 | `bd close <id> --reason "..." --json` | Complete work |
 | `bd close <id1> <id2> ...` | Close multiple issues at once (more efficient) |
-| `bd label add <id> <label>` | Add categorization |
 
 ## Complex Workflows: Molecules & Gates
 

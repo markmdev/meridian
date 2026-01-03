@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.13` (2025-12-30) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.14` (2026-01-03) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -210,6 +210,7 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `pre-compaction-sync.py` | PreToolUse | Warns when approaching token limit, prompts context save |
 | `block-plan-agent.py` | PreToolUse (Task) | Redirects deprecated Plan agent to planning skill |
 | `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
+| `action-counter.py` | PostToolUse, UserPromptSubmit | Tracks actions for stop hook threshold |
 | `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create task folder |
 | `pre-stop-update.py` | Stop | Requires task/memory updates and implementation review |
 | `startup-prune-completed-tasks.py` | SessionStart | Archives old completed tasks |
@@ -230,10 +231,12 @@ Skills are reusable instruction sets that activate when invoked.
 ### Planning Skill
 
 Guides Claude through comprehensive planning so plans don't break during implementation:
-1. **Deep Discovery** — Spawn Explore subagents to understand the codebase before writing anything
-2. **Design** — Choose approach, define target state, verify assumptions against actual code
-3. **Decomposition** — Break into subtasks with clear dependencies
-4. **Integration** — Explicitly plan how modules connect (mandatory for multi-module plans)
+1. **Requirements Interview** — Up to 40 questions across multiple rounds to deeply understand the task
+2. **Deep Discovery** — Use direct tools (Glob, Grep, Read) to research the codebase; Explore agents only for conceptual questions
+3. **Design** — Choose approach, define target state, verify assumptions against actual code
+4. **Decomposition** — Break into subtasks with clear dependencies
+5. **Integration** — Explicitly plan how modules connect (mandatory for multi-module plans)
+6. **Documentation** — Each phase must include CLAUDE.md and human docs steps (mandatory)
 
 Plans describe **what and why**, not how. The plan-reviewer agent validates plans against the actual codebase before implementation begins.
 
@@ -290,33 +293,36 @@ python3 .claude/skills/memory-curator/scripts/delete_memory_entry.py \
 <details>
 <summary><strong>Agents — Quality Gates</strong></summary>
 
-Agents are specialized subagents that validate work.
+Agents are specialized subagents that validate work. All reviewers use an **issue-based system** — no scores, just issues or no issues. Loop until all issues are resolved.
 
 ### Plan Reviewer
 
 Validates plans before implementation:
+- Reads `memory.jsonl` for domain knowledge before analysis
 - Verifies file paths and API assumptions against codebase
-- Checks for missing steps, dependencies, integration plan
+- Checks for missing steps, dependencies, integration plan, documentation steps
 - Uses Context7 and DeepWiki to verify library claims
+- Trusts plan claims about packages/versions (user may have private access)
 - Returns score (must reach 9+ to proceed) + findings
 
 ### Implementation Reviewer
 
-Validates implementations after completion:
-- Compares actual code against plan
-- Flags hardcoded values, TODOs, unused exports
-- Checks integration (no orphaned modules)
-- Returns score (must reach 9+ to ship) + findings
+Verifies every plan item was implemented:
+- Extracts checklist of EVERY item from the plan
+- Verifies each item individually (no skipping, no assumptions)
+- Creates issues for incomplete items (Beads issues or markdown file)
+- Loop: fix issues → re-run → repeat until no issues
 
-**Multi-Reviewer Strategy:** For large plans, spawn multiple focused reviewers in parallel — phase reviewers, integration reviewer, completeness reviewer, and code reviewer.
+### Code Reviewer (CodeRabbit-style)
 
-### Code Reviewer
+Deep code review with full context analysis:
+1. Loads context (memory.jsonl, plan, CLAUDE.md)
+2. Creates detailed walkthrough of each change (forcing function)
+3. Generates sequence diagrams for complex flows (forcing function)
+4. Finds real issues — logic bugs, data flow problems, pattern inconsistencies
+5. Creates issues for findings (Beads issues or markdown file)
 
-Line-by-line review of all code changes:
-- Reviews every changed line for bugs, security, performance
-- Checks CODE_GUIDE compliance
-- Handles different git states (feature branch, uncommitted, staged)
-- Returns score (must reach 9+) + findings
+Focuses on issues that actually matter, not checklist items or style preferences.
 
 </details>
 
@@ -375,6 +381,9 @@ implementation_review_enabled: true
 # Context preservation
 pre_compaction_sync_enabled: true
 pre_compaction_sync_threshold: 150000  # tokens
+
+# Stop hook behavior
+stop_hook_min_actions: 10  # Skip stop hook if < N actions since last user input
 ```
 
 ### Required Context Files (`.meridian/required-context-files.yaml`)
@@ -429,6 +438,7 @@ your-project/
 │   │   ├── plan-approval-reminder.py
 │   │   ├── pre-stop-update.py
 │   │   ├── block-plan-agent.py
+│   │   ├── action-counter.py  # Tracks actions for stop hook
 │   │   ├── startup-prune-completed-tasks.py
 │   │   ├── permission-auto-approver.py
 │   │   ├── meridian-path-guard.py

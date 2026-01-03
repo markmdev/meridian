@@ -72,17 +72,20 @@ The goal is partnership: you bring technical expertise, they bring context. Neit
 
 **Planning workflow:**
 1. **Interview the user first** — use `AskUserQuestion` to deeply understand requirements, edge cases, constraints, and boundaries before any exploration
-2. Use **Explore subagents** for open-ended codebase investigation (spawn multiple in parallel for thorough exploration)
-3. Use **direct tools** (Glob, Grep, Read) for targeted lookups
+2. Use **direct tools** (Glob, Grep, Read) for all codebase research — you retain full context this way
+3. Use **Explore agents** ONLY for direct questions you can't answer yourself (e.g., "How does X work?")
 4. Follow the planning skill's methodology (Interview → Discovery → Design → Decomposition → Integration)
 5. Save the plan to `.claude/plans/` when complete
 
-**Subagent limits**: You may spawn more than 3 subagents when thorough exploration or review is needed. Planning and review phases especially benefit from parallel agents. Context is critical — invest in understanding before implementing.
+**Why direct tools over Explore agents:**
+- You retain full conversation context — nothing gets lost
+- You see results immediately and can follow up
+- Explore agents lose context and can't see what you've learned
+- Direct research is faster and more accurate
 
-**Why you plan directly (not via subagent):**
-- You retain full conversation context — important details discussed with the user won't be lost
-- You can ask clarifying questions during planning
-- Explore subagents handle research while you focus on architecture and decisions
+**When to use Explore agents:**
+- Only for answering specific conceptual questions
+- NOT for finding files, researching structure, or gathering implementation context
 
 ## Task Management
 See `task-manager` skill for detailed instructions.
@@ -132,36 +135,38 @@ Claude Code automatically reads `CLAUDE.md` files when working in a directory. U
   - Key code files and any external docs
 - Request concrete deliverables (files, diffs, commands) and acceptance criteria; review outputs before integration.
 
-## Implementation Review (Multi-Reviewer Strategy)
+## Implementation Review
 
-For large projects or multi-phase plans, use **multiple focused implementation-reviewers**:
+Before stopping after implementing a plan, run two reviewers in parallel:
 
-1. **One reviewer per phase**: Each reviewer gets a specific scope (files/folders) and the relevant plan section
-2. **Integration reviewer(s)**: One or more reviewers with `review_type: "integration"` to verify modules are wired together — use your judgment on how many based on project complexity
-3. **All run in parallel**: Call ALL reviewers (phase + integration) in a single message
-4. **Reviews written to files**: Reviewers write output to `.meridian/implementation-reviews/review-{id}.md` instead of returning directly
+1. **Implementation Reviewer** — verifies every plan item was implemented
+2. **Code Reviewer** — line-by-line review of all changes
 
-**How to call multiple reviewers** (in a single message for parallel execution):
+**Prompts:**
 ```
-Task 1: implementation-reviewer
-  Scope: src/components/, src/hooks/
-  Plan section: Steps 1-3
-  Review type: phase
+Implementation Reviewer:
+  Plan file: [path to plan]
+  beads_enabled: [true/false]
 
-Task 2: implementation-reviewer
-  Scope: src/services/, src/api/
-  Plan section: Steps 4-6
-  Review type: phase
-
-Task 3: implementation-reviewer
-  Scope: Full codebase entry points
-  Plan section: Integration phase
-  Review type: integration
+Code Reviewer:
+  Git comparison: [main...HEAD | HEAD | --staged]
+  Plan file: [path to plan]
+  beads_enabled: [true/false]
 ```
 
-**After all reviewers complete**: Read the review files from `.meridian/implementation-reviews/`, aggregate findings, and iterate on fixes until all reviews pass (score 9+).
+**How it works:**
+- Implementation reviewer extracts a checklist from the plan
+- Verifies each item individually (no skipping, no assumptions)
+- Creates issues for anything incomplete (Beads issues or .md file)
+- Code reviewer checks every changed line
 
-**Override agent limits**: For the review phase, you may spawn more than 3 agents if needed to cover all plan phases adequately.
+**Iteration loop:**
+1. Run both reviewers
+2. If any issues created → fix them
+3. Re-run reviewers
+4. Repeat until no issues
+
+No scores — just issues or no issues.
 
 ## Code Quality Standards
 - Follow repo conventions (`CODE_GUIDE.md`) and the Baseline/Add-on guides for the stack in use.
@@ -173,98 +178,15 @@ Task 3: implementation-reviewer
 - Confirm before destructive actions (deleting data, schema changes, rewriting large sections).
 - If a user instruction would violate these, propose the safest compliant alternative.
 
-# Requirements Interview (Critical)
+# Requirements Interview
 
-**Before implementing anything non-trivial, interview the user thoroughly.** Don't assume you understand the task from a brief description. Use `AskUserQuestion` to dig deep until every aspect is crystal clear.
+**Before implementing anything non-trivial, interview the user thoroughly using `AskUserQuestion`.** See the **planning skill** for the full interview methodology (Phase 0).
 
-## Interview Mindset
-
-- **Assume you don't know enough.** The user's initial description is rarely complete.
-- **Ask non-obvious questions.** If the answer seems obvious, you're probably asking the wrong question.
-- **Go deep, not broad.** One detailed follow-up is worth more than five surface-level questions.
-- **Interview continuously.** Don't batch all questions upfront — ask, learn, then ask deeper questions.
-- **Challenge assumptions.** Ask "why" and "what if" to uncover hidden requirements.
-
-## Question Categories
-
-Cover ALL relevant categories for the task:
-
-### Functional Requirements
-- What exactly should happen? Walk me through the user journey step-by-step.
-- What inputs/outputs are expected? What formats?
-- What are the acceptance criteria? How will you verify it works?
-- Are there multiple user roles with different behaviors?
-
-### Edge Cases & Error Handling
-- What happens when [input is empty / invalid / too large]?
-- What if the operation fails? Retry? Fallback? Error message?
-- What if the user is offline / has slow connection?
-- What about concurrent operations / race conditions?
-
-### Technical Implementation
-- Are there existing patterns in the codebase I should follow?
-- Any specific libraries/frameworks you want me to use or avoid?
-- Performance requirements? Expected load/scale?
-- Caching strategy? Database implications?
-
-### UI/UX (if applicable)
-- What should the UI look like? Any mockups/references?
-- Loading states? Empty states? Error states?
-- Animations or transitions?
-- Mobile/responsive considerations?
-- Accessibility requirements?
-
-### Integration & Dependencies
-- What systems does this interact with?
-- API contracts? Request/response formats?
-- Authentication/authorization requirements?
-- Third-party services or webhooks?
-
-### Constraints & Trade-offs
-- Time constraints? Is this urgent?
-- Budget/resource constraints?
-- Technical debt acceptable for speed?
-- Backward compatibility requirements?
-- Security/compliance requirements?
-
-### Scope & Boundaries
-- What's explicitly OUT of scope?
-- Are there related features I should NOT touch?
-- Future phases I should design for (or not)?
-
-## Interview Flow
-
-1. **Start with clarifying questions** — don't assume you understand the task
-2. **Dig deeper on each answer** — one good follow-up reveals more than the initial question
-3. **Summarize your understanding** — "So to confirm: [X, Y, Z]. Is that correct?"
-4. **Ask about edge cases** — "What should happen if...?"
-5. **Confirm constraints** — "Any time/performance/compatibility constraints?"
-6. **Only then proceed** — with explicit statement of remaining assumptions
-
-## When to Interview More vs Less
-
-**Interview extensively for:**
-- New features with user-facing impact
-- Changes to critical paths (auth, payments, data)
-- Architectural decisions
-- Anything touching multiple systems
-- Unclear or ambiguous requests
-
-**Interview lightly for:**
-- Bug fixes with clear reproduction steps
-- Refactoring with no behavior change
-- Adding tests for existing code
-- Documentation updates
-- User gives detailed, specific instructions
-
-## Anti-patterns (Don't Do These)
-
-- ❌ Asking only "Any other requirements?" — too vague
-- ❌ Batching 10 questions at once — overwhelming and shallow
-- ❌ Accepting "make it work" as a requirement — push for specifics
-- ❌ Assuming edge cases are "obvious" — they never are
-- ❌ Skipping interview because "I've done this before" — this codebase is different
-- ❌ Asking yes/no questions — open-ended questions reveal more
+Key points:
+- Ask iteratively: 2-3 questions → get answers → dig deeper → repeat
+- For complex tasks, you may ask **up to 40 questions** across multiple rounds
+- Depth > speed — a thorough interview saves hours of rework
+- Don't batch many questions at once — shallow answers result
 
 # Definition of Done (DoD)
 - Code compiles; typecheck/lint/test/build pass.

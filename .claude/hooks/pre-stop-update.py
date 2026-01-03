@@ -13,9 +13,18 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, get_additional_review_files, parse_yaml_list, MERIDIAN_CONFIG
+from config import get_project_config, get_additional_review_files, parse_yaml_list, MERIDIAN_CONFIG, ACTION_COUNTER_FILE
 
-REQUIRED_SCORE = 9
+def get_action_count(base_dir: Path) -> int:
+    """Read current action counter value."""
+    counter_path = base_dir / ACTION_COUNTER_FILE
+    try:
+        if counter_path.exists():
+            return int(counter_path.read_text().strip())
+    except (ValueError, IOError):
+        pass
+    return 0
+
 
 # Default folders to ignore for CLAUDE.md review
 DEFAULT_IGNORED_FOLDERS = [
@@ -34,8 +43,9 @@ def get_changed_files(base_dir: Path) -> list[str]:
     """Get list of changed files using git (staged + unstaged + untracked)."""
     try:
         # Get modified/staged files
+        # -uall shows individual files in untracked directories (not just dir name)
         result = subprocess.run(
-            ["git", "status", "--porcelain"],
+            ["git", "status", "--porcelain", "-uall"],
             cwd=base_dir,
             capture_output=True,
             text=True,
@@ -229,119 +239,92 @@ def main():
     base_dir = Path(claude_project_dir)
 
     config = get_project_config(base_dir)
+
+    # Skip stop hook if too few actions since last user input
+    min_actions = config.get('stop_hook_min_actions', 10)
+    if min_actions > 0:
+        action_count = get_action_count(base_dir)
+        if action_count < min_actions:
+            sys.exit(0)  # Allow stop without prompts
+
     files_list = '\n'.join(get_additional_review_files(base_dir, absolute=True))
 
     # Get CLAUDE.md review info
     claudemd_info = get_claudemd_review_info(base_dir)
 
-    # Base message
-    reason = (
-        "[SYSTEM]: Before stopping, check whether you need to update "
-        f"`{claude_project_dir}/.meridian/task-backlog.yaml`, "
-        f"`{claude_project_dir}/.meridian/session-context.md`, "
-        f"or `{claude_project_dir}/.meridian/memory.jsonl` using the `memory-curator` skill, as well as any other "
-        "documents that should reflect what you accomplished during this session (for example design documents, API specifications, etc.).\n"
-        "If nothing significant happened, you may skip the update.\n\n"
-        "**MEMORY** — Before adding to memory, ask: \"If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?\"\n"
-        "**Add to memory**: Architectural patterns affecting future features, data model gotchas not obvious from code, external API limitations, cross-agent coordination patterns.\n"
-        "**DON'T add**: One-time bug fixes (code is fixed), SDK quirks (code handles it), agent behavior rules (belong in operating manual), module-specific details (belong in CLAUDE.md).\n\n"
-        "**SESSION CONTEXT**: Append a timestamped entry (format: `YYYY-MM-DD HH:MM`) to "
-        f"`{claude_project_dir}/.meridian/session-context.md` with: key decisions made, important discoveries, "
-        "complex problems solved, and context that would be hard to rediscover. This is a rolling file — oldest entries "
-        "are automatically trimmed. If nothing significant happened, you may skip the update.\n\n"
-        "**CLAUDE.md FILES**: "
+    # Build message with sections ordered by priority (lower = more important)
+    beads_enabled = config.get('beads_enabled', False)
+    beads_str = str(beads_enabled).lower()
+
+    reason = "[SYSTEM]: Before stopping, complete these checks:\n\n"
+
+    # Implementation review section (lowest priority - at top)
+    if config['implementation_review_enabled']:
+        reason += (
+            "**IMPLEMENTATION REVIEW**: If you were working on implementing a plan, run reviewers.\n\n"
+            "**Spawn in parallel:**\n"
+            "1. **Implementation Reviewer** — verifies every plan item was implemented\n"
+            "2. **Code Reviewer** — line-by-line review of all changes\n\n"
+            "**1. Implementation Reviewer**:\n"
+            "```\n"
+            "Plan file: [EXACT PLAN PATH, e.g., /path/.claude/plans/my-plan.md]\n"
+            f"beads_enabled: {beads_str}\n"
+            "```\n\n"
+            "**2. Code Reviewer**:\n"
+            "```\n"
+            "Git comparison: [SPECIFY: main...HEAD | HEAD | --staged]\n"
+            "Plan file: [EXACT PLAN PATH]\n"
+            f"beads_enabled: {beads_str}\n"
+            "```\n\n"
+            "Git state: feature branch → `main...HEAD`, uncommitted → `HEAD`, staged only → `--staged`\n\n"
+        )
+
+        if beads_enabled:
+            reason += (
+                "**After reviewers**: If issues created → fix → re-run. Repeat until no issues.\n\n"
+            )
+        else:
+            reason += (
+                "**After reviewers**: Read `.meridian/implementation-reviews/`. If issues → fix → re-run. Repeat until clean.\n\n"
+            )
+
+    # Memory section
+    reason += (
+        "**MEMORY** — Ask: \"If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?\"\n"
+        "Add: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination.\n"
+        "Skip: One-time fixes (code handles it), SDK quirks, module-specific details (use CLAUDE.md).\n\n"
     )
 
-    # Add dynamic CLAUDE.md section if there are relevant changes
+    # Session context section
+    reason += (
+        "**SESSION CONTEXT**: Append timestamped entry (`YYYY-MM-DD HH:MM`) to "
+        f"`{claude_project_dir}/.meridian/session-context.md` with key decisions, discoveries, and context worth preserving.\n\n"
+    )
+
+    # CLAUDE.md section
+    reason += "**CLAUDE.md FILES**: "
     if claudemd_info:
         reason += format_claudemd_section(claudemd_info)
     else:
         reason += "No code changes detected that require CLAUDE.md review.\n\n"
 
     # Beads reminder if enabled
-    if config.get('beads_enabled', False):
+    if beads_enabled:
         reason += (
-            "**BEADS**: Update Beads issues to reflect work done this session (close completed, update status, create discovered work).\n\n"
+            "**BEADS**: Update issues (close completed, update status, create discovered work).\n\n"
         )
 
+    # Human actions section
     reason += (
-        "**HUMAN ACTIONS**: If this work requires human actions (e.g., create external service accounts, add environment variables, "
-        "configure third-party integrations), create a doc in `.meridian/human-actions-docs/` with concise actionable steps. "
-        "Assume the user knows the tools; focus on what to do, not why.\n\n"
-        "If you consider the current work \"finished\" or close to completion, you MUST ensure the codebase is clean before "
-        "stopping: run the project's tests, lint, and build commands. If any of these fail, you must fix the issues and rerun "
-        "them until they pass before stopping. If they already passed recently and no further changes were made, you may state "
-        "that they are already clean and stop.\n\n"
+        "**HUMAN ACTIONS**: If work requires human actions (external accounts, env vars, integrations), "
+        "create doc in `.meridian/human-actions-docs/` with actionable steps.\n\n"
     )
 
-    # Implementation review section (conditional)
-    if config['implementation_review_enabled']:
-        reason += (
-            "**IMPLEMENTATION REVIEW**: If you were working on implementing a plan, you MUST run all reviewers.\n\n"
-            "**MULTI-REVIEWER STRATEGY** — spawn ALL of these in parallel:\n"
-            "1. **Phase reviewers**: One `implementation-reviewer` per plan phase (scope: files/folders for that phase)\n"
-            "2. **Integration reviewer**: One `implementation-reviewer` with `review_type: integration` (verifies modules wired together)\n"
-            "3. **Completeness reviewer**: One `implementation-reviewer` with `review_type: completeness` (verifies every plan item implemented)\n"
-            "4. **Code reviewer**: One `code-reviewer` (line-by-line review of all changes)\n\n"
-            "- Call **ALL reviewers in parallel** (single message with multiple Task tool calls)\n"
-            "- You may spawn **more than 3 agents** for review — this is an exception to the soft limit\n\n"
-            "**Review output**: Each reviewer writes to `.meridian/implementation-reviews/` and returns only the file path.\n\n"
-            "**IMPORTANT**: When spawning reviewer agents, DO NOT listen to their streaming output. Either:\n"
-            "- Use blocking Task calls and only read the final result, OR\n"
-            "- Read the review files from `.meridian/implementation-reviews/` after completion\n\n"
-            "Listening to streaming output causes massive context pollution.\n\n"
-            "---\n\n"
-            "**EXACT PROMPTS** (fill in bracketed values):\n\n"
-            "**1. Phase Implementation Reviewer** (one per phase):\n"
-            "```\n"
-            "Review Scope: [FILES/FOLDERS FOR THIS PHASE]\n"
-            "Plan file: [EXACT PLAN PATH, e.g., /path/.claude/plans/my-plan.md]\n"
-            "Plan section: [STEPS X-Y]\n"
-            "Review Type: phase\n"
-            "Verify: Each step executed correctly, no deviations, quality standards met\n"
-            f"Additional files to read:\n{files_list}\n"
-            "```\n\n"
-            "**2. Integration Reviewer**:\n"
-            "```\n"
-            "Review Scope: Full codebase entry points\n"
-            "Plan file: [EXACT PLAN PATH]\n"
-            "Plan section: Integration phase\n"
-            "Review Type: integration\n"
-            "Verify: All modules wired together, entry points defined, data flow complete, no orphaned code\n"
-            f"Additional files to read:\n{files_list}\n"
-            "```\n\n"
-            "**3. Completeness Reviewer**:\n"
-            "```\n"
-            "Review Scope: Entire plan vs implementation\n"
-            "Plan file: [EXACT PLAN PATH]\n"
-            "Review Type: completeness\n"
-            "Verify: Every plan item implemented, no missing features, obvious implications covered (integrations need env vars, APIs need error handling)\n"
-            f"Additional files to read:\n{files_list}\n"
-            "```\n\n"
-            "**4. Code Reviewer**:\n"
-            "```\n"
-            "Git comparison: [SPECIFY: main...HEAD | HEAD | --staged]\n"
-            "Plan file: [EXACT PLAN PATH] (for context on intent)\n"
-            "Review Type: code\n"
-            "Verify: Every changed line reviewed line-by-line, bugs, security, performance, CODE_GUIDE compliance\n"
-            f"Additional files to read:\n{files_list}\n"
-            "```\n\n"
-            "**IMPORTANT**: Determine git state before calling code-reviewer:\n"
-            "- Feature branch: use `main...HEAD` (fetch main first if stale)\n"
-            "- Uncommitted changes: use `HEAD`\n"
-            "- Staged only: use `--staged`\n\n"
-            "---\n\n"
-            "**After all reviewers complete**:\n"
-            "1. Read all review files from `.meridian/implementation-reviews/`\n"
-            "2. Aggregate findings across all reviews\n"
-            f"3. ALL reviewers must achieve score {REQUIRED_SCORE}+\n\n"
-            f"**ITERATION REQUIRED**: If any score is below {REQUIRED_SCORE}:\n"
-            "1. Review each finding with the user using AskUserQuestion\n"
-            "2. For findings the user wants to fix: make the fixes in the codebase\n"
-            "3. For findings the user declines: note as `[USER_DECLINED: <finding> - Reason: <reason>]`\n"
-            "4. Re-run the failing reviewer(s)\n"
-            f"5. Repeat until all scores reach {REQUIRED_SCORE}+\n\n"
-        )
+    # Tests/lint/build section (highest priority - near bottom)
+    reason += (
+        "**TESTS/LINT/BUILD**: If work is finished, you MUST ensure codebase is clean. Run tests, lint, build. "
+        "Fix failures and rerun until passing. If already passed and no changes since, state they're clean.\n\n"
+    )
 
     # Footer
     reason += (

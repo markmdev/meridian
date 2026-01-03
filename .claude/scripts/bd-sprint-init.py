@@ -54,9 +54,11 @@ For each issue:
 
 #### 2. IMPLEMENTATION
 
+See `.meridian/BEADS_GUIDE.md` for command reference. Always use `--json` flag.
+
 1. Execute the approved plan step by step
-2. Update Beads status: `bd update <id> --status in_progress`
-3. **If you discover bugs or new work**: Create Beads issue immediately with `bd create "..." --deps discovered-from:<current-id>`
+2. Update Beads status: `bd update <id> --status in_progress --json`
+3. **If you discover bugs or new work**: Create Beads issue immediately with `bd create "..." --deps discovered-from:<current-id> --json`
 
 #### 3. REVIEW
 
@@ -155,7 +157,7 @@ Fix any failures before proceeding.
 - Include: key decisions, important discoveries, complex problems solved
 
 **Close Issue**:
-- `bd close <id> --reason "..."`
+- `bd close <id> --reason "..." --json`
 - Update checkbox above to `[x]`
 
 #### 6. NEXT ISSUE
@@ -167,7 +169,7 @@ Continue to next unchecked issue. Repeat from step 1.
 ### On Problems
 
 - Document discovery in session context
-- Create blocking issue: `bd create "..." --deps discovered-from:<current-id>`
+- Create blocking issue: `bd create "..." --deps discovered-from:<current-id> --json`
 - Continue workflow
 
 ### On Context Compaction
@@ -180,7 +182,7 @@ This section survives at bottom of session-context.md. After compaction:
 ### Workflow Complete
 
 When all checkboxes checked and completion criteria met:
-1. Close epic if applicable: `bd close <epic-id> --reason "All child issues complete"`
+1. Close epic if applicable: `bd close <epic-id> --reason "All child issues complete" --json`
 2. Final session context entry summarizing the work
 3. Run `/bd-sprint-stop` to remove this workflow section
 

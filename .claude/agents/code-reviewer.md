@@ -246,6 +246,7 @@ Collect all findings and create issues.
 
 **If `beads_enabled: true`:**
 
+See `.meridian/BEADS_GUIDE.md` for command reference. Create issues with `--json` flag:
 ```bash
 bd create "[file:line] Brief title" --description "Full context and fix" -t bug -p <priority> --json
 ```

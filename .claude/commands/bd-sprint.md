@@ -11,6 +11,8 @@ This command starts an autonomous workflow for completing Beads work (epic, issu
 
 ## Before Proceeding
 
+See `.meridian/BEADS_GUIDE.md` for Beads command reference. Always use `--json` flag on create/update/close.
+
 1. **Verify work is defined**: Did the user discuss specific work before running this command?
 2. **If no prior context**:
    - Ask: "What epic or issue do you want to complete? Should I check `bd ready` for available work?"

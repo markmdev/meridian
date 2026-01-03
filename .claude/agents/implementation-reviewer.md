@@ -109,7 +109,7 @@ Collect all items marked `[ ]` (not implemented) or `[!]` (partial).
 
 **If `beads_enabled: true`:**
 
-For each incomplete item, create a Beads issue:
+See `.meridian/BEADS_GUIDE.md` for command reference. For each incomplete item, create a Beads issue with `--json`:
 ```bash
 bd create "Brief title" --description "Details from checklist" -t task -p 2 --json
 ```

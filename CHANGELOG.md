@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.15] - 2026-01-03
+
+### Added
+- **BEADS_GUIDE.md**: Comprehensive Beads reference guide for agents. Single source of truth for commands, dependency types, and best practices. Injected at session start when Beads is enabled.
+
+### Changed
+- **Beads guidance centralized**: All hooks/prompts now reference `BEADS_GUIDE.md` instead of duplicating command examples. Reduces maintenance burden and ensures consistency.
+- **Dependency types clarified**: Only `blocks` affects `bd ready`. Parent-child, related, and discovered-from are informational only — this was a common source of confusion.
+- **Ready Front model**: Guide teaches "Ready Front" thinking instead of "phases". Walk backward from goal to create correct dependencies.
+- **Cognitive trap documented**: Explicit warning about temporal language ("A before B") inverting dependencies. Use requirement language ("B needs A").
+- **PM-style descriptions**: Expanded guidance on writing comprehensive issue descriptions with Purpose/Why This Matters/Requirements/Acceptance Criteria/Context sections.
+- **`--parent` flag**: Corrected from `--deps parent:<id>` to `--parent <id>` throughout.
+
+### Technical
+- Removed 150+ line `BEADS_PROMPT` from `lib/config.py`, now injects `BEADS_GUIDE.md` file directly
+- Updated: `plan-approval-reminder.py`, `pre-stop-update.py`, `pre-compaction-sync.py`, `code-reviewer.md`, `implementation-reviewer.md`, `bd-sprint-init.py`, `bd-sprint.md`, `config.yaml`
+
 ## [0.0.14] - 2026-01-03
 
 ### Added

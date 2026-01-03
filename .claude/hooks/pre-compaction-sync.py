@@ -155,7 +155,7 @@ def main():
             "- Technical debt identified\n"
             "- Follow-up work needed\n"
             "- Ideas worth tracking\n\n"
-            "Use `bd create \"Title\" --description \"...\" -t <type> -p <priority>` for each.\n\n"
+            "See `.meridian/BEADS_GUIDE.md` for commands. Always use `--json` flag.\n\n"
         )
 
     reason += "After updating, you may continue your work."

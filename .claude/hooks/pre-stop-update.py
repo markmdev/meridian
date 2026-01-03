@@ -311,7 +311,8 @@ def main():
     # Beads reminder if enabled
     if beads_enabled:
         reason += (
-            "**BEADS**: Update issues (close completed, update status, create discovered work).\n\n"
+            "**BEADS**: Update issues (close completed, update status, create discovered work). "
+            "See `.meridian/BEADS_GUIDE.md`. Always use `--json` flag.\n\n"
         )
 
     # Human actions section

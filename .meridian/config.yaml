@@ -37,11 +37,8 @@ pre_compaction_sync_threshold: 144000
 session_context_max_lines: 650
 
 # Beads integration: Git-backed graph issue tracker for AI agents.
-# When enabled, agent MUST actively use Beads to manage work:
-# - Check `bd ready` for unblocked tasks
-# - Create issues for new work and discovered bugs
-# - Track dependencies between issues
-# - Update status as work progresses
+# When enabled, agent MUST actively use Beads to manage work.
+# See BEADS_GUIDE.md for command reference and principles.
 # See: https://github.com/steveyegge/beads
 beads_enabled: false
 

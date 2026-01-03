@@ -3,6 +3,7 @@
 ## [0.0.14] - 2026-01-03
 
 ### Added
+- **Browser verifier agent** (experimental): Manual QA agent using Claude for Chrome MCP. Verifies implementations by actually using the application in a browser — tests user flows, checks visual appearance, creates issues for failures.
 - **Action counter for stop hook**: Stop hook skips if fewer than `stop_hook_min_actions` (default: 10) tool calls since last user input. Prevents hook from firing on trivial interactions.
 - **Interview depth guidance**: Planning skill now explicitly allows up to 40 questions across multiple rounds for complex tasks.
 - **Documentation planning phase**: Planning skill now has mandatory Phase 4.5 requiring explicit CLAUDE.md and human documentation steps for each implementation phase.

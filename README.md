@@ -324,6 +324,17 @@ Deep code review with full context analysis:
 
 Focuses on issues that actually matter, not checklist items or style preferences.
 
+### Browser Verifier (experimental)
+
+Manual QA using Claude for Chrome MCP:
+- Extracts user-facing items from plan
+- Actually uses the application in a browser to verify functionality
+- Checks visual appearance (layout, styling, responsiveness)
+- Tests user flows, form submissions, error states
+- Creates issues for failures (Beads issues or markdown file)
+
+Requires Claude for Chrome browser extension.
+
 </details>
 
 <details>
@@ -465,7 +476,8 @@ your-project/
 │   └── agents/
 │       ├── plan-reviewer.md
 │       ├── implementation-reviewer.md
-│       └── code-reviewer.md
+│       ├── code-reviewer.md
+│       └── browser-verifier.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected

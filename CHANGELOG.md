@@ -29,6 +29,9 @@
 - Reviewers pass `beads_enabled` flag to control output mode
 - Plan reviewer has new "documentation" finding category
 
+### Fixed
+- **Plan approval reminder (Beads mode)**: Now instructs to create ALL sub-tasks upfront (not just first phase), add dependencies BETWEEN sub-tasks within each phase, and write comprehensive PM-style descriptions with Purpose/Requirements/Acceptance Criteria sections. Previously, agents would only create Phase 1 sub-tasks, skip inter-subtask dependencies, and write terse technical descriptions.
+
 ## [0.0.13] - 2025-12-30
 
 ### Added

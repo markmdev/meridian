@@ -10,3 +10,4 @@ __pycache__
 .meridian/.pre-compaction-sync.log
 .meridian/.plan-mode-state
 .meridian/.active-plan
+.meridian/.injected-files

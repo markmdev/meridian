@@ -262,21 +262,9 @@ def main():
     if config['implementation_review_enabled']:
         reason += (
             "**IMPLEMENTATION REVIEW**: If you were working on implementing a plan, run reviewers.\n\n"
-            "**Spawn in parallel:**\n"
-            "1. **Implementation Reviewer** — verifies every plan item was implemented\n"
-            "2. **Code Reviewer** — line-by-line review of all changes\n\n"
-            "**1. Implementation Reviewer**:\n"
-            "```\n"
-            "Plan file: [EXACT PLAN PATH, e.g., /path/.claude/plans/my-plan.md]\n"
-            f"beads_enabled: {beads_str}\n"
-            "```\n\n"
-            "**2. Code Reviewer**:\n"
-            "```\n"
-            "Git comparison: [SPECIFY: main...HEAD | HEAD | --staged]\n"
-            "Plan file: [EXACT PLAN PATH]\n"
-            f"beads_enabled: {beads_str}\n"
-            "```\n\n"
-            "Git state: feature branch → `main...HEAD`, uncommitted → `HEAD`, staged only → `--staged`\n\n"
+            "**Spawn in parallel** (no prompts needed — they read from `.meridian/.injected-files`):\n"
+            "1. Implementation Reviewer agent\n"
+            "2. Code Reviewer agent\n\n"
         )
 
         if beads_enabled:

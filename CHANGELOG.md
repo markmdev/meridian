@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.17] - 2026-01-03
+
+### Added
+- **Injected files log**: New hook logs all injected context files to `.meridian/.injected-files` on session start/compact/clear. Includes `beads_enabled` and `git_comparison` settings.
+- **Self-loading reviewer agents**: Implementation Reviewer, Code Reviewer, and Browser Verifier now auto-load context from `.injected-files` — no prompts needed.
+
+### Changed
+- **Stop hook simplified**: No longer requires manual prompts for reviewers. Just says "spawn Implementation Reviewer agent" and "Code Reviewer agent".
+- **Reviewer agents have Step 0**: All three reviewer agents now read `.meridian/.injected-files` as first step to get plan, settings, and context files.
+
+### Technical
+- New `injected-files-log.py` SessionStart hook
+- Updated: `implementation-reviewer.md`, `code-reviewer.md`, `browser-verifier.md`, `pre-stop-update.py`
+- Added `.injected-files` to `.gitignore`
+
 ## [0.0.16] - 2026-01-03
 
 ### Added

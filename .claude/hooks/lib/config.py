@@ -531,7 +531,8 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if session_context_path.exists():
         files_to_inject.append((SESSION_CONTEXT_FILE, session_context_path))
 
-    # 4. Plan files for in-progress tasks
+    # 4. Plan files for in-progress tasks (from task-backlog.yaml)
+    injected_plans = set()
     for task in in_progress_tasks:
         plan_path = task.get('plan_path', '')
         if plan_path:
@@ -541,6 +542,23 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
                 full_path = base_dir / plan_path
             if full_path.exists():
                 files_to_inject.append((plan_path, full_path))
+                injected_plans.add(str(full_path))
+
+    # 4b. Active plan file (for Beads workflows)
+    active_plan_file = base_dir / ".meridian" / ".active-plan"
+    if active_plan_file.exists():
+        try:
+            plan_path = active_plan_file.read_text().strip()
+            if plan_path:
+                if plan_path.startswith('/'):
+                    full_path = Path(plan_path)
+                else:
+                    full_path = base_dir / plan_path
+                # Only inject if not already injected from task-backlog
+                if full_path.exists() and str(full_path) not in injected_plans:
+                    files_to_inject.append((plan_path, full_path))
+        except IOError:
+            pass
 
     # 5. CODE_GUIDE and addons
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"

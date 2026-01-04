@@ -95,6 +95,26 @@ grep -r "TODO\|FIXME\|HACK\|XXX" --include="*.ts" --include="*.tsx" --include="*
 grep -r "\$0\|placeholder\|CHANGEME\|xxx" --include="*.ts" --include="*.tsx" src/
 ```
 
+**Pattern Consistency Check:**
+
+For each new file or significant addition, verify it follows patterns from files it integrates with:
+
+1. **Read the files** the new code imports from or extends
+2. **Check for pattern violations**:
+   - Uses `new XxxService()` when a `createXxxService()` factory exists
+   - Different naming conventions than surrounding code
+   - Different error handling patterns
+   - Different logging patterns
+   - Different type patterns (e.g., uses `type` when module uses `interface`)
+
+If you find pattern violations, add them as issues:
+```markdown
+## Pattern Consistency Issues
+
+- [ ] [P1] src/services/scoped-query.ts uses `new AuthorizationService()` but authorization.ts has `createAuthorizationService()` factory
+- [ ] [P2] src/handlers/user.ts uses console.log but other handlers use structured logger
+```
+
 Add any findings to the checklist as additional items:
 ```markdown
 ## Quality Issues Found
@@ -200,6 +220,7 @@ issues: 0
 - Test mentioned but not written
 - Any TODO/FIXME/HACK comment in new code
 - Any placeholder values in new code
+- Pattern consistency violations (e.g., direct instantiation when factory exists, wrong naming convention, different error/logging patterns)
 
 ## What Does NOT Create an Issue
 

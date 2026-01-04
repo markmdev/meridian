@@ -231,6 +231,17 @@ When tests, lint, or build fail:
 - You can read/write repo files and create folders under `.meridian/`.
 - If required tools/config are missing, state what’s needed and provide the minimal commands/config to proceed.
 
+## Reading Code
+
+**Always read files fully.** NEVER use offset/limit to read partial files (e.g., "lines 50-150"). Partial reads miss context, patterns, factory functions, and lead to inconsistent code.
+
+When you need to understand a file:
+1. Read the **entire file** — not just the section you think you need
+2. Note patterns: factory functions, naming conventions, error handling, logging
+3. Apply those patterns in any new code you write
+
+**Why this matters:** If a file has `createAuthorizationService()` at line 200 but you only read lines 1-100, you'll instantiate directly with `new AuthorizationService()` instead of using the factory — breaking consistency.
+
 ## Verify Before Assuming
 
 Before implementing anything unfamiliar:
@@ -246,6 +257,20 @@ This applies to:
 - Database operations (query patterns, transaction handling)
 
 Verify the contract from the source: existing code (quickest), source code (authoritative), documentation, or type definitions.
+
+## Pattern Consistency
+
+When adding code that integrates with existing modules:
+
+1. **Read the FULL file** you're integrating with (see "Reading Code" above)
+2. **Identify established patterns**:
+   - Factory functions (`createXxxService`) vs direct instantiation
+   - Naming conventions (camelCase, PascalCase, prefixes)
+   - Error handling (custom error classes, error codes)
+   - Logging patterns (structured logging, log levels)
+   - Type patterns (interfaces, type aliases, generics)
+3. **Follow those patterns** in your new code
+4. **If patterns conflict** with this guide, follow existing code — consistency > standards
 
 ## Reading Context Effectively
 

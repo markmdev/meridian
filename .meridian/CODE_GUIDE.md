@@ -50,6 +50,13 @@ Use explicit interfaces for props and API contracts.
 - Use `CLAUDE.md` files to document module context for agents
 - Use the `claudemd-writer` skill for guidance on creating/updating these files
 
+### Pattern Consistency
+When adding code that integrates with existing modules:
+1. Read the **full file** you're integrating with — never partial reads
+2. Identify established patterns: factory functions, naming, error handling, logging, types
+3. Follow those patterns in new code
+4. If patterns conflict with this guide, follow existing code — consistency > standards
+
 ---
 
 ## Frontend (Next.js/React)

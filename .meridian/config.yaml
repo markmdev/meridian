@@ -34,7 +34,7 @@ pre_compaction_sync_threshold: 144000
 # Session context: Rolling context file for cross-session continuity.
 # Agent saves important information here; oldest lines trimmed when over limit.
 # Set to 0 to disable trimming (unlimited size).
-session_context_max_lines: 650
+session_context_max_lines: 850
 
 # Beads integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Beads to manage work.
@@ -45,4 +45,4 @@ beads_enabled: false
 # Stop hook minimum actions: Skip stop hook prompts if fewer than this many
 # tool calls occurred since the user's last input. Prevents interruption
 # on quick/simple tasks. Set to 0 to always run stop hook.
-stop_hook_min_actions: 10
+stop_hook_min_actions: 20

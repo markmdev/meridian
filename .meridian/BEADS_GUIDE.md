@@ -12,10 +12,10 @@ At the beginning of each session, understand what's happening:
 
 | Command | Purpose |
 |---------|---------|
-| `bd ready` | **Start here** — shows unblocked issues ready for work |
-| `bd list --status in_progress` | What's currently being worked on |
-| `bd blocked` | Issues waiting on dependencies |
-| `bd show <id>` | Deep dive into specific issue |
+| `bd ready --json` | **Start here** — shows unblocked issues ready for work |
+| `bd list --status in_progress --json` | What's currently being worked on |
+| `bd blocked --json` | Issues waiting on dependencies |
+| `bd show <id> --json` | Deep dive into specific issue |
 
 Use these commands to understand context from previous sessions — what was in progress, what got blocked, what's next.
 
@@ -153,6 +153,81 @@ Write descriptions that stand alone — an agent should be able to work from the
 - **Acceptance Criteria**: How do we know it's done?
 - **Context**: Dependencies, related work, where this fits
 
+### 6. One Task at a Time
+
+Only ONE issue should be `in_progress` at any moment. If you need to switch tasks, you must first transition the current issue to another state:
+
+- **Block it** — discovered a dependency that prevents progress
+- **Defer it** — lower priority work came up, will return later
+- **Close it** — work is genuinely complete (see principle 7)
+
+```bash
+# WRONG: Multiple in_progress
+bd update PROJ-1 --status in_progress --json
+bd update PROJ-2 --status in_progress --json  # NO! PROJ-1 is still in_progress
+
+# RIGHT: Transition current issue before starting another
+bd update PROJ-1 --status blocked --json      # Or deferred, or close
+bd update PROJ-2 --status in_progress --json  # Now OK
+```
+
+### 7. Handling Discovered Work
+
+During implementation, you may discover problems, missing dependencies, or prerequisite work. Handle this immediately:
+
+**Pattern:**
+1. **Create issue immediately** — capture context before forgetting
+2. **Link provenance** — `bd dep add <current> <new> -t discovered-from`
+3. **Assess urgency** — is it a blocker or deferrable?
+
+**If blocker (can't continue current work):**
+```bash
+# Create the blocker issue
+NEW=$(bd create "Found: auth service needs refactoring" -t task -p 1 --json | jq -r .id)
+
+# Link provenance and add blocking dependency
+bd dep add $CURRENT $NEW -t discovered-from
+bd dep add $CURRENT $NEW                       # blocks type — CURRENT is now blocked by NEW
+
+# Transition states
+bd update $CURRENT --status blocked --json
+bd update $NEW --status in_progress --json
+
+# Work on the blocker first
+```
+
+**If deferrable (can continue current work):**
+```bash
+# Create issue for later
+NEW=$(bd create "Found: could optimize query performance" -t task -p 3 --json | jq -r .id)
+
+# Link provenance only (no blocks dependency)
+bd dep add $NEW $CURRENT -t discovered-from
+
+# Continue main task — new issue persists for later
+```
+
+### 8. Comment Before Closing
+
+**Before closing any issue, add a comment documenting what was implemented.** This creates an audit trail and forces verification that work was actually done.
+
+```bash
+# Add implementation comment BEFORE closing
+bd comments add PROJ-abc "Implemented scopedQuery() in src/auth/query-builder.ts:45-78.
+Wraps all vector queries with validateScope() check.
+Tests added in query-builder.test.ts."
+
+# Then close with brief reason
+bd close PROJ-abc --reason "Implemented and tested" --json
+```
+
+**The comment MUST include:**
+- File paths and line numbers where code was added/changed
+- Brief description of what was implemented
+- Any tests added
+
+**Never close an issue without a comment.** If you can't write a specific comment about what was done, the work isn't complete.
+
 ---
 
 ## Essential Commands
@@ -258,7 +333,7 @@ Think: "prerequisite blocks dependent" — so `bd dep add B A` means "B is block
 ### Graph Visualization
 
 ```bash
-bd graph <epic-id>                    # ASCII graph of epic and children
+bd graph <epic-id> --json                  # ASCII graph of epic and children
 ```
 
 ---
@@ -310,7 +385,10 @@ bd update <id> --claim --json
 # 3. Do the work
 # ...
 
-# 4. Close when done
+# 4. Add implementation comment
+bd comments add <id> "Implemented X in path/to/file.ts:45-78. Tests in file.test.ts."
+
+# 5. Close when done
 bd close <id> --reason "Implemented and tested" --suggest-next
 ```
 
@@ -326,3 +404,5 @@ bd close <id> --reason "Implemented and tested" --suggest-next
 6. **Using discovered-from for planning** — For planned task breakdown, use `--parent`. Use `discovered-from` only for emergent discoveries during work.
 7. **Terse descriptions** — Future agents (including you after context loss) need full context
 8. **Orphan issues** — Always connect issues to the work graph
+9. **Multiple in_progress** — Only ONE issue should be in_progress at a time. Transition the current issue (block/defer/close) before claiming another.
+10. **Closing without comment** — Always add a comment with file paths and implementation details before closing. If you can't write a specific comment, the work isn't done.

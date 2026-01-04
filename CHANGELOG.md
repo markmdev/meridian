@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.0.16] - 2026-01-03
+
+### Added
+- **Plan tracker hook**: Automatically tracks active plan by watching Edit/Write/Read operations on `.claude/plans/` files. Saves to `.meridian/.active-plan` for injection after compaction.
+- **Beads workflow improvements**:
+  - **One task at a time**: Only ONE issue should be `in_progress` at any moment. Must transition current issue (block/defer/close) before claiming another.
+  - **Discovered work pattern**: Full pattern for handling blockers vs deferrable work discovered during implementation.
+  - **Comment before closing**: Must add comment with file paths and implementation details before closing any issue. Prevents false closures.
+- **Pattern consistency rules**: New guidance requiring agents to read full files and follow established patterns (factory functions, naming, error handling, logging).
+- **Full file reads required**: Agents must NEVER use offset/limit to read partial files. Partial reads miss context and lead to inconsistent code.
+
+### Changed
+- **Implementation reviewer**: Now checks for pattern consistency violations (e.g., direct instantiation when factory exists).
+- **Plan injection for Beads**: Plans now inject after compaction for Beads workflows via `.active-plan` file (previously only worked with task-backlog.yaml).
+
+### Technical
+- New `plan-tracker.py` PostToolUse hook for Edit|Write|Read matcher
+- Updated `config.py` to inject from `.meridian/.active-plan`
+- Added `.active-plan` to `.gitignore`
+- Updated: `agent-operating-manual.md`, `CODE_GUIDE.md`, `implementation-reviewer.md`, `BEADS_GUIDE.md`
+
 ## [0.0.15] - 2026-01-03
 
 ### Added

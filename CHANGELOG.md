@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.0.19] - 2026-01-04
+
+### Added
+- **CLAUDE.md section in stop hook**: Prompts agent to create/update CLAUDE.md when creating new modules or making significant architectural changes.
+- **Work-until requires reviewers**: Before outputting completion phrase, agent MUST run Implementation Reviewer and Code Reviewer. Loop continues until reviewers return 0 issues.
+
+### Changed
+- **Stop hook improvements**:
+  - Implementation review: Clarified trigger ("after finishing a plan, epic, or large multi-file task") and added `cd $PROJECT_DIR` instruction
+  - Memory section: Rewritten to explain the critical test clearly, references `/memory-curator` skill
+  - Beads section: Expanded with explicit guidance (close, create, update, comment) — removed BEADS_GUIDE.md reference (already in context)
+- **Reviewer agents navigate to project root**: All reviewers (implementation, code, plan, browser) now `cd "$CLAUDE_PROJECT_DIR"` as Step/Phase 0 before reading `.injected-files`.
+- **Injected files use absolute paths**: `.meridian/.injected-files` now contains absolute paths instead of relative paths.
+- **claudemd-writer skill**: Emphasizes "Commands first" — setup/test commands should be at the top of CLAUDE.md files. Removed hard line limits (50/100), replaced with "every line competes for Claude's attention". Added precedence note.
+
+### Removed
+- **`/bd-sprint` and `/bd-sprint-stop` commands**: Superseded by `/work-until` which provides stop-hook enforcement. The bd-sprint workflow template lacked enforcement mechanism.
+
+### Technical
+- Deleted: `bd-sprint.md`, `bd-sprint-stop.md`, `bd-sprint-init.py`, `bd-sprint-stop.py`, `.claude/scripts/` directory
+- Updated: `config.py`, `work-until-stop.py`, `injected-files-log.py`, `implementation-reviewer.md`, `code-reviewer.md`, `plan-reviewer.md`, `browser-verifier.md`, `claudemd-writer/SKILL.md`, `README.md`
+
 ## [0.0.18] - 2026-01-04
 
 ### Added

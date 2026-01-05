@@ -30,11 +30,12 @@ def get_last_assistant_output(transcript_path: str) -> str | None:
             lines = f.readlines()
 
         # Find last assistant message (transcript is JSONL)
+        # Entry format: {"type": "assistant", "message": {"role": "assistant", "content": [...]}, ...}
         last_assistant = None
         for line in lines:
             try:
                 entry = json.loads(line)
-                if entry.get('role') == 'assistant':
+                if entry.get('type') == 'assistant':
                     last_assistant = entry
             except json.JSONDecodeError:
                 continue
@@ -102,6 +103,10 @@ def build_loop_prompt(base_dir: Path, config: dict, state: dict) -> str:
         parts.append("- The phrase MUST be completely and genuinely true\n")
         parts.append("- Do NOT output a false statement to escape the loop\n")
         parts.append("- If you're stuck, keep trying — the loop continues until genuine completion\n\n")
+        parts.append("**BEFORE OUTPUTTING COMPLETION PHRASE**: You MUST run reviewer agents first.\n")
+        parts.append("1. Run Implementation Reviewer and Code Reviewer agents in parallel\n")
+        parts.append("2. If they return ANY issues → fix them → re-run reviewers\n")
+        parts.append("3. Only when reviewers return 0 issues can you output the completion phrase\n\n")
     else:
         parts.append("**TO EXIT LOOP**: No completion phrase set. Loop will run until max iterations.\n\n")
 

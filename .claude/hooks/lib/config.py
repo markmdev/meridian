@@ -769,8 +769,8 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     # Implementation review section (lowest priority - at top)
     if config.get('implementation_review_enabled', True):
         parts.append(
-            "**IMPLEMENTATION REVIEW**: If you were working on implementing a plan, run reviewers.\n\n"
-            "**Spawn in parallel** (no prompts needed — they read from `.meridian/.injected-files`):\n"
+            "**IMPLEMENTATION REVIEW**: After finishing a plan, epic, or large multi-file task, run reviewers.\n\n"
+            f"First `cd {claude_project_dir}`, then **spawn in parallel** (no prompts needed — they read from `.meridian/.injected-files`):\n"
             "1. Implementation Reviewer agent\n"
             "2. Code Reviewer agent\n"
         )
@@ -786,9 +786,11 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
     # Memory section
     parts.append(
-        "**MEMORY** — Ask: \"If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?\"\n"
-        "Add: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination.\n"
-        "Skip: One-time fixes (code handles it), SDK quirks, module-specific details (use CLAUDE.md).\n"
+        "**MEMORY**: Consider if you learned something that future agents need to know.\n"
+        "The test: \"If I don't record this, will a future agent make the same mistake — or is the fix already in the code?\"\n"
+        "- **Add**: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination patterns.\n"
+        "- **Skip**: One-time bug fixes (code handles it), SDK quirks (code works around them), agent behavior rules (use agent-operating-manual.md), module-specific details (use CLAUDE.md).\n"
+        "If you have something worth preserving, invoke the `/memory-curator` skill to add it properly.\n"
     )
 
     # Session context section
@@ -800,9 +802,21 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     # Beads reminder if enabled
     if beads_enabled:
         parts.append(
-            "**BEADS**: Update issues (close completed, update status, create discovered work). "
-            "See `.meridian/BEADS_GUIDE.md`. Always use `--json` flag.\n"
+            "**BEADS**: Keep the issue tracker current before stopping.\n"
+            "- **Close** issues you fully completed (with a comment summarizing what was done).\n"
+            "- **Create** issues for discovered work, TODOs you noticed, or future improvements.\n"
+            "- **Create** blocker issues if something is blocking progress and needs attention.\n"
+            "- **Update** existing issues if status changed, scope evolved, or you have new context.\n"
+            "- **Comment** on issues you worked on but didn't finish, explaining current state.\n"
         )
+
+    # CLAUDE.md section
+    parts.append(
+        "**CLAUDE.md**: If you created a new module/service directory or made significant architectural changes, "
+        "consider creating or updating the CLAUDE.md file in that directory.\n"
+        "- Include: setup/test commands, what the module does, how it works, why it's designed this way, gotchas.\n"
+        "- Invoke `/claudemd-writer` skill for guidance on writing effective CLAUDE.md files.\n"
+    )
 
     # Human actions section
     parts.append(

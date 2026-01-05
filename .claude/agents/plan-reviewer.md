@@ -26,6 +26,17 @@ If mandatory files are specified, read them FIRST before any other analysis.
 
 ## Review Methodology
 
+### Phase 0: Navigate to Project Root (MANDATORY)
+
+**This step is critical. Do NOT skip it.**
+
+First, navigate to the project root directory:
+```bash
+cd "$CLAUDE_PROJECT_DIR"
+```
+
+If `$CLAUDE_PROJECT_DIR` is not set, ask the user for the project root path.
+
 ### Phase 1: Context Acquisition
 - Read `$CLAUDE_PROJECT_DIR/.meridian/memory.jsonl` for domain knowledge and project learnings
 - Read all mandatory files specified by the user

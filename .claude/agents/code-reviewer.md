@@ -30,7 +30,18 @@ You are an elite Code Reviewer. You don't just scan for syntax issues — you de
 
 ## Workflow
 
-### Phase 0: Load Injected Context (MANDATORY)
+### Phase 0: Navigate to Project Root (MANDATORY)
+
+**This step is critical. Do NOT skip it.**
+
+First, navigate to the project root directory:
+```bash
+cd "$CLAUDE_PROJECT_DIR"
+```
+
+If `$CLAUDE_PROJECT_DIR` is not set, ask the user for the project root path.
+
+### Phase 1: Load Injected Context (MANDATORY)
 
 **This step is critical. Do NOT skip it.**
 
@@ -50,7 +61,7 @@ If `.injected-files` doesn't exist, ask the user for the plan file path.
 
 If the user wants a different git comparison (e.g., `main...HEAD` for feature branch, `--staged` for staged only), they can specify it.
 
-### Phase 1: Load Additional Context
+### Phase 2: Load Additional Context
 
 Read additional context not in `.injected-files`:
 - Relevant `CLAUDE.md` files in affected directories
@@ -70,7 +81,7 @@ Read additional context not in `.injected-files`:
 [Project patterns/conventions that apply to this change]
 ```
 
-### Phase 2: Change Summary
+### Phase 3: Change Summary
 
 Get the diff and write a high-level summary:
 
@@ -95,7 +106,7 @@ Add to analysis file:
 [2-3 sentence summary of what this change does overall]
 ```
 
-### Phase 3: Deep Research
+### Phase 4: Deep Research
 
 For each changed file, research the surrounding context:
 
@@ -115,7 +126,7 @@ grep -r "[pattern-from-change]" --include="*.ts" src/
 grep -r "interface.*[TypeName]" --include="*.ts" src/
 ```
 
-### Phase 4: Walkthrough
+### Phase 5: Walkthrough
 
 For each significant change, write a detailed walkthrough. This forces you to actually understand the code.
 
@@ -142,7 +153,7 @@ The new resetPassword flow:
 **Dependencies**: Relies on EmailService (new), TokenRepository (existing)
 ```
 
-### Phase 5: Sequence Diagrams
+### Phase 6: Sequence Diagrams
 
 For complex flows, create a sequence diagram. This forces you to trace the actual execution path.
 
@@ -168,7 +179,7 @@ API --> User: 200 OK
 ```
 ```
 
-### Phase 6: Find Issues
+### Phase 7: Find Issues
 
 Now that you deeply understand the change, look for real issues:
 
@@ -241,7 +252,7 @@ lastSyncAt: institution.lastSync
 **Fix**: Extract to `src/utils/date.ts` and import.
 ```
 
-### Phase 7: Create Issues
+### Phase 8: Create Issues
 
 Collect all findings and create issues.
 
@@ -266,7 +277,7 @@ Include:
 - All findings with context and fixes
 - Summary statistics
 
-### Phase 8: Cleanup and Return
+### Phase 9: Cleanup and Return
 
 1. Delete temp analysis file
 2. Return result

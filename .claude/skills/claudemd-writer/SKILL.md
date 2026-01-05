@@ -33,16 +33,19 @@ When Claude reads `modules/payments/lib/checkout.ts`, it receives:
 - `project/modules/payments/CLAUDE.md`
 - `project/modules/payments/lib/CLAUDE.md`
 
+**Precedence**: The closest CLAUDE.md to the file being edited takes precedence if instructions conflict.
+
 **Implication**: Keep each CLAUDE.md focused on its level. Don't duplicate parent content.
 
 ## What Goes Where
 
 ### Root CLAUDE.md (project root)
+- **Commands first**: install, dev, test, build, lint
 - What the project is and its purpose
 - Stack and architecture overview
 - Project-wide conventions
 - Pointers to where module docs live
-- Keep under 100 lines if possible
+- Keep concise — every line competes for Claude's attention
 
 ### Domain CLAUDE.md (e.g., `modules/`, `services/`)
 - What this domain handles
@@ -50,11 +53,11 @@ When Claude reads `modules/payments/lib/checkout.ts`, it receives:
 - Cross-module dependencies and data flow
 
 ### Module CLAUDE.md (e.g., `payments/`, `auth/`)
+- **Commands first**: how to test this module specifically
 - What the module does and its role
 - How it works (architecture, key components)
 - Why it's designed this way (rationale, constraints)
 - Gotchas and anti-patterns
-- Testing commands
 
 ## Writing Guidelines
 
@@ -178,6 +181,12 @@ No rigid template — adapt to what's useful for the module. Common sections:
 
 [1-2 sentences: what this does and its role in the system]
 
+## Commands
+[Put runnable commands at the top — agents need these most]
+- Test: `pnpm test:module-name`
+- Dev: `pnpm dev`
+- Lint: `pnpm lint`
+
 ## How It Works
 [Architecture, data flow, key components — enough to understand the module]
 
@@ -192,9 +201,6 @@ No rigid template — adapt to what's useful for the module. Common sections:
 [Things that aren't obvious and cause mistakes]
 - Never [X], use [Y] instead
 - [Common mistake] → [How to fix]
-
-## Testing
-[How to run tests for this module]
 ```
 
 **Not all sections are needed.** Include what helps agents work effectively here.
@@ -207,17 +213,24 @@ No rigid template — adapt to what's useful for the module. Common sections:
 
 E-commerce platform for digital products.
 
-Stack: Next.js 14, TypeScript, Prisma, PostgreSQL, Stripe
+## Commands
+- Install: `pnpm install`
+- Dev: `pnpm dev`
+- Test: `pnpm test`
+- Build: `pnpm build`
+- Lint: `pnpm lint`
+
+## Stack
+Next.js 14, TypeScript, Prisma, PostgreSQL, Stripe
 
 ## Architecture
 - `src/app/` — Next.js app router pages
 - `src/services/` — Business logic (each has its own CLAUDE.md)
 - `src/lib/` — Shared utilities
 
-## Key Conventions
+## Conventions
 - All database operations use Prisma — no raw SQL
 - Environment variables in `.env.local`, never commit secrets
-- Run `pnpm test` before committing
 ```
 
 ### Good Module CLAUDE.md
@@ -225,6 +238,10 @@ Stack: Next.js 14, TypeScript, Prisma, PostgreSQL, Stripe
 # Payments Module
 
 Handles Stripe integration for subscriptions and one-time payments.
+
+## Commands
+- Test: `pnpm test:payments`
+- Test watch: `pnpm test:payments --watch`
 
 ## How It Works
 `PaymentService` wraps all Stripe API calls. Webhooks are processed async via
@@ -238,9 +255,6 @@ to avoid retry storms. Handlers are idempotent using event ID deduplication.
 - Never call Stripe API directly — use `PaymentService`
 - All amounts are in cents, not dollars
 - Webhook handlers must be idempotent (check `processedEvents` table)
-
-## Testing
-pnpm test:payments
 ```
 
 ### Bad CLAUDE.md (Too Verbose)
@@ -273,5 +287,5 @@ Before saving a CLAUDE.md:
 - [ ] Is every line relevant to work in this directory?
 - [ ] Are code references (file:line) used instead of code snippets?
 - [ ] Does every "never" have an alternative?
-- [ ] Is it concise? (Under 50 lines ideal for modules, under 100 for root)
+- [ ] Is it concise? (Every line competes for Claude's attention)
 - [ ] Would an agent understand the module well enough to work on it?

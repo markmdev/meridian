@@ -249,20 +249,6 @@ Creates and manages task folders (`.meridian/tasks/TASK-###/`) for storing:
 
 Session context is stored separately in `session-context.md` (always available, not task-dependent).
 
-### Beads Sprint Commands (requires Beads integration)
-
-When `beads_enabled: true`, two slash commands enable autonomous multi-issue workflows:
-
-**`/bd-sprint`** — Starts autonomous workflow for completing Beads work (epics, issues, any scoped work):
-- Appends comprehensive workflow template to `session-context.md`
-- Template survives context compaction (stays at bottom of file)
-- Enforces all phases: Planning → Implementation → Review → Verify → Complete
-- Acknowledgment hook detects active sprint and prompts agent to resume after compaction
-
-**`/bd-sprint-stop`** — Removes workflow section when sprint is complete
-
-The workflow ensures agents don't skip steps — planning is mandatory for every issue, all reviewers must pass (score 9+), and session context entries track progress.
-
 ### Memory Curator Skill
 
 Manages `memory.jsonl` via scripts (never edit manually). Uses strict criteria:
@@ -456,11 +442,7 @@ your-project/
 │   │   ├── plan-mode-tracker.py
 │   │   └── session-cleanup.py
 │   ├── commands/
-│   │   ├── bd-sprint.md         # Start autonomous workflow
-│   │   └── bd-sprint-stop.md    # End autonomous workflow
-│   ├── scripts/
-│   │   ├── bd-sprint-init.py    # Appends workflow template
-│   │   └── bd-sprint-stop.py    # Removes workflow section
+│   │   └── work-until.md        # Start work-until loop
 │   ├── skills/
 │   │   ├── planning/SKILL.md
 │   │   ├── task-manager/

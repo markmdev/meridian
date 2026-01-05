@@ -22,23 +22,23 @@ from config import (
 
 
 def get_injected_file_paths(base_dir: Path) -> list[str]:
-    """Get list of all files that will be injected into context."""
+    """Get list of all files that will be injected into context (absolute paths)."""
     files = []
 
     # 1. Memory
     memory_path = base_dir / ".meridian" / "memory.jsonl"
     if memory_path.exists():
-        files.append(".meridian/memory.jsonl")
+        files.append(str(memory_path))
 
     # 2. Task backlog
     backlog_path = base_dir / ".meridian" / "task-backlog.yaml"
     if backlog_path.exists():
-        files.append(".meridian/task-backlog.yaml")
+        files.append(str(backlog_path))
 
     # 3. Session context
     session_context_path = base_dir / SESSION_CONTEXT_FILE
     if session_context_path.exists():
-        files.append(SESSION_CONTEXT_FILE)
+        files.append(str(session_context_path))
 
     # 4. Plan files from task-backlog
     in_progress_tasks = get_in_progress_tasks(base_dir)
@@ -50,7 +50,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
             else:
                 full_path = base_dir / plan_path
             if full_path.exists():
-                files.append(plan_path)
+                files.append(str(full_path))
 
     # 4b. Active plan (for Beads workflows)
     active_plan_file = base_dir / ".meridian" / ".active-plan"
@@ -62,32 +62,32 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
                     full_path = Path(plan_path)
                 else:
                     full_path = base_dir / plan_path
-                if full_path.exists() and plan_path not in files:
-                    files.append(plan_path)
+                if full_path.exists() and str(full_path) not in files:
+                    files.append(str(full_path))
         except IOError:
             pass
 
     # 5. CODE_GUIDE
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
     if code_guide_path.exists():
-        files.append(".meridian/CODE_GUIDE.md")
+        files.append(str(code_guide_path))
 
     # 5b. CODE_GUIDE addons
     project_config = get_project_config(base_dir)
     if project_config['project_type'] == 'hackathon':
         addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_HACKATHON.md"
         if addon_path.exists():
-            files.append(".meridian/CODE_GUIDE_ADDON_HACKATHON.md")
+            files.append(str(addon_path))
     elif project_config['project_type'] == 'production':
         addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_PRODUCTION.md"
         if addon_path.exists():
-            files.append(".meridian/CODE_GUIDE_ADDON_PRODUCTION.md")
+            files.append(str(addon_path))
 
     # 6. BEADS_GUIDE (if enabled)
     if project_config.get('beads_enabled', False):
         beads_guide_path = base_dir / ".meridian" / "BEADS_GUIDE.md"
         if beads_guide_path.exists():
-            files.append(".meridian/BEADS_GUIDE.md")
+            files.append(str(beads_guide_path))
 
     # Note: agent-operating-manual.md is excluded - not needed for reviewer agents
 

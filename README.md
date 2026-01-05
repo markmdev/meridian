@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.17` (2026-01-03) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.18` (2026-01-04) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -497,6 +497,58 @@ your-project/
 ```
 
 </details>
+
+---
+
+## Work-Until Loop
+
+The `/work-until` command creates an iterative loop where Claude keeps working on a task until a completion condition is met.
+
+### Usage
+
+```bash
+# Basic: work until phrase is true
+/work-until Fix all failing tests --completion-phrase "All tests pass"
+
+# With iteration limit
+/work-until Implement auth feature --completion-phrase "Feature complete" --max-iterations 10
+
+# Just iteration limit (no phrase)
+/work-until Refactor the API layer --max-iterations 5
+```
+
+### How It Works
+
+1. **Start**: `/work-until` creates a loop state file with your task
+2. **Work**: Claude works on the task normally
+3. **Stop blocked**: When Claude tries to stop, the hook intercepts
+4. **Check completion**: Hook looks for `<complete>PHRASE</complete>` in output
+5. **Continue or exit**:
+   - If phrase found (and TRUE) → loop ends
+   - If max iterations reached → loop ends
+   - Otherwise → task is resent, Claude continues
+
+### Key Points
+
+- **Session context preserves history**: Between iterations, Claude writes to `session-context.md`, so it knows what was tried
+- **Normal stop checks still run**: Memory, session context, tests/lint/build — all enforced each iteration
+- **Completion phrase must be TRUE**: Claude cannot lie to escape the loop
+- **Monitor progress**: `cat .meridian/.loop-state` shows current iteration
+
+### Example Flow
+
+```
+You: /work-until Fix the auth bug --completion-phrase "All auth tests pass" --max-iterations 5
+
+Claude: [Works on fix, runs tests, some fail]
+Claude: [Tries to stop]
+→ Hook blocks: "Iteration 2 of 5 — continue working"
+
+Claude: [Reads session-context, sees what was tried]
+Claude: [Fixes another issue, runs tests, all pass]
+Claude: <complete>All auth tests pass</complete>
+→ Hook allows stop: "✅ Completion phrase detected"
+```
 
 ---
 

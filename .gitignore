@@ -11,3 +11,4 @@ __pycache__
 .meridian/.plan-mode-state
 .meridian/.active-plan
 .meridian/.injected-files
+.meridian/.loop-state

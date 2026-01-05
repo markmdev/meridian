@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.0.18] - 2026-01-04
+
+### Added
+- **Work-until loop** (`/work-until`): Iterative task completion loop that keeps Claude working until a condition is met.
+  - `/work-until TASK --completion-phrase "PHRASE"` — loops until `<complete>PHRASE</complete>` is output (must be TRUE)
+  - `--max-iterations N` — auto-stop after N iterations
+  - Task prompt is resent each iteration; session-context preserves history
+  - Normal stop hook checks (memory, session context, tests) run between iterations
+- **Session context rules**: Header now explicitly states to add entries at BOTTOM and re-read fully if partial read was done.
+
+### Changed
+- **Stop hook refactored**: Extracted prompt building to shared `build_stop_prompt()` helper in `lib/config.py`. Reduced from 337 to 81 lines.
+- **CLAUDE.md section removed**: Stop hook no longer prompts for CLAUDE.md review (now handled in plans).
+- **Reviewer agents**: Added "Critical Rules" section — NEVER read partial files, Step 0 is MANDATORY.
+
+### Technical
+- New `work-until-stop.py` Stop hook for loop control
+- New `.claude/commands/work-until.md` slash command
+- New `.claude/hooks/scripts/setup-work-until.sh` setup script
+- New loop helpers in `lib/config.py`: `is_loop_active()`, `get_loop_state()`, `update_loop_iteration()`, `clear_loop_state()`, `build_stop_prompt()`
+- Added `.loop-state` to `.gitignore`
+
 ## [0.0.17] - 2026-01-03
 
 ### Added

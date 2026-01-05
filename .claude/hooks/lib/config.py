@@ -636,3 +636,192 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     trim_session_context(base_dir, max_lines)
 
     return "\n".join(parts)
+
+
+# =============================================================================
+# LOOP STATE HELPERS
+# =============================================================================
+
+LOOP_STATE_FILE = ".meridian/.loop-state"
+
+
+def is_loop_active(base_dir: Path) -> bool:
+    """Check if a work-until loop is currently active."""
+    loop_state = base_dir / LOOP_STATE_FILE
+    if not loop_state.exists():
+        return False
+    try:
+        content = loop_state.read_text().strip()
+        # Check for active: true in the state file
+        for line in content.split('\n'):
+            if line.strip().startswith('active:'):
+                value = line.split(':', 1)[1].strip().lower()
+                return value == 'true'
+    except IOError:
+        pass
+    return False
+
+
+def get_loop_state(base_dir: Path) -> dict | None:
+    """Get current loop state if active, None otherwise.
+
+    State file format:
+    ```
+    active: true
+    iteration: 1
+    max_iterations: 10
+    completion_phrase: "All tests pass"
+    started_at: "2026-01-04T12:00:00Z"
+    ---
+    The prompt text goes here
+    ```
+    """
+    loop_state = base_dir / LOOP_STATE_FILE
+    if not loop_state.exists():
+        return None
+    try:
+        content = loop_state.read_text()
+
+        # Split on --- separator
+        if '---' in content:
+            parts = content.split('---', 1)
+            header = parts[0].strip()
+            prompt = parts[1].strip() if len(parts) > 1 else ''
+        else:
+            header = content.strip()
+            prompt = ''
+
+        state = {'prompt': prompt}
+        for line in header.split('\n'):
+            if ':' in line:
+                key, value = line.split(':', 1)
+                key = key.strip()
+                value = value.strip().strip('"')
+                if key == 'active':
+                    state['active'] = value.lower() == 'true'
+                elif key == 'iteration':
+                    state['iteration'] = int(value)
+                elif key == 'max_iterations':
+                    state['max_iterations'] = int(value)
+                elif key == 'completion_phrase':
+                    state['completion_phrase'] = value if value and value != 'null' else None
+                elif key == 'started_at':
+                    state['started_at'] = value
+        if state.get('active'):
+            return state
+    except (IOError, ValueError):
+        pass
+    return None
+
+
+def update_loop_iteration(base_dir: Path, new_iteration: int) -> bool:
+    """Update the iteration count in the loop state file."""
+    loop_state = base_dir / LOOP_STATE_FILE
+    if not loop_state.exists():
+        return False
+    try:
+        content = loop_state.read_text()
+        lines = content.split('\n')
+        for i, line in enumerate(lines):
+            if line.strip().startswith('iteration:'):
+                lines[i] = f'iteration: {new_iteration}'
+                break
+        loop_state.write_text('\n'.join(lines))
+        return True
+    except IOError:
+        return False
+
+
+def clear_loop_state(base_dir: Path) -> bool:
+    """Remove the loop state file to end the loop."""
+    loop_state = base_dir / LOOP_STATE_FILE
+    try:
+        if loop_state.exists():
+            loop_state.unlink()
+        return True
+    except IOError:
+        return False
+
+
+# =============================================================================
+# STOP PROMPT BUILDER
+# =============================================================================
+
+def build_stop_prompt(base_dir: Path, config: dict) -> str:
+    """
+    Build the stop hook prompt with all sections.
+
+    This is shared between the normal stop hook and the loop stop hook
+    to ensure consistency.
+
+    Args:
+        base_dir: Project root directory
+        config: Project config from get_project_config()
+
+    Returns:
+        The stop prompt string
+    """
+    beads_enabled = config.get('beads_enabled', False)
+    claude_project_dir = str(base_dir)
+
+    parts = ["[SYSTEM]: Before stopping, complete these checks:\n"]
+
+    # Implementation review section (lowest priority - at top)
+    if config.get('implementation_review_enabled', True):
+        parts.append(
+            "**IMPLEMENTATION REVIEW**: If you were working on implementing a plan, run reviewers.\n\n"
+            "**Spawn in parallel** (no prompts needed — they read from `.meridian/.injected-files`):\n"
+            "1. Implementation Reviewer agent\n"
+            "2. Code Reviewer agent\n"
+        )
+
+        if beads_enabled:
+            parts.append(
+                "**After reviewers**: If issues created → fix → re-run. Repeat until no issues.\n"
+            )
+        else:
+            parts.append(
+                "**After reviewers**: Read `.meridian/implementation-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
+            )
+
+    # Memory section
+    parts.append(
+        "**MEMORY** — Ask: \"If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?\"\n"
+        "Add: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination.\n"
+        "Skip: One-time fixes (code handles it), SDK quirks, module-specific details (use CLAUDE.md).\n"
+    )
+
+    # Session context section
+    parts.append(
+        "**SESSION CONTEXT**: Append timestamped entry (`YYYY-MM-DD HH:MM`) to "
+        f"`{claude_project_dir}/.meridian/session-context.md` with key decisions, discoveries, and context worth preserving.\n"
+    )
+
+    # Beads reminder if enabled
+    if beads_enabled:
+        parts.append(
+            "**BEADS**: Update issues (close completed, update status, create discovered work). "
+            "See `.meridian/BEADS_GUIDE.md`. Always use `--json` flag.\n"
+        )
+
+    # Human actions section
+    parts.append(
+        "**HUMAN ACTIONS**: If work requires human actions (external accounts, env vars, integrations), "
+        "create doc in `.meridian/human-actions-docs/` with actionable steps.\n"
+    )
+
+    # Tests/lint/build section (highest priority - near bottom)
+    parts.append(
+        "**TESTS/LINT/BUILD**: If work is finished, you MUST ensure codebase is clean. Run tests, lint, build. "
+        "Fix failures and rerun until passing. If already passed and no changes since, state they're clean.\n"
+    )
+
+    # Footer
+    parts.append(
+        "If you have nothing to update and were not working on a plan, your response to this hook must be exactly the same as the message that was blocked. "
+        "If you did update something or called implementation-reviewer, resend the same message you sent before you were interrupted by this hook. "
+        "Before marking a task as complete, review the 'Definition of Done' section in "
+        f"`{claude_project_dir}/.meridian/prompts/agent-operating-manual.md`."
+    )
+
+    return "\n".join(parts)

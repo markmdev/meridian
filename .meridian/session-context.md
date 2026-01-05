@@ -2,6 +2,12 @@
 
 > **Rolling context file** — Captures important information across sessions. Oldest entries are automatically trimmed when the file exceeds the configured line limit (`session_context_max_lines` in config.yaml).
 
+## Rules
+
+**ALWAYS add new entries at the BOTTOM of this file.** Oldest entries are at the top and get trimmed first.
+
+**If you read this file partially (offset/limit, specific lines), you MUST re-read it fully before adding entries.** Partial reads may miss recent context.
+
 ## How to Use
 
 Append timestamped entries (format: `YYYY-MM-DD HH:MM`) with:
@@ -15,4 +21,4 @@ Append timestamped entries (format: `YYYY-MM-DD HH:MM`) with:
 
 ---
 
-<!-- SESSION ENTRIES START - Add timestamped entries below, oldest at top -->
+<!-- SESSION ENTRIES START - Add new entries at the BOTTOM -->

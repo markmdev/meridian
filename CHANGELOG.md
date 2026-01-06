@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.21] - 2026-01-06
+
+### Changed
+- **Human documentation emphasis**: Planning skill and plan-reviewer now treat human-facing documentation as equally important to CLAUDE.md. Phases adding user-visible functionality REQUIRE human docs (README, API docs, etc.), not just agent docs.
+- **Plan mode tracker clarity**: Now explicitly tells users to "Send /planning in the chat" when plan mode activates.
+- **Plan-reviewer doc checks expanded**: New red flag for phases that add user-visible features without README/user doc updates.
+
+### Technical
+- Updated: `plan-reviewer.md`, `plan-mode-tracker.py`, `planning/SKILL.md`
+
 ## [0.0.20] - 2026-01-05
 
 ### Added

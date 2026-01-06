@@ -124,11 +124,12 @@ Check for:
 - **Documentation section per phase**: Each step/phase must have a "Documentation:" subsection
 - **CLAUDE.md planned**: For each new/modified module, is CLAUDE.md creation/update specified?
 - **claudemd-writer skill referenced**: Does the plan mention using `claudemd-writer` skill?
-- **Human docs identified**: Are README, API docs, config docs, migration guides addressed?
+- **Human docs planned**: Are README, API docs, config docs, migration guides addressed? **Human-facing documentation is equally important as CLAUDE.md** — if a phase adds user-visible functionality, human docs MUST be included.
 
 **Documentation red flags (flag as critical if found):**
 - Phase creates new module but no CLAUDE.md step
 - Phase changes API but no human-facing doc update
+- Phase adds user-visible feature but no README/user doc update
 - Phase adds config/env vars but no documentation step
 - Phase has breaking changes but no migration guide planned
 - No mention of `claudemd-writer` skill for CLAUDE.md updates

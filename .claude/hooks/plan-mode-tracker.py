@@ -43,7 +43,7 @@ def main():
             beads_enabled = config.get('beads_enabled', False)
 
             print("<system-message>")
-            print("Plan mode activated. Invoke the `planning` skill before proceeding.")
+            print("Plan mode activated. Invoke the `/planning` skill before proceeding. Send /planning in the chat.")
             if beads_enabled:
                 print("Beads is enabled — proactively use it to track this work.")
             print("</system-message>")

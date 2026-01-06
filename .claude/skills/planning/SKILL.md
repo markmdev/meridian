@@ -244,12 +244,14 @@ For each module/directory affected by that phase:
 - Document module purpose, key patterns, gotchas
 - Update existing CLAUDE.md if patterns/APIs change
 
-### Human-Facing Documentation
-For each phase, identify what humans need to know:
+### Human-Facing Documentation (EQUALLY IMPORTANT)
+**Users and developers need documentation too, not just Claude.** For each phase, identify what humans need to know:
 - README updates (new features, changed behavior)
 - API documentation (new/changed endpoints)
 - Configuration docs (new env vars, settings)
 - Migration guides (breaking changes)
+
+If a phase adds user-visible functionality, human docs are REQUIRED, not optional.
 
 **Include in each phase:**
 ```markdown

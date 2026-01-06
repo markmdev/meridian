@@ -16,6 +16,7 @@ PLAN_REVIEW_FLAG = ".meridian/.plan-review-blocked"
 CONTEXT_ACK_FLAG = ".meridian/.context-acknowledgment-pending"
 SESSION_CONTEXT_FILE = ".meridian/session-context.md"
 ACTION_COUNTER_FILE = ".meridian/.action-counter"
+REMINDER_COUNTER_FILE = ".meridian/.reminder-counter"
 
 
 # =============================================================================
@@ -272,10 +273,10 @@ def trim_session_context(base_dir: Path, max_lines: int) -> None:
         if len(lines) <= max_lines:
             return
 
-        # Find header separator (---)
+        # Find header separator (SESSION ENTRIES START comment)
         separator_idx = -1
         for i, line in enumerate(lines):
-            if line.strip() == '---':
+            if 'SESSION ENTRIES START' in line:
                 separator_idx = i
                 break
 
@@ -796,7 +797,8 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     # Session context section
     parts.append(
         "**SESSION CONTEXT**: Append timestamped entry (`YYYY-MM-DD HH:MM`) to "
-        f"`{claude_project_dir}/.meridian/session-context.md` with key decisions, discoveries, and context worth preserving.\n"
+        f"`{claude_project_dir}/.meridian/session-context.md` with key decisions, discoveries, context worth preserving, "
+        "and important user messages (instructions, preferences, constraints — copy verbatim if needed).\n"
     )
 
     # Beads reminder if enabled

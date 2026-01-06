@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-Action Counter Hook - Tracks tool calls since last user input.
+Action Counter Hook - Tracks tool calls for stop hook threshold.
 
-Handles two events:
+Handles:
 - PostToolUse: Increment counter
-- UserPromptSubmit: Reset counter to 0
 
-Used by pre-stop-update.py to skip prompts on short sessions.
+Counter is reset by stop hooks (pre-stop-update.py, work-until-stop.py)
+when they actually fire. This ensures actions accumulate across user
+interruptions until the agent sees the stop message.
 """
 
 import json
@@ -53,10 +54,7 @@ def main() -> int:
 
     hook_event = input_data.get("hook_event_name", "")
 
-    if hook_event == "UserPromptSubmit":
-        # Reset counter on user input
-        set_counter(base_dir, 0)
-    elif hook_event == "PostToolUse":
+    if hook_event == "PostToolUse":
         # Increment counter on tool use
         current = get_counter(base_dir)
         set_counter(base_dir, current + 1)

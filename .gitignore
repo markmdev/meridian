@@ -12,3 +12,5 @@ __pycache__
 .meridian/.active-plan
 .meridian/.injected-files
 .meridian/.loop-state
+.meridian/.action-counter
+.meridian/.reminder-counter

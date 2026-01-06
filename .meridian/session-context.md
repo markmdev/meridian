@@ -16,6 +16,7 @@ Append timestamped entries (format: `YYYY-MM-DD HH:MM`) with:
 - Complex problems solved (and how)
 - Context that would be hard to rediscover
 - Next steps if work is interrupted
+- **Important user messages** — if a user's messages contains instructions, preferences, constraints, or context that should persist across sessions, copy it here (verbatim if needed)
 
 **Do NOT include**: Routine progress updates, obvious information, or content better suited for task-specific docs.
 

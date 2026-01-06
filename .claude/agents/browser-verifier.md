@@ -138,16 +138,22 @@ Collect all items marked `[ ]` (broken) or `[!]` (partial).
 
 **If `beads_enabled: true`:**
 
-For each issue, create a Beads issue:
-```bash
-bd create "Brief title" --description "Details from verification" -t bug -p <priority> --json
-```
+See `$CLAUDE_PROJECT_DIR/.meridian/BEADS_GUIDE.md` for command reference.
+
+**IMPORTANT: Never create orphaned issues.** Before creating any issue:
+
+1. **Check existing issues first** — list all issues to see if a similar one already exists
+2. **Connect to parent work** — if you know the epic or parent issue ID, connect the new issue to it
+3. **Mark as discovered** — if this was found while working on a specific issue, use `discovered-from` dependency
+4. **Set proper blockers** — if this issue blocks other work, add appropriate `blocks` dependency
+
+Every issue should have at least one connection (parent, dependency, or discovered-from).
 
 Severity mapping:
-- Feature completely broken → `-p 0`
-- Feature partially broken → `-p 1`
-- Visual bug affecting usability → `-p 2`
-- Minor visual bug → `-p 3`
+- Feature completely broken → priority 0
+- Feature partially broken → priority 1
+- Visual bug affecting usability → priority 2
+- Minor visual bug → priority 3
 
 **If `beads_enabled: false`:**
 

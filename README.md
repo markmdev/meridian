@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.18` (2026-01-04) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.20` (2026-01-05) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -210,7 +210,8 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `pre-compaction-sync.py` | PreToolUse | Warns when approaching token limit, prompts context save |
 | `block-plan-agent.py` | PreToolUse (Task) | Redirects deprecated Plan agent to planning skill |
 | `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
-| `action-counter.py` | PostToolUse, UserPromptSubmit | Tracks actions for stop hook threshold |
+| `action-counter.py` | PostToolUse | Tracks actions for stop hook threshold |
+| `periodic-reminder.py` | UserPromptSubmit, SessionStart | Injects behavior reminders every N messages |
 | `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create task folder |
 | `pre-stop-update.py` | Stop | Requires task/memory updates and implementation review |
 | `startup-prune-completed-tasks.py` | SessionStart | Archives old completed tasks |
@@ -436,6 +437,7 @@ your-project/
 │   │   ├── pre-stop-update.py
 │   │   ├── block-plan-agent.py
 │   │   ├── action-counter.py  # Tracks actions for stop hook
+│   │   ├── periodic-reminder.py  # Injects reminders every N messages
 │   │   ├── startup-prune-completed-tasks.py
 │   │   ├── permission-auto-approver.py
 │   │   ├── meridian-path-guard.py

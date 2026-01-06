@@ -20,7 +20,17 @@ from config import (
     update_loop_iteration,
     clear_loop_state,
     build_stop_prompt,
+    ACTION_COUNTER_FILE,
 )
+
+
+def reset_action_count(base_dir: Path) -> None:
+    """Reset action counter to 0."""
+    counter_path = base_dir / ACTION_COUNTER_FILE
+    try:
+        counter_path.write_text("0")
+    except IOError:
+        pass
 
 
 def get_last_assistant_output(transcript_path: str) -> str | None:
@@ -170,6 +180,9 @@ def main():
 
     # Build loop prompt
     reason = build_loop_prompt(base_dir, config, state)
+
+    # Reset action counter now that loop hook is firing
+    reset_action_count(base_dir)
 
     # Build system message
     if completion_phrase:

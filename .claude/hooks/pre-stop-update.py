@@ -32,6 +32,15 @@ def get_action_count(base_dir: Path) -> int:
     return 0
 
 
+def reset_action_count(base_dir: Path) -> None:
+    """Reset action counter to 0."""
+    counter_path = base_dir / ACTION_COUNTER_FILE
+    try:
+        counter_path.write_text("0")
+    except IOError:
+        pass
+
+
 def main():
     try:
         input_data = json.load(sys.stdin)
@@ -65,6 +74,9 @@ def main():
 
     # Build the stop prompt using shared helper
     reason = build_stop_prompt(base_dir, config)
+
+    # Reset action counter now that stop hook is firing
+    reset_action_count(base_dir)
 
     output = {
         "decision": "block",

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.20] - 2026-01-05
+
+### Added
+- **Periodic reminder system**: Injects short reminder about key behaviors every N user messages. Configurable via `reminder_interval` in config.yaml (default: 5). Resets on session start.
+- **Important user messages in session-context**: Session context now captures important user instructions, preferences, and constraints that should persist across sessions. Agent can copy user prompts verbatim if needed.
+- **Research Before Implementation**: New section in agent-operating-manual.md with mandatory research steps and exploration mindset. Emphasizes searching before assuming something doesn't exist.
+
+### Changed
+- **Reviewer agents prevent orphaned issues**: Implementation reviewer, code reviewer, and browser verifier now include guidance to check existing issues, connect to parent work, use `discovered-from` dependencies, and set proper blockers. Every issue should have at least one connection.
+- **Planning skill research emphasis**: Added "Before Planning to Create Anything New" subsection — search for existing API endpoints, utilities, components before proposing new ones.
+- **Action counter reset timing**: Counter now resets when stop hooks fire (not on every user message). Prevents counter drift when user interrupts mid-work.
+- **Session context separator detection**: Fixed to use `SESSION ENTRIES START` marker instead of `---`.
+
+### Technical
+- New: `periodic-reminder.py` hook, `REMINDER_COUNTER_FILE` constant in config.py
+- Updated: `session-context.md` header, `agent-operating-manual.md`, `config.py` (stop hook, separator detection), `action-counter.py`, `pre-stop-update.py`, `implementation-reviewer.md`, `code-reviewer.md`, `browser-verifier.md`, `planning/SKILL.md`
+
 ## [0.0.19] - 2026-01-04
 
 ### Added

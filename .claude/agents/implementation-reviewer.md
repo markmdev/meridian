@@ -155,16 +155,22 @@ Collect all items marked `[ ]` (not implemented) or `[!]` (partial).
 
 **If `beads_enabled: true`:**
 
-See `.meridian/BEADS_GUIDE.md` for command reference. For each incomplete item, create a Beads issue with `--json`:
-```bash
-bd create "Brief title" --description "Details from checklist" -t task -p 2 --json
-```
+See `$CLAUDE_PROJECT_DIR/.meridian/BEADS_GUIDE.md` for command reference.
+
+**IMPORTANT: Never create orphaned issues.** Before creating any issue:
+
+1. **Check existing issues first** — list all issues to see if a similar one already exists
+2. **Connect to parent work** — if you know the epic or parent issue ID, connect the new issue to it
+3. **Mark as discovered** — if this was found while working on a specific issue, use `discovered-from` dependency
+4. **Set proper blockers** — if this issue blocks other work, add appropriate `blocks` dependency
+
+Every issue should have at least one connection (parent, dependency, or discovered-from).
 
 Map severity:
-- Missing core functionality → `-p 1`
-- Missing secondary feature → `-p 2`
-- Missing docs/tests → `-p 3`
-- Quality issues (TODOs) → `-p 3`
+- Missing core functionality → priority 1
+- Missing secondary feature → priority 2
+- Missing docs/tests → priority 3
+- Quality issues (TODOs) → priority 3
 
 **If `beads_enabled: false`:**
 

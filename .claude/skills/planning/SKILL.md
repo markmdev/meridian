@@ -150,11 +150,24 @@ Use **direct tools** (Glob, Grep, Read) to research the codebase yourself:
 - What could break if we change this? → Read dependents
 - What tests exist? → Glob for test files, Read them
 
+### Before Planning to Create Anything New
+
+Search if it already exists:
+- API endpoints that provide the data you need
+- Components/utilities that do what you're planning to build
+- Types/interfaces you could reuse
+- Similar features you could extend
+
+**Don't conclude something doesn't exist until you've searched for it.**
+
+If you find existing code, plan to use/extend it rather than building from scratch.
+
 ### Verify Assumptions
 Every assumption you have about the codebase must be verified:
 - File paths you think exist → Glob to confirm
 - Functions you think have certain signatures → Read to verify
 - Behavior you think works a certain way → Read the implementation
+- Something you think doesn't exist → Grep to confirm it's truly missing
 
 **If you can't verify it, you don't know it.**
 

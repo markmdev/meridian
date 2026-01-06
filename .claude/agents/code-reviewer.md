@@ -257,16 +257,22 @@ lastSyncAt: institution.lastSync
 Collect all findings and create issues.
 
 **Severity mapping:**
-- **Critical**: Data loss, security, crashes → `-p 0`
-- **Important**: Bugs affecting functionality → `-p 1`
-- **Suggestion**: DRY, minor improvements → `-p 2`
+- **Critical**: Data loss, security, crashes → priority 0
+- **Important**: Bugs affecting functionality → priority 1
+- **Suggestion**: DRY, minor improvements → priority 2
 
 **If `beads_enabled: true`:**
 
-See `.meridian/BEADS_GUIDE.md` for command reference. Create issues with `--json` flag:
-```bash
-bd create "[file:line] Brief title" --description "Full context and fix" -t bug -p <priority> --json
-```
+See `$CLAUDE_PROJECT_DIR/.meridian/BEADS_GUIDE.md` for command reference.
+
+**IMPORTANT: Never create orphaned issues.** Before creating any issue:
+
+1. **Check existing issues first** — list all issues to see if a similar one already exists
+2. **Connect to parent work** — if you know the epic or parent issue ID, connect the new issue to it
+3. **Mark as discovered** — if this was found while working on a specific issue, use `discovered-from` dependency
+4. **Set proper blockers** — if this issue blocks other work, add appropriate `blocks` dependency
+
+Every issue should have at least one connection (parent, dependency, or discovered-from).
 
 **If `beads_enabled: false`:**
 

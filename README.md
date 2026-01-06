@@ -211,7 +211,7 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `block-plan-agent.py` | PreToolUse (Task) | Redirects deprecated Plan agent to planning skill |
 | `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
 | `action-counter.py` | PostToolUse | Tracks actions for stop hook threshold |
-| `periodic-reminder.py` | UserPromptSubmit, SessionStart | Injects behavior reminders every N messages |
+| `periodic-reminder.py` | PostToolUse, UserPromptSubmit, SessionStart | Injects behavior reminders every N actions |
 | `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create task folder |
 | `pre-stop-update.py` | Stop | Requires task/memory updates and implementation review |
 | `startup-prune-completed-tasks.py` | SessionStart | Archives old completed tasks |

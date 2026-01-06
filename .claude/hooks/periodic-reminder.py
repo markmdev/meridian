@@ -2,10 +2,12 @@
 """
 Periodic Reminder Hook
 
-Injects a small reminder about key behaviors every N user messages.
+Injects a small reminder about key behaviors every N actions.
+Both tool calls and user messages increment the counter.
 Resets on session start (startup, compaction, clear).
 
 Handles:
+- PostToolUse: Increment counter, inject reminder if threshold hit
 - UserPromptSubmit: Increment counter, inject reminder if threshold hit
 - SessionStart: Reset counter
 """
@@ -66,10 +68,10 @@ def main() -> int:
         set_counter(base_dir, 0)
         return 0
 
-    if hook_event == "UserPromptSubmit":
+    if hook_event in ("PostToolUse", "UserPromptSubmit"):
         # Get config
         config = get_project_config(base_dir)
-        interval = config.get('reminder_interval', 15)
+        interval = config.get('reminder_interval', 10)
 
         if interval <= 0:
             # Disabled
@@ -84,9 +86,21 @@ def main() -> int:
             # Reset counter and inject reminder
             set_counter(base_dir, 0)
 
-            output = {
-                "additionalContext": REMINDER_TEXT
-            }
+            # Output format differs by hook event
+            if hook_event == "PostToolUse":
+                output = {
+                    "hookSpecificOutput": {
+                        "hookEventName": "PostToolUse",
+                        "additionalContext": REMINDER_TEXT
+                    }
+                }
+            else:  # UserPromptSubmit
+                output = {
+                    "hookSpecificOutput": {
+                        "hookEventName": "UserPromptSubmit",
+                        "additionalContext": REMINDER_TEXT
+                    }
+                }
             print(json.dumps(output))
         else:
             # Just increment

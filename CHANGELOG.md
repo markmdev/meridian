@@ -3,7 +3,7 @@
 ## [0.0.20] - 2026-01-05
 
 ### Added
-- **Periodic reminder system**: Injects short reminder about key behaviors every N user messages. Configurable via `reminder_interval` in config.yaml (default: 5). Resets on session start.
+- **Periodic reminder system**: Injects short reminder about key behaviors every N actions (tool calls + user messages). Configurable via `reminder_interval` in config.yaml (default: 10). Resets on session start. Non-blocking — uses `additionalContext`.
 - **Important user messages in session-context**: Session context now captures important user instructions, preferences, and constraints that should persist across sessions. Agent can copy user prompts verbatim if needed.
 - **Research Before Implementation**: New section in agent-operating-manual.md with mandatory research steps and exploration mindset. Emphasizes searching before assuming something doesn't exist.
 

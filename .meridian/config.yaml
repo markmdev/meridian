@@ -48,7 +48,7 @@ beads_enabled: false
 stop_hook_min_actions: 20
 
 # Periodic reminder interval: Inject a short reminder about key behaviors
-# every N user messages. Helps maintain focus during long sessions.
-# Resets on session start (startup, compaction, clear).
+# every N actions (tool calls + user messages). Helps maintain focus during
+# long sessions. Resets on session start (startup, compaction, clear).
 # Set to 0 to disable.
-reminder_interval: 5
+reminder_interval: 10

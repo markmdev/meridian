@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-SessionEnd hook to clean up session state files.
+Session cleanup hook - runs on startup, clear, and session end.
 
-Removes plan-mode-state so next session starts fresh.
+Removes ephemeral state files so next session starts fresh.
 """
 
 import os
@@ -10,16 +10,25 @@ import sys
 from pathlib import Path
 
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
-STATE_FILE = PROJECT_DIR / ".meridian/.plan-mode-state"
+
+# Ephemeral state files to clean up
+STATE_FILES = [
+    PROJECT_DIR / ".meridian/.plan-mode-state",
+    PROJECT_DIR / ".meridian/.plan-review-blocked",
+    PROJECT_DIR / ".meridian/.action-counter",
+    PROJECT_DIR / ".meridian/.reminder-counter",
+    PROJECT_DIR / ".meridian/.pre-compaction-synced",
+]
 
 
 def main():
-    # Clean up plan mode state file
-    try:
-        if STATE_FILE.exists():
-            STATE_FILE.unlink()
-    except Exception:
-        pass  # Ignore cleanup errors
+    # Clean up ephemeral state files
+    for state_file in STATE_FILES:
+        try:
+            if state_file.exists():
+                state_file.unlink()
+        except Exception:
+            pass  # Ignore cleanup errors
 
     sys.exit(0)
 

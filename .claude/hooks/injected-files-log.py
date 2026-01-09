@@ -17,7 +17,9 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from config import (
     get_project_config,
     get_in_progress_tasks,
+    parse_yaml_list,
     SESSION_CONTEXT_FILE,
+    REQUIRED_CONTEXT_CONFIG,
 )
 
 
@@ -34,6 +36,19 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
     backlog_path = base_dir / ".meridian" / "task-backlog.yaml"
     if backlog_path.exists():
         files.append(str(backlog_path))
+
+    # 2b. User-provided docs
+    config_path = base_dir / REQUIRED_CONTEXT_CONFIG
+    if config_path.exists():
+        try:
+            content = config_path.read_text()
+            user_docs = parse_yaml_list(content, 'user_provided_docs')
+            for doc_path in user_docs:
+                full_path = base_dir / doc_path
+                if full_path.exists():
+                    files.append(str(full_path))
+        except IOError:
+            pass
 
     # 3. Session context
     session_context_path = base_dir / SESSION_CONTEXT_FILE

@@ -785,14 +785,16 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
                 "**After reviewers**: Read `.meridian/implementation-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
             )
 
-    # Memory section
-    parts.append(
-        "**MEMORY**: Consider if you learned something that future agents need to know.\n"
-        "The test: \"If I don't record this, will a future agent make the same mistake — or is the fix already in the code?\"\n"
-        "- **Add**: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination patterns.\n"
-        "- **Skip**: One-time bug fixes (code handles it), SDK quirks (code works around them), agent behavior rules (use agent-operating-manual.md), module-specific details (use CLAUDE.md).\n"
-        "If you have something worth preserving, invoke the `/memory-curator` skill to add it properly.\n"
-    )
+    # Beads reminder if enabled (before session context - higher priority)
+    if beads_enabled:
+        parts.append(
+            "**BEADS (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
+            "- **Already-fixed bugs**: If you discovered AND fixed a bug this session, create the issue NOW (issue → already fixed → comment what you did → close). The fix happened, but the record didn't.\n"
+            "- **Close** issues you fully completed (with a comment summarizing what was done).\n"
+            "- **Create** issues for: bugs found, broken code, missing error handling, problems that need attention.\n"
+            "- **Update** existing issues if status changed, scope evolved, or you have new context.\n"
+            "- **Comment** on issues you worked on but didn't finish, explaining current state.\n"
+        )
 
     # Session context section
     parts.append(
@@ -801,16 +803,14 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         "and important user messages (instructions, preferences, constraints — copy verbatim if needed).\n"
     )
 
-    # Beads reminder if enabled
-    if beads_enabled:
-        parts.append(
-            "**BEADS**: Keep the issue tracker current before stopping.\n"
-            "- **Close** issues you fully completed (with a comment summarizing what was done).\n"
-            "- **Create** issues for discovered work, TODOs you noticed, or future improvements.\n"
-            "- **Create** blocker issues if something is blocking progress and needs attention.\n"
-            "- **Update** existing issues if status changed, scope evolved, or you have new context.\n"
-            "- **Comment** on issues you worked on but didn't finish, explaining current state.\n"
-        )
+    # Memory section
+    parts.append(
+        "**MEMORY**: Consider if you learned something that future agents need to know.\n"
+        "The test: \"If I don't record this, will a future agent make the same mistake — or is the fix already in the code?\"\n"
+        "- **Add**: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination patterns.\n"
+        "- **Skip**: One-time bug fixes (code handles it), SDK quirks (code works around them), agent behavior rules (use agent-operating-manual.md), module-specific details (use CLAUDE.md).\n"
+        "If you have something worth preserving, invoke the `/memory-curator` skill to add it properly.\n"
+    )
 
     # CLAUDE.md section
     parts.append(

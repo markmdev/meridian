@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.0.22] - 2026-01-07
+
+### Added
+- **Explore agent**: New Opus-powered agent for deep codebase exploration. Use when you don't know where to start, need broad research across many files, or context window is filling up. Returns comprehensive findings with file paths, line numbers, code snippets. Read-only — cannot modify files.
+
+### Changed
+- **Beads audit trail enforcement**: Stop hook and pre-compaction-sync now emphasize that already-fixed bugs still need issues ("The fix happened, but the record didn't"). Beads section moved before session context (higher priority). Renamed to "BEADS (AUDIT TRAIL)" to reinforce purpose.
+- **Implementation-focused beads language**: Changed "future improvements" and "ideas worth tracking" to "bugs found, broken code, missing error handling, problems that need attention" — language that matches what agents encounter during implementation.
+- **Condensed prompts** (preserving behavior):
+  - Planning skill: 445 → 150 lines (66% reduction). Two interview phases (business requirements before discovery, technical after). Professional judgment to push back on suboptimal suggestions. No artificial plan size limits.
+  - CLAUDE.md writer skill: 292 → 89 lines (70% reduction)
+  - Reviewer agents: 1,204 → 454 lines total (62% reduction). All workflow steps, quality criteria, and orphan issue prevention preserved.
+- **Explore vs direct tools guidance**: Updated agent-operating-manual and planning skill with decision table for when to use Explore agents vs direct tools (Glob, Grep, Read).
+
+### Technical
+- New: `explore.md` agent
+- Updated: `planning/SKILL.md`, `claudemd-writer/SKILL.md`, `plan-reviewer.md`, `implementation-reviewer.md`, `code-reviewer.md`, `browser-verifier.md`, `agent-operating-manual.md`, `BEADS_GUIDE.md`, `config.py`, `pre-compaction-sync.py`, `periodic-reminder.py`
+
 ## [0.0.21] - 2026-01-06
 
 ### Changed

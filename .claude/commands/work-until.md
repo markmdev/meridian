@@ -1,16 +1,14 @@
 ---
 description: Start a work-until loop that keeps you working on a task until completion
 argument-hint: TASK [--completion-phrase "TEXT"] [--max-iterations N]
-allowed-tools: ["Bash"]
+allowed-tools: "Bash"
 ---
 
 # Work-Until Loop
 
 Execute the setup script:
 
-```!
-"$CLAUDE_PROJECT_DIR"/.claude/hooks/scripts/setup-work-until.sh $ARGUMENTS
-```
+!`.claude/hooks/scripts/setup-work-until.sh $ARGUMENTS`
 
 You are now in a **work-until loop**. This means:
 

@@ -29,7 +29,7 @@ Create Beads issues when:
 - Work has dependencies or could block other work
 - Breaking large tasks into trackable sub-tasks
 - Research or exploratory work with fuzzy boundaries
-- Ideas worth capturing for later
+- Problems discovered that need attention later
 
 **Be proactive**: Suggest creating issues during conversations.
 
@@ -228,6 +228,35 @@ bd close PROJ-abc --reason "Implemented and tested" --json
 
 **Never close an issue without a comment.** If you can't write a specific comment about what was done, the work isn't complete.
 
+### 9. Every Fix Gets an Issue (Audit Trail)
+
+**Anti-pattern**: "I found a bug and fixed it. No need for an issue since it's already done."
+
+**This is WRONG.** Create the issue FIRST, then fix, then comment, then close.
+
+Even if the fix takes 30 seconds:
+```bash
+# 1. Create issue immediately
+ID=$(bd create "Found: X was broken because Y" -t bug -p 2 --json | jq -r .id)
+
+# 2. Fix it
+# ... make the code change ...
+
+# 3. Comment with what was done
+bd comments add $ID "Fixed in path/to/file.ts:45-52. Changed X to Y."
+
+# 4. Close
+bd close $ID --reason "Fixed" --json
+```
+
+**Why this matters:**
+- Issues are **audit records**, not just work queues
+- Future agents need to know what was discovered and how it was resolved
+- Patterns of bugs reveal systemic problems
+- Without the issue, the fix is invisible — no one knows it happened
+
+**The rule is simple: If you change code, there's an issue for it.**
+
 ---
 
 ## Essential Commands
@@ -406,3 +435,4 @@ bd close <id> --reason "Implemented and tested" --suggest-next
 8. **Orphan issues** — Always connect issues to the work graph
 9. **Multiple in_progress** — Only ONE issue should be in_progress at a time. Transition the current issue (block/defer/close) before claiming another.
 10. **Closing without comment** — Always add a comment with file paths and implementation details before closing. If you can't write a specific comment, the work isn't done.
+11. **Skipping issues for "quick fixes"** — "I found it and fixed it, no issue needed" is WRONG. Every code change gets an issue — issues are audit records, not just work queues.

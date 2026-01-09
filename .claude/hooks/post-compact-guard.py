@@ -60,15 +60,18 @@ def main():
         "**CONTEXT ACKNOWLEDGMENT REQUIRED**\n\n"
         "Project context has been injected into this session. "
         "Before using any tools, please acknowledge that you have read and understood:\n\n"
-        "1. The **memory entries** (past decisions and lessons learned)\n"
-        "2. Any **in-progress tasks** and their current state\n"
-        "3. The **CODE_GUIDE** conventions for this project\n"
-        "4. The **agent-operating-manual** instructions\n\n"
+        "1. Any **user-provided docs** (project-specific documentation)\n"
+        "2. The **memory entries** (past decisions and lessons learned)\n"
+        "3. Any **in-progress tasks** and their current state\n"
+        "4. The **session context** (recent decisions and discoveries)\n"
+        "5. Any **active plans** for in-progress tasks\n"
+        "6. The **CODE_GUIDE** conventions for this project\n"
+        "7. The **agent-operating-manual** instructions\n\n"
     )
 
     if beads_enabled:
         reason += (
-            "5. **Beads issue tracker** is enabled — check project state and available work\n\n"
+            "8. **Beads issue tracker** is enabled — check project state and available work\n\n"
         )
 
     if sprint_active:

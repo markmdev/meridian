@@ -23,9 +23,9 @@ from config import get_project_config, REMINDER_COUNTER_FILE
 
 REMINDER_TEXT = (
     "[REMINDER]: Research before implementing — search, don't assume. "
-    "Create Beads issues for discovered work. Follow existing codebase patterns. "
-    "Ask before pivoting from the plan. Save important user messages to session-context. "
-    "Check memory.jsonl for past lessons."
+    "Every code change needs a Beads issue — even bugs fixed immediately (issue → fix → comment → close). "
+    "Follow existing codebase patterns. Ask before pivoting from the plan. "
+    "Save important user messages to session-context. Check memory.jsonl for past lessons."
 )
 
 

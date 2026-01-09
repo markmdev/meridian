@@ -131,9 +131,23 @@ def main():
         f"**CONTEXT PRESERVATION REQUIRED** (Token usage: {total_tokens:,} / {threshold:,})\n\n"
         "The conversation is approaching compaction. Before continuing, you MUST save your current work "
         "to preserve context for the agent that will continue after compaction.\n\n"
-        "**Append a dated entry to the session context file**:\n"
+    )
+
+    # Add Beads instructions FIRST if enabled (higher priority)
+    if config.get('beads_enabled', False):
+        reason += (
+            "**BEADS (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
+            "- **Already-fixed bugs**: If you discovered AND fixed a bug this session, create the issue NOW "
+            "(issue → already fixed → comment what you did → close). The fix happened, but the record didn't.\n"
+            "- Create issues for: bugs found, broken code, technical debt encountered, problems that need attention.\n"
+            "- Close any issues you completed (with a comment).\n"
+            "See `.meridian/BEADS_GUIDE.md` for commands.\n\n"
+        )
+
+    reason += (
+        "**SESSION CONTEXT**: Append a dated entry to:\n"
         f"`{claude_project_dir}/.meridian/session-context.md`\n\n"
-        "**What survives compaction well (should be included):**\n"
+        "**What survives compaction well:**\n"
         "- Concrete decisions with rationale (\"chose X because Y\")\n"
         "- Specific file paths and line numbers\n"
         "- Error messages that took time to debug\n"
@@ -145,20 +159,8 @@ def main():
         "- Implicit context that requires the full conversation\n"
         "- Progress updates without decisions\n\n"
         "Write as if briefing a new agent who has zero context.\n\n"
+        "After updating, you may continue your work."
     )
-
-    # Add Beads instructions if enabled
-    if config.get('beads_enabled', False):
-        reason += (
-            "**BEADS ISSUES**: Create Beads issues for any findings discovered this session:\n"
-            "- Bugs found but not yet fixed\n"
-            "- Technical debt identified\n"
-            "- Follow-up work needed\n"
-            "- Ideas worth tracking\n\n"
-            "See `.meridian/BEADS_GUIDE.md` for commands. Always use `--json` flag.\n\n"
-        )
-
-    reason += "After updating, you may continue your work."
 
     output = {
         "hookSpecificOutput": {

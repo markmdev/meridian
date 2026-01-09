@@ -111,20 +111,29 @@ The goal is partnership: you bring technical expertise, they bring context. Neit
 
 **Planning workflow:**
 1. **Interview the user first** — use `AskUserQuestion` to deeply understand requirements, edge cases, constraints, and boundaries before any exploration
-2. Use **direct tools** (Glob, Grep, Read) for all codebase research — you retain full context this way
-3. Use **Explore agents** ONLY for direct questions you can't answer yourself (e.g., "How does X work?")
-4. Follow the planning skill's methodology (Interview → Discovery → Design → Decomposition → Integration)
-5. Save the plan to `.claude/plans/` when complete
+2. Research the codebase thoroughly (see "Direct Tools vs Explore Agents" below)
+3. Follow the planning skill's methodology (Interview → Discovery → Design → Decomposition → Integration)
+4. Save the plan to `.claude/plans/` when complete
 
-**Why direct tools over Explore agents:**
-- You retain full conversation context — nothing gets lost
-- You see results immediately and can follow up
-- Explore agents lose context and can't see what you've learned
-- Direct research is faster and more accurate
+**Direct Tools vs Explore Agents:**
 
-**When to use Explore agents:**
-- Only for answering specific conceptual questions
-- NOT for finding files, researching structure, or gathering implementation context
+You can research the codebase yourself (Glob, Grep, Read) or delegate to Explore agents. Both are valid — choose based on the situation:
+
+| Use Direct Tools When | Use Explore Agent When |
+|-----------------------|------------------------|
+| You know where to look | You don't know where to start |
+| Focused lookup in specific files | Broad research across many files |
+| Quick verification of something specific | Deep dive into "how does X work?" |
+| Context window has plenty of room | Context window is getting full |
+| Following up on previous findings | Fresh exploration of new area |
+
+**Explore agent characteristics:**
+- Runs on Opus — thorough, high-quality research
+- Returns comprehensive findings with file paths, line numbers, code snippets
+- Reports negative results (what it searched for but didn't find)
+- Read-only — cannot modify files
+
+**Key insight:** Explore agents are your eyes into distant parts of the codebase. They save your context window for synthesis and decision-making. Use them liberally for broad research.
 
 ## Task Management
 See `task-manager` skill for detailed instructions.
@@ -135,6 +144,42 @@ See `task-manager` skill for detailed instructions.
 - Keep `.meridian/task-backlog.yaml` current:
   - Mark completed tasks, add new tasks, update in‑progress status, reorder priorities.
   - Include `plan_path` pointing to the Claude Code plan file.
+
+## Beads Issue Tracking
+
+**If Beads is enabled, every code change maps to an issue.**
+
+### The Core Rule
+
+Issues are **audit records**, not just work queues. If you change code, there's an issue for it — even if you find and fix a bug in 30 seconds.
+
+**Wrong**: "I found a bug and fixed it. No need for an issue since it's done."
+
+**Right**: Create issue → fix → comment → close. The full cycle, every time.
+
+### Why This Matters
+
+- Future agents need to know what was discovered and how it was resolved
+- Patterns of bugs reveal systemic problems
+- Without the issue, the fix is invisible — no one knows it happened
+- The user relies on Beads as a complete audit trail
+
+### Workflow
+
+```bash
+# 1. Create issue FIRST (before fixing)
+ID=$(bd create "Found: X was broken" -t bug --json | jq -r .id)
+
+# 2. Fix it
+
+# 3. Comment with file paths and what changed
+bd comments add $ID "Fixed in src/foo.ts:45. Changed X to Y."
+
+# 4. Close
+bd close $ID --reason "Fixed" --json
+```
+
+See BEADS_GUIDE.md for full documentation.
 
 ## Session Context
 

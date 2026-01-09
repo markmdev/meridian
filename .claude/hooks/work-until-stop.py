@@ -162,6 +162,7 @@ def main():
     if max_iterations > 0 and iteration >= max_iterations:
         print(f"🛑 Work-until loop: Max iterations ({max_iterations}) reached.", file=sys.stderr)
         clear_loop_state(base_dir)
+        reset_action_count(base_dir)
         sys.exit(0)  # Allow stop
 
     # Check for completion phrase in transcript
@@ -171,6 +172,7 @@ def main():
         if output and check_completion_phrase(output, completion_phrase):
             print(f"✅ Work-until loop: Detected <complete>{completion_phrase}</complete>", file=sys.stderr)
             clear_loop_state(base_dir)
+            reset_action_count(base_dir)
             sys.exit(0)  # Allow stop
 
     # Not complete - continue loop

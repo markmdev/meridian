@@ -157,6 +157,7 @@ fi
 STATE_PATTERNS=(
   ".meridian/memory.jsonl"
   ".meridian/session-context.md"
+  ".meridian/config.yaml"
   ".meridian/api-docs/"
   ".meridian/tasks/"
   ".meridian/.manifest"

@@ -159,20 +159,41 @@ sequenceDiagram
 
 ## Quick Start
 
+### One-line install (recommended)
+
 ```bash
-# Clone Meridian
-git clone https://github.com/markmdev/meridian.git
-cd meridian
-
-# Copy to your project
-cp -R .claude .meridian .mcp.json /path/to/your/project
 cd /path/to/your/project
+curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
+```
 
-# Make scripts executable
+### Install specific version
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash -s -- -v 0.0.24
+```
+
+### Update existing installation
+
+```bash
+# Same command — installer detects existing installation and updates
+# Your memory.jsonl, session-context.md, and config are preserved
+curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
+```
+
+### Check installed version
+
+```bash
+./install.sh --check
+# Or just: cat .meridian/.version
+```
+
+### Manual install
+
+```bash
+git clone https://github.com/markmdev/meridian.git
+cp -R meridian/.claude meridian/.meridian meridian/.mcp.json /path/to/your/project
+cd /path/to/your/project
 find .claude -type f -name '*.py' -print0 | xargs -0 chmod +x
-
-# (Optional) Configure project type
-# Edit .meridian/config.yaml → project_type: hackathon|standard|production
 ```
 
 Open your project in Claude Code. Hooks activate automatically, MCP servers connect.

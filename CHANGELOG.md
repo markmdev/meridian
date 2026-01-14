@@ -3,6 +3,7 @@
 ## [0.0.24] - 2026-01-14
 
 ### Added
+- **install.sh**: One-line installer and updater. Supports version pinning (`-v X.X.X`), preserves state files on update (memory, session-context, api-docs, config), merges new config options automatically.
 - **pebble-scaffolder agent**: Creates Pebble issue hierarchy (epic, tasks, verification subtasks) from approved plans. Reads PEBBLE_GUIDE.md for rules, parses plan phases and verification features, creates all issues with proper parent-child relationships and dependencies. Invoked automatically after plan approval when Pebble is enabled.
 - **feature-writer agent**: Generates 5-20 verification features per plan phase. Features are testable acceptance criteria with concrete steps. Supports any verification type (UI, API, CLI, Library, Config/Infra, Data).
 

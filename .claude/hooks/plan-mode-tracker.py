@@ -40,12 +40,12 @@ def main():
     if previous_mode != current_mode:
         if current_mode == "plan":
             config = get_project_config(PROJECT_DIR)
-            beads_enabled = config.get('beads_enabled', False)
+            pebble_enabled = config.get('pebble_enabled', False)
 
             print("<system-message>")
             print("Plan mode activated. Invoke the `/planning` skill before proceeding. Send /planning in the chat.")
-            if beads_enabled:
-                print("Beads is enabled — proactively use it to track this work.")
+            if pebble_enabled:
+                print("Pebble is enabled — proactively use it to track this work.")
             print("</system-message>")
 
     save_mode(current_mode)

@@ -1,13 +1,32 @@
 # Changelog
 
+## [0.0.23] - 2026-01-13
+
+### Added
+- **docs-researcher agent**: New Opus-powered agent that researches external tools, APIs, and products using Firecrawl. Builds comprehensive knowledge docs in `.meridian/api-docs/` covering current versions, API operations, rate limits, best practices, and gotchas.
+- **Firecrawl MCP server**: Added to `.mcp.json` for web scraping capabilities. All reviewer agents now have access to Firecrawl tools.
+- **API docs system**: New `.meridian/api-docs/` directory with INDEX.md. Injected at session start so agents know which external tools are documented.
+- **External API documentation requirement**: Strict new rule — no code using external APIs unless documented in api-docs. Agent operating manual has full workflow for checking INDEX.md and running docs-researcher.
+
+### Changed
+- **Renamed Beads to Pebble**: Issue tracker renamed from "Beads" to "Pebble" throughout. Commands changed from `bd` to `pb`. All hooks, agents, guides updated.
+- **Planning skill external API phase**: New mandatory Phase 4 (External API Documentation) before decomposition. All external libraries must be documented via docs-researcher before implementation begins.
+- **Planning skill follow-up section**: New guidance for appending bug fixes/improvements to existing plan files rather than overwriting.
+- **Periodic reminder simplified**: Now prints text directly instead of JSON-wrapped output. Added reminder about api-docs and docs-researcher.
+- **Work-until command safety**: Added check to ensure command runs from project root directory.
+
+### Technical
+- New: `docs-researcher.md` agent, `.meridian/api-docs/INDEX.md`
+- Updated: `.mcp.json`, `planning/SKILL.md`, `agent-operating-manual.md`, `config.py`, `periodic-reminder.py`, `work-until.md`, all agents referencing Beads→Pebble
+
 ## [0.0.22] - 2026-01-07
 
 ### Added
 - **Explore agent**: New Opus-powered agent for deep codebase exploration. Use when you don't know where to start, need broad research across many files, or context window is filling up. Returns comprehensive findings with file paths, line numbers, code snippets. Read-only — cannot modify files.
 
 ### Changed
-- **Beads audit trail enforcement**: Stop hook and pre-compaction-sync now emphasize that already-fixed bugs still need issues ("The fix happened, but the record didn't"). Beads section moved before session context (higher priority). Renamed to "BEADS (AUDIT TRAIL)" to reinforce purpose.
-- **Implementation-focused beads language**: Changed "future improvements" and "ideas worth tracking" to "bugs found, broken code, missing error handling, problems that need attention" — language that matches what agents encounter during implementation.
+- **Pebble audit trail enforcement**: Stop hook and pre-compaction-sync now emphasize that already-fixed bugs still need issues ("The fix happened, but the record didn't"). Pebble section moved before session context (higher priority). Renamed to "PEBBLE (AUDIT TRAIL)" to reinforce purpose.
+- **Implementation-focused pebble language**: Changed "future improvements" and "ideas worth tracking" to "bugs found, broken code, missing error handling, problems that need attention" — language that matches what agents encounter during implementation.
 - **Condensed prompts** (preserving behavior):
   - Planning skill: 445 → 150 lines (66% reduction). Two interview phases (business requirements before discovery, technical after). Professional judgment to push back on suboptimal suggestions. No artificial plan size limits.
   - CLAUDE.md writer skill: 292 → 89 lines (70% reduction)
@@ -16,7 +35,7 @@
 
 ### Technical
 - New: `explore.md` agent
-- Updated: `planning/SKILL.md`, `claudemd-writer/SKILL.md`, `plan-reviewer.md`, `implementation-reviewer.md`, `code-reviewer.md`, `browser-verifier.md`, `agent-operating-manual.md`, `BEADS_GUIDE.md`, `config.py`, `pre-compaction-sync.py`, `periodic-reminder.py`
+- Updated: `planning/SKILL.md`, `claudemd-writer/SKILL.md`, `plan-reviewer.md`, `implementation-reviewer.md`, `code-reviewer.md`, `browser-verifier.md`, `agent-operating-manual.md`, `PEBBLE_GUIDE.md`, `config.py`, `pre-compaction-sync.py`, `periodic-reminder.py`
 
 ## [0.0.21] - 2026-01-06
 
@@ -55,16 +74,16 @@
 - **Stop hook improvements**:
   - Implementation review: Clarified trigger ("after finishing a plan, epic, or large multi-file task") and added `cd $PROJECT_DIR` instruction
   - Memory section: Rewritten to explain the critical test clearly, references `/memory-curator` skill
-  - Beads section: Expanded with explicit guidance (close, create, update, comment) — removed BEADS_GUIDE.md reference (already in context)
+  - Pebble section: Expanded with explicit guidance (close, create, update, comment) — removed PEBBLE_GUIDE.md reference (already in context)
 - **Reviewer agents navigate to project root**: All reviewers (implementation, code, plan, browser) now `cd "$CLAUDE_PROJECT_DIR"` as Step/Phase 0 before reading `.injected-files`.
 - **Injected files use absolute paths**: `.meridian/.injected-files` now contains absolute paths instead of relative paths.
 - **claudemd-writer skill**: Emphasizes "Commands first" — setup/test commands should be at the top of CLAUDE.md files. Removed hard line limits (50/100), replaced with "every line competes for Claude's attention". Added precedence note.
 
 ### Removed
-- **`/bd-sprint` and `/bd-sprint-stop` commands**: Superseded by `/work-until` which provides stop-hook enforcement. The bd-sprint workflow template lacked enforcement mechanism.
+- **`/pb-sprint` and `/pb-sprint-stop` commands**: Superseded by `/work-until` which provides stop-hook enforcement. The pb-sprint workflow template lacked enforcement mechanism.
 
 ### Technical
-- Deleted: `bd-sprint.md`, `bd-sprint-stop.md`, `bd-sprint-init.py`, `bd-sprint-stop.py`, `.claude/scripts/` directory
+- Deleted: `pb-sprint.md`, `pb-sprint-stop.md`, `pb-sprint-init.py`, `pb-sprint-stop.py`, `.claude/scripts/` directory
 - Updated: `config.py`, `work-until-stop.py`, `injected-files-log.py`, `implementation-reviewer.md`, `code-reviewer.md`, `plan-reviewer.md`, `browser-verifier.md`, `claudemd-writer/SKILL.md`, `README.md`
 
 ## [0.0.18] - 2026-01-04
@@ -92,7 +111,7 @@
 ## [0.0.17] - 2026-01-03
 
 ### Added
-- **Injected files log**: New hook logs all injected context files to `.meridian/.injected-files` on session start/compact/clear. Includes `beads_enabled` and `git_comparison` settings.
+- **Injected files log**: New hook logs all injected context files to `.meridian/.injected-files` on session start/compact/clear. Includes `pebble_enabled` and `git_comparison` settings.
 - **Self-loading reviewer agents**: Implementation Reviewer, Code Reviewer, and Browser Verifier now auto-load context from `.injected-files` — no prompts needed.
 
 ### Changed
@@ -108,7 +127,7 @@
 
 ### Added
 - **Plan tracker hook**: Automatically tracks active plan by watching Edit/Write/Read operations on `.claude/plans/` files. Saves to `.meridian/.active-plan` for injection after compaction.
-- **Beads workflow improvements**:
+- **Pebble workflow improvements**:
   - **One task at a time**: Only ONE issue should be `in_progress` at any moment. Must transition current issue (block/defer/close) before claiming another.
   - **Discovered work pattern**: Full pattern for handling blockers vs deferrable work discovered during implementation.
   - **Comment before closing**: Must add comment with file paths and implementation details before closing any issue. Prevents false closures.
@@ -117,30 +136,30 @@
 
 ### Changed
 - **Implementation reviewer**: Now checks for pattern consistency violations (e.g., direct instantiation when factory exists).
-- **Plan injection for Beads**: Plans now inject after compaction for Beads workflows via `.active-plan` file (previously only worked with task-backlog.yaml).
+- **Plan injection for Pebble**: Plans now inject after compaction for Pebble workflows via `.active-plan` file (previously only worked with task-backlog.yaml).
 
 ### Technical
 - New `plan-tracker.py` PostToolUse hook for Edit|Write|Read matcher
 - Updated `config.py` to inject from `.meridian/.active-plan`
 - Added `.active-plan` to `.gitignore`
-- Updated: `agent-operating-manual.md`, `CODE_GUIDE.md`, `implementation-reviewer.md`, `BEADS_GUIDE.md`
+- Updated: `agent-operating-manual.md`, `CODE_GUIDE.md`, `implementation-reviewer.md`, `PEBBLE_GUIDE.md`
 
 ## [0.0.15] - 2026-01-03
 
 ### Added
-- **BEADS_GUIDE.md**: Comprehensive Beads reference guide for agents. Single source of truth for commands, dependency types, and best practices. Injected at session start when Beads is enabled.
+- **PEBBLE_GUIDE.md**: Comprehensive Pebble reference guide for agents. Single source of truth for commands, dependency types, and best practices. Injected at session start when Pebble is enabled.
 
 ### Changed
-- **Beads guidance centralized**: All hooks/prompts now reference `BEADS_GUIDE.md` instead of duplicating command examples. Reduces maintenance burden and ensures consistency.
-- **Dependency types clarified**: Only `blocks` affects `bd ready`. Parent-child, related, and discovered-from are informational only — this was a common source of confusion.
+- **Pebble guidance centralized**: All hooks/prompts now reference `PEBBLE_GUIDE.md` instead of duplicating command examples. Reduces maintenance burden and ensures consistency.
+- **Dependency types clarified**: Only `blocks` affects `pb ready`. Parent-child, related, and discovered-from are informational only — this was a common source of confusion.
 - **Ready Front model**: Guide teaches "Ready Front" thinking instead of "phases". Walk backward from goal to create correct dependencies.
 - **Cognitive trap documented**: Explicit warning about temporal language ("A before B") inverting dependencies. Use requirement language ("B needs A").
 - **PM-style descriptions**: Expanded guidance on writing comprehensive issue descriptions with Purpose/Why This Matters/Requirements/Acceptance Criteria/Context sections.
 - **`--parent` flag**: Corrected from `--deps parent:<id>` to `--parent <id>` throughout.
 
 ### Technical
-- Removed 150+ line `BEADS_PROMPT` from `lib/config.py`, now injects `BEADS_GUIDE.md` file directly
-- Updated: `plan-approval-reminder.py`, `pre-stop-update.py`, `pre-compaction-sync.py`, `code-reviewer.md`, `implementation-reviewer.md`, `bd-sprint-init.py`, `bd-sprint.md`, `config.yaml`
+- Removed 150+ line `PEBBLE_PROMPT` from `lib/config.py`, now injects `PEBBLE_GUIDE.md` file directly
+- Updated: `plan-approval-reminder.py`, `pre-stop-update.py`, `pre-compaction-sync.py`, `code-reviewer.md`, `implementation-reviewer.md`, `pb-sprint-init.py`, `pb-sprint.md`, `config.yaml`
 
 ## [0.0.14] - 2026-01-03
 
@@ -157,31 +176,31 @@
 - **Code reviewer rewritten (CodeRabbit-style)**: Complete rewrite with 8-phase deep analysis workflow — Load Context, Change Summary, Deep Research, Walkthrough (forcing function), Sequence Diagrams (forcing function), Find Issues, Create Issues, Cleanup. Reviews now include detailed walkthroughs and sequence diagrams to ensure deep understanding.
 - **Implementation reviewer simplified**: Replaced multi-type reviewers (phase/integration/completeness) with single checklist-based approach. Extract every item from plan → verify each individually → create issues for incomplete items.
 - **Issue-based review system**: Both reviewers now output issues instead of scores. No more 1-10 scoring — just issues or no issues. Loop until all issues resolved.
-- **Beads integration in reviewers**: When `beads_enabled: true`, reviewers create Beads issues directly instead of writing to files.
+- **Pebble integration in reviewers**: When `pebble_enabled: true`, reviewers create Pebble issues directly instead of writing to files.
 - **Direct tools over Explore agents**: Planning skill now instructs to use Glob/Grep/Read directly for codebase research. Explore agents only for answering direct conceptual questions.
-- **Stop hook section reorder**: Sections now ordered by priority (lower in prompt = higher priority): Implementation Review → Memory → Session Context → CLAUDE.md → Beads → Human Actions → Tests/Lint/Build (highest priority).
+- **Stop hook section reorder**: Sections now ordered by priority (lower in prompt = higher priority): Implementation Review → Memory → Session Context → CLAUDE.md → Pebble → Human Actions → Tests/Lint/Build (highest priority).
 - **Stop hook text condensed**: More concise instructions while preserving key information.
 - **Pre-compaction sync improved**: Better guidance on what survives compaction (concrete decisions, file paths, error messages) vs what doesn't (vague summaries, implicit context).
-- **Pre-compaction Beads instructions**: When Beads enabled, prompts agent to create issues for findings discovered during session.
+- **Pre-compaction Pebble instructions**: When Pebble enabled, prompts agent to create issues for findings discovered during session.
 - **Agent operating manual simplified**: Removed redundant Requirements Interview section (~90 lines), replaced with reference to planning skill Phase 0.
 
 ### Technical
 - New `ACTION_COUNTER_FILE` constant and `stop_hook_min_actions` config option in `.claude/hooks/lib/config.py`
 - New `action-counter.py` hook tracks tool calls, resets on UserPromptSubmit
-- Reviewers pass `beads_enabled` flag to control output mode
+- Reviewers pass `pebble_enabled` flag to control output mode
 - Plan reviewer has new "documentation" finding category
 
 ### Fixed
-- **Plan approval reminder (Beads mode)**: Now instructs to create ALL sub-tasks upfront (not just first phase), add dependencies BETWEEN sub-tasks within each phase, and write comprehensive PM-style descriptions with Purpose/Requirements/Acceptance Criteria sections. Previously, agents would only create Phase 1 sub-tasks, skip inter-subtask dependencies, and write terse technical descriptions.
+- **Plan approval reminder (Pebble mode)**: Now instructs to create ALL sub-tasks upfront (not just first phase), add dependencies BETWEEN sub-tasks within each phase, and write comprehensive PM-style descriptions with Purpose/Requirements/Acceptance Criteria sections. Previously, agents would only create Phase 1 sub-tasks, skip inter-subtask dependencies, and write terse technical descriptions.
 
 ## [0.0.13] - 2025-12-30
 
 ### Added
-- **`/bd-sprint` autonomous workflow**: New slash command starts a comprehensive workflow for completing Beads work (epics, issues with dependencies, any scoped work). Appends workflow template to `session-context.md` that survives context compaction.
-- **`/bd-sprint-stop`**: Removes the workflow section when sprint is complete.
+- **`/pb-sprint` autonomous workflow**: New slash command starts a comprehensive workflow for completing Pebble work (epics, issues with dependencies, any scoped work). Appends workflow template to `session-context.md` that survives context compaction.
+- **`/pb-sprint-stop`**: Removes the workflow section when sprint is complete.
 - **Sprint workflow detection**: Acknowledgment hook detects active sprint workflow and prompts agent to resume from where it left off.
 - **Auto-approve for plans**: Write/Edit to paths containing `.claude/plans/` now auto-approved.
-- **Auto-approve for Beads CLI**: All `bd` commands now auto-approved.
+- **Auto-approve for Pebble CLI**: All `pb` commands now auto-approved.
 
 ### Changed
 - **Planning mandatory in sprint**: Workflow template now explicitly requires planning for every issue — "No exceptions — even if the issue is 'detailed' or 'simple'".
@@ -210,8 +229,8 @@
 - **Plan approval reminder rewritten**: Now explicitly lists all 3 required steps (create task folder, copy plan, add backlog entry) with exact YAML format. Previously agent would only copy the plan and skip the backlog entry.
 - **Memory curator stricter criteria**: New critical test: "If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?" Explicit SHOULD/SHOULD NOT lists. One-time bug fixes, SDK quirks, and agent behavior rules no longer belong in memory.
 - **Stop hook memory guidance updated**: Reflects stricter memory criteria — add patterns affecting future features, don't add one-time fixes.
-- **Beads prompt improvements**: Added `bd stats` for project health, `bd close <id1> <id2> ...` for closing multiple issues, and explicit priority format note (use 0-4 or P0-P4, NOT "high"/"medium"/"low").
-- **Beads reminders in hooks**: When Beads is enabled, reminders appear in context acknowledgment (check project state), stop hook (update issues), and plan mode tracker (use Beads to track work).
+- **Pebble prompt improvements**: Added `pb stats` for project health, `pb close <id1> <id2> ...` for closing multiple issues, and explicit priority format note (use 0-4 or P0-P4, NOT "high"/"medium"/"low").
+- **Pebble reminders in hooks**: When Pebble is enabled, reminders appear in context acknowledgment (check project state), stop hook (update issues), and plan mode tracker (use Pebble to track work).
 
 ### Removed
 - **Task file tracker hook**: `task-file-tracker.py` removed — no longer needed with rolling session context.
@@ -221,10 +240,10 @@
 ## [0.0.11] - 2025-12-29
 
 ### Added
-- **Beads integration**: Optional Git-backed issue tracker for AI agents. When `beads_enabled: true` in config.yaml, agents receive comprehensive instructions for using Beads to manage work: understanding project state (`bd ready`, `bd list`, `bd blocked`), creating well-researched issues, managing dependencies, using molecules (epics with execution intent) and gates (quality checkpoints). Agents are instructed to proactively suggest creating issues during conversations.
+- **Pebble integration**: Optional Git-backed issue tracker for AI agents. When `pebble_enabled: true` in config.yaml, agents receive comprehensive instructions for using Pebble to manage work: understanding project state (`pb ready`, `pb list`, `pb blocked`), creating well-researched issues, managing dependencies, using molecules (epics with execution intent) and gates (quality checkpoints). Agents are instructed to proactively suggest creating issues during conversations.
 
 ### Changed
-- **Context injection order**: Reordered for better context flow — task backlog now appears before task context files; Beads prompt (when enabled) appears before agent operating manual.
+- **Context injection order**: Reordered for better context flow — task backlog now appears before task context files; Pebble prompt (when enabled) appears before agent operating manual.
 
 ## [0.0.10] - 2025-12-29
 

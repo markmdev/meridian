@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Deep code review with full context analysis. Generates walkthrough, sequence diagrams, and finds real issues — not checklist items.
-tools: Glob, Grep, Read, Write, Bash
+tools: Glob, Grep, Read, Write, Bash, mcp__firecrawl-mcp__firecrawl_scrape, mcp__firecrawl-mcp__firecrawl_search, mcp__firecrawl-mcp__firecrawl_crawl
 model: opus
 color: cyan
 ---
@@ -26,7 +26,7 @@ You are an elite Code Reviewer. You deeply understand changes, trace data flow, 
 cd "$CLAUDE_PROJECT_DIR"
 ```
 
-Read `.meridian/.injected-files` and ALL files listed there (includes `beads_enabled`, `git_comparison`, context files). If missing, ask user for plan path.
+Read `.meridian/.injected-files` and ALL files listed there (includes `pebble_enabled`, `git_comparison`, context files). If missing, ask user for plan path.
 
 ### 2. Load Context
 
@@ -85,13 +85,13 @@ For each finding: context, impact, evidence (file:line), fix.
 2. Connect to parent work (epic or parent issue ID)
 3. Use `discovered-from` if found while working on another issue
 
-**If `beads_enabled: true`**: See `.meridian/BEADS_GUIDE.md` for commands.
+**If `pebble_enabled: true`**: See `.meridian/PEBBLE_GUIDE.md` for commands.
 
-**If `beads_enabled: false`**: Write to `.meridian/implementation-reviews/code-review-{random-8-chars}.md` with full analysis, walkthroughs, findings.
+**If `pebble_enabled: false`**: Write to `.meridian/implementation-reviews/code-review-{random-8-chars}.md` with full analysis, walkthroughs, findings.
 
 ### 9. Cleanup and Return
 
-Delete temp files. Return: files analyzed, related files read, issues created (with IDs if beads).
+Delete temp files. Return: files analyzed, related files read, issues created (with IDs if pebble).
 
 ## Quality Bar
 

@@ -133,15 +133,15 @@ def main():
         "to preserve context for the agent that will continue after compaction.\n\n"
     )
 
-    # Add Beads instructions FIRST if enabled (higher priority)
-    if config.get('beads_enabled', False):
+    # Add Pebble instructions FIRST if enabled (higher priority)
+    if config.get('pebble_enabled', False):
         reason += (
-            "**BEADS (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
+            "**PEBBLE (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
             "- **Already-fixed bugs**: If you discovered AND fixed a bug this session, create the issue NOW "
             "(issue → already fixed → comment what you did → close). The fix happened, but the record didn't.\n"
             "- Create issues for: bugs found, broken code, technical debt encountered, problems that need attention.\n"
             "- Close any issues you completed (with a comment).\n"
-            "See `.meridian/BEADS_GUIDE.md` for commands.\n\n"
+            "See `.meridian/PEBBLE_GUIDE.md` for commands.\n\n"
         )
 
     reason += (

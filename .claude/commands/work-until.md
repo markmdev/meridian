@@ -8,7 +8,7 @@ allowed-tools: "Bash"
 
 Execute the setup script:
 
-!`.claude/hooks/scripts/setup-work-until.sh $ARGUMENTS`
+!`[ -f .claude/hooks/scripts/setup-work-until.sh ] || { echo "Error: Run /work-until from project root directory" >&2; exit 1; }; .claude/hooks/scripts/setup-work-until.sh $ARGUMENTS`
 
 You are now in a **work-until loop**. This means:
 

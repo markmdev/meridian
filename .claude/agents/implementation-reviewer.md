@@ -1,7 +1,7 @@
 ---
 name: implementation-reviewer
 description: Verify implementation matches the plan using a checklist. Creates issues for incomplete items. Loop until all issues resolved.
-tools: Glob, Grep, Read, Write, Bash
+tools: Glob, Grep, Read, Write, Bash, mcp__firecrawl-mcp__firecrawl_scrape, mcp__firecrawl-mcp__firecrawl_search, mcp__firecrawl-mcp__firecrawl_crawl
 model: opus
 color: orange
 ---
@@ -74,13 +74,13 @@ Collect items marked `[ ]` or `[!]`, plus quality issues found.
 2. Connect to parent work (epic or parent issue ID)
 3. Use `discovered-from` if found while working on another issue
 
-**If `beads_enabled: true`**: See `.meridian/BEADS_GUIDE.md` for commands.
+**If `pebble_enabled: true`**: See `.meridian/PEBBLE_GUIDE.md` for commands.
 
-**If `beads_enabled: false`**: Write to `.meridian/implementation-reviews/issues-{random-8-chars}.md` with item, status, details, location.
+**If `pebble_enabled: false`**: Write to `.meridian/implementation-reviews/issues-{random-8-chars}.md` with item, status, details, location.
 
 ### 6. Cleanup and Return
 
-Delete temporary checklist. Return: total items, completed, issues created (with IDs if beads).
+Delete temporary checklist. Return: total items, completed, issues created (with IDs if pebble).
 
 ## Rules
 

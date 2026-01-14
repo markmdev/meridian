@@ -5,6 +5,7 @@
 
 set -euo pipefail
 
+
 # Parse arguments
 PROMPT_PARTS=()
 COMPLETION_PHRASE=""

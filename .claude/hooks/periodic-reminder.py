@@ -12,7 +12,7 @@ Handles:
 - SessionStart: Reset counter
 """
 
-import json
+import json  # For reading stdin
 import os
 import sys
 from pathlib import Path
@@ -23,6 +23,7 @@ from config import get_project_config, REMINDER_COUNTER_FILE
 
 REMINDER_TEXT = (
     "[REMINDER]: Research before implementing — search, don't assume. "
+    "No external tool code without docs — check api-docs/INDEX.md, run docs-researcher if missing. "
     "Every code change needs a Beads issue — even bugs fixed immediately (issue → fix → comment → close). "
     "Follow existing codebase patterns. Ask before pivoting from the plan. "
     "Save important user messages to session-context. Check memory.jsonl for past lessons."
@@ -85,23 +86,7 @@ def main() -> int:
         if new_count >= interval:
             # Reset counter and inject reminder
             set_counter(base_dir, 0)
-
-            # Output format differs by hook event
-            if hook_event == "PostToolUse":
-                output = {
-                    "hookSpecificOutput": {
-                        "hookEventName": "PostToolUse",
-                        "additionalContext": REMINDER_TEXT
-                    }
-                }
-            else:  # UserPromptSubmit
-                output = {
-                    "hookSpecificOutput": {
-                        "hookEventName": "UserPromptSubmit",
-                        "additionalContext": REMINDER_TEXT
-                    }
-                }
-            print(json.dumps(output))
+            print(REMINDER_TEXT)
         else:
             # Just increment
             set_counter(base_dir, new_count)

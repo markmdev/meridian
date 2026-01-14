@@ -99,7 +99,7 @@ def get_project_config(base_dir: Path) -> dict:
         'pre_compaction_sync_enabled': True,
         'pre_compaction_sync_threshold': 150000,
         'session_context_max_lines': 1000,
-        'beads_enabled': False,
+        'pebble_enabled': False,
         'stop_hook_min_actions': 10,
     }
 
@@ -146,10 +146,10 @@ def get_project_config(base_dir: Path) -> dict:
             except ValueError:
                 pass
 
-        # Beads integration
-        beads = get_config_value(content, 'beads_enabled')
-        if beads:
-            config['beads_enabled'] = beads.lower() == 'true'
+        # Pebble integration
+        pebble = get_config_value(content, 'pebble_enabled')
+        if pebble:
+            config['pebble_enabled'] = pebble.lower() == 'true'
 
         # Stop hook minimum actions threshold
         min_actions = get_config_value(content, 'stop_hook_min_actions')
@@ -473,9 +473,9 @@ def build_task_xml(tasks: list[dict], claude_project_dir: str) -> str:
 
 
 # =============================================================================
-# BEADS INTEGRATION
+# PEBBLE INTEGRATION
 # =============================================================================
-# BEADS_GUIDE.md is injected as a file when beads is enabled (see build_injected_context)
+# PEBBLE_GUIDE.md is injected as a file when pebble is enabled (see build_injected_context)
 
 
 # =============================================================================
@@ -566,7 +566,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if code_guide_path.exists():
         files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path))
 
-    # Get project config for addons and beads
+    # Get project config for addons and pebble
     project_config = get_project_config(base_dir)
 
     if project_config['project_type'] == 'hackathon':
@@ -590,21 +590,34 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append(f'<file path="{rel_path}" error="Could not read file" />')
             parts.append("")
 
-    # 6. Beads guide (if enabled)
-    if project_config.get('beads_enabled', False):
-        beads_guide_path = base_dir / ".meridian" / "BEADS_GUIDE.md"
-        if beads_guide_path.exists():
+    # 6. API docs index (tells agent which external APIs are documented)
+    api_docs_index = base_dir / ".meridian" / "api-docs" / "INDEX.md"
+    if api_docs_index.exists():
+        try:
+            content = api_docs_index.read_text()
+            parts.append(f'<file path=".meridian/api-docs/INDEX.md">')
+            parts.append(content.rstrip())
+            parts.append('</file>')
+            parts.append("")
+        except IOError:
+            parts.append(f'<file path=".meridian/api-docs/INDEX.md" error="Could not read file" />')
+            parts.append("")
+
+    # 7. Pebble guide (if enabled)
+    if project_config.get('pebble_enabled', False):
+        pebble_guide_path = base_dir / ".meridian" / "PEBBLE_GUIDE.md"
+        if pebble_guide_path.exists():
             try:
-                content = beads_guide_path.read_text()
-                parts.append(f'<file path=".meridian/BEADS_GUIDE.md">')
+                content = pebble_guide_path.read_text()
+                parts.append(f'<file path=".meridian/PEBBLE_GUIDE.md">')
                 parts.append(content.rstrip())
                 parts.append('</file>')
                 parts.append("")
             except IOError:
-                parts.append(f'<file path=".meridian/BEADS_GUIDE.md" error="Could not read file" />')
+                parts.append(f'<file path=".meridian/PEBBLE_GUIDE.md" error="Could not read file" />')
                 parts.append("")
 
-    # 7. Agent operating manual
+    # 8. Agent operating manual
     manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
     if manual_path.exists():
         try:
@@ -762,7 +775,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     Returns:
         The stop prompt string
     """
-    beads_enabled = config.get('beads_enabled', False)
+    pebble_enabled = config.get('pebble_enabled', False)
     claude_project_dir = str(base_dir)
 
     parts = ["[SYSTEM]: Before stopping, complete these checks:\n"]
@@ -776,7 +789,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
             "2. Code Reviewer agent\n"
         )
 
-        if beads_enabled:
+        if pebble_enabled:
             parts.append(
                 "**After reviewers**: If issues created → fix → re-run. Repeat until no issues.\n"
             )
@@ -785,10 +798,10 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
                 "**After reviewers**: Read `.meridian/implementation-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
             )
 
-    # Beads reminder if enabled (before session context - higher priority)
-    if beads_enabled:
+    # Pebble reminder if enabled (before session context - higher priority)
+    if pebble_enabled:
         parts.append(
-            "**BEADS (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
+            "**PEBBLE (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
             "- **Already-fixed bugs**: If you discovered AND fixed a bug this session, create the issue NOW (issue → already fixed → comment what you did → close). The fix happened, but the record didn't.\n"
             "- **Close** issues you fully completed (with a comment summarizing what was done).\n"
             "- **Create** issues for: bugs found, broken code, missing error handling, problems that need attention.\n"

@@ -42,9 +42,9 @@ def main():
     # Flag exists - block and ask for acknowledgment, then remove flag
     cleanup_flag(base_dir, CONTEXT_ACK_FLAG)
 
-    # Check if Beads is enabled
+    # Check if Pebble is enabled
     config = get_project_config(base_dir)
-    beads_enabled = config.get('beads_enabled', False)
+    pebble_enabled = config.get('pebble_enabled', False)
 
     # Check if sprint workflow is active
     sprint_active = False
@@ -52,7 +52,7 @@ def main():
     if session_context.exists():
         try:
             content = session_context.read_text()
-            sprint_active = "<!-- BEADS SPRINT WORKFLOW" in content
+            sprint_active = "<!-- PEBBLE SPRINT WORKFLOW" in content
         except Exception:
             pass
 
@@ -69,15 +69,15 @@ def main():
         "7. The **agent-operating-manual** instructions\n\n"
     )
 
-    if beads_enabled:
+    if pebble_enabled:
         reason += (
-            "8. **Beads issue tracker** is enabled — check project state and available work\n\n"
+            "8. **Pebble issue tracker** is enabled — check project state and available work\n\n"
         )
 
     if sprint_active:
         reason += (
             "⚠️ **ACTIVE SPRINT WORKFLOW DETECTED**\n\n"
-            "A Beads Sprint workflow is in progress. Read the workflow section at the bottom of "
+            "A Pebble Sprint workflow is in progress. Read the workflow section at the bottom of "
             "`.meridian/session-context.md` to understand:\n"
             "- Current scope and issues being worked on\n"
             "- Which issues are completed (checked) vs pending\n"

@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.22` (2026-01-07) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.23` (2026-01-13) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -82,14 +82,15 @@ flowchart TB
     subgraph Agents["Agents (Quality Gates)"]
         A1[plan-reviewer]
         A2[implementation-reviewer]
+        A3[docs-researcher]
     end
 
     subgraph Files[".meridian/ (Persistent State)"]
         F1[memory.jsonl]
         F2[task-backlog.yaml]
         F3[tasks/TASK-###/]
-        F4[CODE_GUIDE.md]
-        F5[config.yaml]
+        F4[api-docs/]
+        F5[CODE_GUIDE.md]
     end
 
     User -->|talks to| Claude
@@ -297,7 +298,7 @@ Validates plans before implementation:
 Verifies every plan item was implemented:
 - Extracts checklist of EVERY item from the plan
 - Verifies each item individually (no skipping, no assumptions)
-- Creates issues for incomplete items (Beads issues or markdown file)
+- Creates issues for incomplete items (Pebble issues or markdown file)
 - Loop: fix issues → re-run → repeat until no issues
 
 ### Code Reviewer (CodeRabbit-style)
@@ -307,7 +308,7 @@ Deep code review with full context analysis:
 2. Creates detailed walkthrough of each change (forcing function)
 3. Generates sequence diagrams for complex flows (forcing function)
 4. Finds real issues — logic bugs, data flow problems, pattern inconsistencies
-5. Creates issues for findings (Beads issues or markdown file)
+5. Creates issues for findings (Pebble issues or markdown file)
 
 Focuses on issues that actually matter, not checklist items or style preferences.
 
@@ -318,16 +319,26 @@ Manual QA using Claude for Chrome MCP:
 - Actually uses the application in a browser to verify functionality
 - Checks visual appearance (layout, styling, responsiveness)
 - Tests user flows, form submissions, error states
-- Creates issues for failures (Beads issues or markdown file)
+- Creates issues for failures (Pebble issues or markdown file)
 
 Requires Claude for Chrome browser extension.
+
+### Docs Researcher
+
+Researches external tools, APIs, and products:
+- Uses Firecrawl to scrape current documentation from the web
+- Builds comprehensive knowledge docs in `.meridian/api-docs/`
+- Covers current versions, API operations, rate limits, best practices, gotchas
+- Run before using any external library not already documented
+
+**Strict rule:** No code using external APIs unless documented in api-docs. Planning skill has mandatory phase to verify/create docs.
 
 </details>
 
 <details>
 <summary><strong>MCP Servers — External Knowledge</strong></summary>
 
-MCP (Model Context Protocol) servers give Claude access to up-to-date external knowledge. Meridian includes two:
+MCP (Model Context Protocol) servers give Claude access to up-to-date external knowledge. Meridian includes three:
 
 ### Context7
 
@@ -343,6 +354,15 @@ Asks questions about any public GitHub repository. Claude uses this to:
 - Verify integration patterns are correct
 - Research best practices for specific tools
 
+### Firecrawl
+
+Web scraping and search capabilities. Used by docs-researcher agent and reviewers to:
+- Scrape current documentation from official sources
+- Search for up-to-date API information
+- Crawl documentation sites for comprehensive coverage
+
+Requires `FIRECRAWL_API_KEY` environment variable.
+
 **Why MCPs matter:** Claude's training data has a cutoff date. When planning or reviewing, Claude can verify claims against current documentation instead of relying on potentially outdated knowledge.
 
 **Configuration:** `.mcp.json` in project root:
@@ -356,6 +376,11 @@ Asks questions about any public GitHub repository. Claude uses this to:
     "deepwiki": {
       "type": "http",
       "url": "https://mcp.deepwiki.com/mcp"
+    },
+    "firecrawl-mcp": {
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp"],
+      "env": { "FIRECRAWL_API_KEY": "$FIRECRAWL_API_KEY" }
     }
   }
 }
@@ -461,7 +486,8 @@ your-project/
 │       ├── plan-reviewer.md
 │       ├── implementation-reviewer.md
 │       ├── code-reviewer.md
-│       └── browser-verifier.md
+│       ├── browser-verifier.md
+│       └── docs-researcher.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected
@@ -471,6 +497,8 @@ your-project/
 │   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
 │   ├── memory.jsonl                  # Persistent lessons/decisions
 │   ├── task-backlog.yaml             # Task index
+│   ├── api-docs/                     # External API documentation
+│   │   └── INDEX.md                  # Index of documented APIs
 │   ├── tasks/
 │   │   ├── TASK-000-template/        # Template for new tasks
 │   │   ├── TASK-001/                 # Plans, docs, artifacts

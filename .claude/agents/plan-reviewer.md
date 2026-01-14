@@ -1,7 +1,7 @@
 ---
 name: plan-reviewer
 description: Validate a plan before implementation. Use before exiting Plan mode. Pass the plan file path and any additional context files. Returns JSON with findings and score (must reach 9+ to proceed).
-tools: Glob, Grep, Read, Bash, mcp__deepwiki__read_wiki_structure, mcp__deepwiki__read_wiki_contents, mcp__deepwiki__ask_question, mcp__context7__resolve_library_id, mcp__context7__get_library_docs
+tools: Glob, Grep, Read, Bash, mcp__deepwiki__read_wiki_structure, mcp__deepwiki__read_wiki_contents, mcp__deepwiki__ask_question, mcp__context7__resolve_library_id, mcp__context7__get_library_docs, mcp__firecrawl-mcp__firecrawl_scrape, mcp__firecrawl-mcp__firecrawl_search, mcp__firecrawl-mcp__firecrawl_crawl
 model: opus
 color: green
 ---

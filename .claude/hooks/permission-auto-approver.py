@@ -129,8 +129,8 @@ def should_allow(data: dict, project_dir: Path) -> bool:
         command = tool_input.get("command", "").strip()
         if any(substr in command for substr in BASH_SUBSTRINGS):
             return True
-        # Allow Beads CLI commands (bd)
-        if command.startswith("bd ") or command == "bd":
+        # Allow Pebble CLI commands (pb)
+        if command.startswith("pb ") or command == "pb":
             return True
         # Allow cp from ~/.claude/plans/ (plan archival)
         if command.startswith("cp "):

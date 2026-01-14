@@ -48,10 +48,9 @@ Use direct tools or Explore agents to deeply understand the codebase:
 - **Search for existing solutions** — don't build what already exists
 - **Trace flows** — data flow, control flow, dependencies
 - **Find patterns** — how does the codebase do similar things?
+- **Identify external APIs** — list all external libraries/APIs this plan will use
 
 **If you can't verify it, you don't know it.**
-
-Use MCP tools (Context7, DeepWiki) to verify external library APIs and behavior.
 
 ### 2. Technical Interview
 
@@ -76,7 +75,33 @@ Proceed to Design after technical decisions are confirmed.
 - Identify all changes — every file to create, modify, or delete
 - Map requirements to implementation — explain how each requirement from source documents will be achieved
 
-### 4. Decomposition
+### 4. External API Documentation (MANDATORY — NO EXCEPTIONS)
+
+**Before implementation can begin, all external APIs must be documented.**
+
+1. **List all external APIs** identified in Discovery
+2. **Check `.meridian/api-docs/INDEX.md`** for each one
+3. **For missing or incomplete docs**: Run `docs-researcher` agent NOW — before writing the plan
+4. **Document in the plan** which API docs exist and which were created
+
+**NO EXCEPTIONS.** Do not skip this because you "know" the API or are "familiar with it." Your training knowledge is outdated. Run `docs-researcher` anyway.
+
+**Plan mode exception**: You MAY run `docs-researcher` during planning. This overrides the default read-only restriction. Research artifacts (`.meridian/api-docs/`) are not code — they're prerequisites for good planning.
+
+Example plan section:
+```markdown
+## External APIs
+
+| Library | Doc Status | Operations Needed |
+|---------|------------|-------------------|
+| Chroma | Created (docs-researcher) | add, query, delete |
+| OpenAI | Exists, covers embeddings | embeddings |
+| Stripe | Missing webhooks, appending | webhooks |
+```
+
+**The rule**: No implementation step can use an external API that isn't documented. If you discover a new API need during implementation, stop and run docs-researcher first.
+
+### 5. Decomposition
 
 Break work into detailed steps. Complex features require comprehensive plans — a 2000-line plan with 30 detailed steps is better than a 200-line plan with 7 vague steps. Granularity enables quality.
 
@@ -88,7 +113,7 @@ For each step:
 
 Group related changes (same module, tests with implementation).
 
-### 5. Integration (MANDATORY for multi-module plans)
+### 6. Integration (MANDATORY for multi-module plans)
 
 Explicitly plan how modules connect:
 - Imports and wiring
@@ -98,7 +123,7 @@ Explicitly plan how modules connect:
 
 **Prevent**: Module exists but never imported. Function exists but never called. Config defined but never read.
 
-### 6. Documentation (MANDATORY)
+### 7. Documentation (MANDATORY)
 
 For each phase, plan documentation explicitly:
 
@@ -107,7 +132,7 @@ For each phase, plan documentation explicitly:
 
 If it adds user-visible functionality, human docs are required.
 
-### 7. Testing
+### 8. Testing
 
 Ask user for depth preference:
 1. **Light** — happy path only (prototypes, low-risk)
@@ -132,6 +157,22 @@ Include test types, components to cover, and key scenarios in the plan.
 
 **Size**: Match the plan's detail to the task's complexity. Detailed plans with many steps produce better implementations than brief plans with few steps.
 
+## Follow-up Work (Bug Fixes / Improvements to Implemented Plans)
+
+When planning bug fixes or improvements for work that was **already implemented** from an existing plan:
+
+**APPEND to the existing plan file** — don't overwrite it. Add a new section at the end:
+
+```markdown
+---
+
+## Follow-up: [Title] (YYYY-MM-DD)
+
+[New plan content for the bug fix / improvement]
+```
+
+This preserves the original plan as context, which helps understand what was already built and why. The original plan documents the implemented state; the follow-up section documents what's changing.
+
 ## Quality Checklist
 
 Before finalizing:
@@ -142,6 +183,7 @@ Before finalizing:
 - [ ] Every file path verified (or confirmed as new)
 - [ ] Every function/API referenced actually exists
 - [ ] Edge cases documented from interviews
+- [ ] **External APIs documented** — all external libraries listed, docs verified or created via docs-researcher
 - [ ] Integration phase included (for multi-module plans)
 - [ ] All modules wired to entry points
 - [ ] Testing approach defined (after asking user)

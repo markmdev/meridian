@@ -67,7 +67,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
             if full_path.exists():
                 files.append(str(full_path))
 
-    # 4b. Active plan (for Beads workflows)
+    # 4b. Active plan (for Pebble workflows)
     active_plan_file = base_dir / ".meridian" / ".active-plan"
     if active_plan_file.exists():
         try:
@@ -98,11 +98,11 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         if addon_path.exists():
             files.append(str(addon_path))
 
-    # 6. BEADS_GUIDE (if enabled)
-    if project_config.get('beads_enabled', False):
-        beads_guide_path = base_dir / ".meridian" / "BEADS_GUIDE.md"
-        if beads_guide_path.exists():
-            files.append(str(beads_guide_path))
+    # 6. PEBBLE_GUIDE (if enabled)
+    if project_config.get('pebble_enabled', False):
+        pebble_guide_path = base_dir / ".meridian" / "PEBBLE_GUIDE.md"
+        if pebble_guide_path.exists():
+            files.append(str(pebble_guide_path))
 
     # Note: agent-operating-manual.md is excluded - not needed for reviewer agents
 
@@ -129,9 +129,9 @@ def main():
     # Get list of injected files
     injected_files = get_injected_file_paths(base_dir)
 
-    # Get beads_enabled setting
+    # Get pebble_enabled setting
     project_config = get_project_config(base_dir)
-    beads_enabled = project_config.get('beads_enabled', False)
+    pebble_enabled = project_config.get('pebble_enabled', False)
 
     # Write to log file
     log_file = base_dir / ".meridian" / ".injected-files"
@@ -140,7 +140,7 @@ def main():
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         content = f"# Injected files ({source}) - {timestamp}\n"
-        content += f"beads_enabled: {str(beads_enabled).lower()}\n"
+        content += f"pebble_enabled: {str(pebble_enabled).lower()}\n"
         content += f"git_comparison: HEAD\n"  # Default: uncommitted changes
         content += "\n"
         for f in injected_files:

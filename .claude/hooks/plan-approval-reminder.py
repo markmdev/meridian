@@ -3,7 +3,7 @@
 Plan Approval Reminder Hook - PostToolUse ExitPlanMode
 
 Reminds Claude to create a task after plan is approved.
-If Beads is enabled, instructs to create Beads issues for each plan item.
+If Pebble is enabled, instructs to create Pebble issues for each plan item.
 """
 
 import json
@@ -28,18 +28,18 @@ def main():
     if tool_name != "ExitPlanMode":
         sys.exit(0)
 
-    # Check if Beads is enabled
-    beads_enabled = False
+    # Check if Pebble is enabled
+    pebble_enabled = False
     if claude_project_dir:
         config = get_project_config(Path(claude_project_dir))
-        beads_enabled = config.get('beads_enabled', False)
+        pebble_enabled = config.get('pebble_enabled', False)
 
     # Build instructions based on mode
-    if beads_enabled:
-        # Beads mode: skip task folder, use Beads issues instead
+    if pebble_enabled:
+        # Pebble mode: skip task folder, use Pebble issues instead
         reason = (
-            f"[SYSTEM]: If the user has approved the plan, **CREATE BEADS ISSUES** (MANDATORY):\n\n"
-            f"Read `{claude_project_dir}/.meridian/BEADS_GUIDE.md` for command reference.\n\n"
+            f"[SYSTEM]: If the user has approved the plan, **CREATE PEBBLE ISSUES** (MANDATORY):\n\n"
+            f"Read `{claude_project_dir}/.meridian/PEBBLE_GUIDE.md` for command reference.\n\n"
             f"**Key principles:**\n"
             f"1. **Always use `--json`** on create/update/close commands\n"
             f"2. **Create ALL issues upfront** — full visibility NOW, not incrementally\n"

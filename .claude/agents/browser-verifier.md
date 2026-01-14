@@ -65,18 +65,18 @@ Collect items marked `[ ]` or `[!]`.
 2. Connect to parent work (epic or parent issue ID)
 3. Use `discovered-from` if found while working on another issue
 
-**If `beads_enabled: true`**: See `.meridian/BEADS_GUIDE.md` for commands.
+**If `pebble_enabled: true`**: See `.meridian/PEBBLE_GUIDE.md` for commands.
 
 Severity: broken feature → p0, partial → p1, visual/usability → p2, minor visual → p3.
 
-**If `beads_enabled: false`**: Write to `.meridian/implementation-reviews/browser-verify-{random-8-chars}.md` with issues, expected vs actual, steps to reproduce.
+**If `pebble_enabled: false`**: Write to `.meridian/implementation-reviews/browser-verify-{random-8-chars}.md` with issues, expected vs actual, steps to reproduce.
 
 ### 6. Cleanup and Return
 
 Delete the temporary checklist file. Return summary:
 - Items verified count
 - Passed count
-- Issues created (with IDs if beads)
+- Issues created (with IDs if pebble)
 
 ## Browser Interaction Guidelines
 

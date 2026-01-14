@@ -1,8 +1,8 @@
-# Beads Guide for Agents
+# Pebble Guide for Agents
 
-**Beads is ENABLED for this project.** You MUST actively use Beads to manage all work.
+**Pebble is ENABLED for this project.** You MUST actively use Pebble to manage all work.
 
-Beads is a git-backed issue tracker designed for AI agents. It provides persistent memory across sessions, dependency tracking, and structured workflows. All work should be tracked as Beads issues.
+Pebble is a git-backed issue tracker designed for AI agents. It provides persistent memory across sessions, dependency tracking, and structured workflows. All work should be tracked as Pebble issues.
 
 ---
 
@@ -12,10 +12,10 @@ At the beginning of each session, understand what's happening:
 
 | Command | Purpose |
 |---------|---------|
-| `bd ready --json` | **Start here** — shows unblocked issues ready for work |
-| `bd list --status in_progress --json` | What's currently being worked on |
-| `bd blocked --json` | Issues waiting on dependencies |
-| `bd show <id> --json` | Deep dive into specific issue |
+| `pb ready --json` | **Start here** — shows unblocked issues ready for work |
+| `pb list --status in_progress --json` | What's currently being worked on |
+| `pb blocked --json` | Issues waiting on dependencies |
+| `pb show <id> --json` | Deep dive into specific issue |
 
 Use these commands to understand context from previous sessions — what was in progress, what got blocked, what's next.
 
@@ -23,7 +23,7 @@ Use these commands to understand context from previous sessions — what was in 
 
 ## When to Create Issues
 
-Create Beads issues when:
+Create Pebble issues when:
 - User mentions work to do ("fix X", "add Y", "investigate Z")
 - You discover bugs or problems during implementation
 - Work has dependencies or could block other work
@@ -57,21 +57,21 @@ A well-researched issue saves time later. Don't create vague issues.
 **Every command that creates or modifies issues MUST include `--json`** for parseable output. This lets you capture IDs and verify state.
 
 ```bash
-bd create "Fix login bug" -t bug -p 1 --json          # Returns {"id": "PROJ-abc", ...}
-bd update PROJ-abc --status in_progress --json
-bd close PROJ-abc --reason "Fixed" --json
+pb create "Fix login bug" -t bug -p 1 --json          # Returns {"id": "PROJ-abc", ...}
+pb update PROJ-abc --status in_progress --json
+pb close PROJ-abc --reason "Fixed" --json
 ```
 
 ### 2. Dependencies Control Execution
 
-Issues become "ready" when all their blockers are closed. Use `bd ready` to see what's unblocked — this is your **Ready Front** (what can be worked on right now).
+Issues become "ready" when all their blockers are closed. Use `pb ready` to see what's unblocked — this is your **Ready Front** (what can be worked on right now).
 
 - **No dependency** = runs in parallel with siblings
 - **Has dependency** = blocked until dependency closes
 
 ```bash
 # B depends on A (B is blocked until A closes)
-bd dep add B-id A-id
+pb dep add B-id A-id
 ```
 
 **Walk backward from the goal to create correct dependencies:**
@@ -90,10 +90,10 @@ bd dep add B-id A-id
 This produces correct deps because you're asking "X needs Y", not "X before Y".
 
 **Cognitive trap to avoid:**
-> "Phase 1 before Phase 2" → brain thinks "Phase 1 blocks Phase 2" → WRONG: `bd dep add phase1 phase2`
+> "Phase 1 before Phase 2" → brain thinks "Phase 1 blocks Phase 2" → WRONG: `pb dep add phase1 phase2`
 
 **Correct thinking:**
-> "Phase 2 needs Phase 1" → `bd dep add phase2 phase1`
+> "Phase 2 needs Phase 1" → `pb dep add phase2 phase1`
 
 Always use requirement language, not temporal language.
 
@@ -103,13 +103,13 @@ Creating issues under a parent (`--parent <id>`) only creates hierarchy, NOT exe
 
 ```bash
 # These three tasks can run in PARALLEL (no deps between them)
-bd create "Task A" -t task --parent $EPIC --json
-bd create "Task B" -t task --parent $EPIC --json
-bd create "Task C" -t task --parent $EPIC --json
+pb create "Task A" -t task --parent $EPIC --json
+pb create "Task B" -t task --parent $EPIC --json
+pb create "Task C" -t task --parent $EPIC --json
 
 # To sequence them, add blocks dependencies
-bd dep add $TASK_B $TASK_A    # B blocked by A
-bd dep add $TASK_C $TASK_B    # C blocked by B
+pb dep add $TASK_B $TASK_A    # B blocked by A
+pb dep add $TASK_C $TASK_B    # C blocked by B
 ```
 
 ### 4. No Orphan Issues
@@ -163,12 +163,12 @@ Only ONE issue should be `in_progress` at any moment. If you need to switch task
 
 ```bash
 # WRONG: Multiple in_progress
-bd update PROJ-1 --status in_progress --json
-bd update PROJ-2 --status in_progress --json  # NO! PROJ-1 is still in_progress
+pb update PROJ-1 --status in_progress --json
+pb update PROJ-2 --status in_progress --json  # NO! PROJ-1 is still in_progress
 
 # RIGHT: Transition current issue before starting another
-bd update PROJ-1 --status blocked --json      # Or deferred, or close
-bd update PROJ-2 --status in_progress --json  # Now OK
+pb update PROJ-1 --status blocked --json      # Or deferred, or close
+pb update PROJ-2 --status in_progress --json  # Now OK
 ```
 
 ### 7. Handling Discovered Work
@@ -177,21 +177,21 @@ During implementation, you may discover problems, missing dependencies, or prere
 
 **Pattern:**
 1. **Create issue immediately** — capture context before forgetting
-2. **Link provenance** — `bd dep add <current> <new> -t discovered-from`
+2. **Link provenance** — `pb dep add <current> <new> -t discovered-from`
 3. **Assess urgency** — is it a blocker or deferrable?
 
 **If blocker (can't continue current work):**
 ```bash
 # Create the blocker issue
-NEW=$(bd create "Found: auth service needs refactoring" -t task -p 1 --json | jq -r .id)
+NEW=$(pb create "Found: auth service needs refactoring" -t task -p 1 --json | jq -r .id)
 
 # Link provenance and add blocking dependency
-bd dep add $CURRENT $NEW -t discovered-from
-bd dep add $CURRENT $NEW                       # blocks type — CURRENT is now blocked by NEW
+pb dep add $CURRENT $NEW -t discovered-from
+pb dep add $CURRENT $NEW                       # blocks type — CURRENT is now blocked by NEW
 
 # Transition states
-bd update $CURRENT --status blocked --json
-bd update $NEW --status in_progress --json
+pb update $CURRENT --status blocked --json
+pb update $NEW --status in_progress --json
 
 # Work on the blocker first
 ```
@@ -199,10 +199,10 @@ bd update $NEW --status in_progress --json
 **If deferrable (can continue current work):**
 ```bash
 # Create issue for later
-NEW=$(bd create "Found: could optimize query performance" -t task -p 3 --json | jq -r .id)
+NEW=$(pb create "Found: could optimize query performance" -t task -p 3 --json | jq -r .id)
 
 # Link provenance only (no blocks dependency)
-bd dep add $NEW $CURRENT -t discovered-from
+pb dep add $NEW $CURRENT -t discovered-from
 
 # Continue main task — new issue persists for later
 ```
@@ -213,12 +213,12 @@ bd dep add $NEW $CURRENT -t discovered-from
 
 ```bash
 # Add implementation comment BEFORE closing
-bd comments add PROJ-abc "Implemented scopedQuery() in src/auth/query-builder.ts:45-78.
+pb comments add PROJ-abc "Implemented scopedQuery() in src/auth/query-builder.ts:45-78.
 Wraps all vector queries with validateScope() check.
 Tests added in query-builder.test.ts."
 
 # Then close with brief reason
-bd close PROJ-abc --reason "Implemented and tested" --json
+pb close PROJ-abc --reason "Implemented and tested" --json
 ```
 
 **The comment MUST include:**
@@ -237,16 +237,16 @@ bd close PROJ-abc --reason "Implemented and tested" --json
 Even if the fix takes 30 seconds:
 ```bash
 # 1. Create issue immediately
-ID=$(bd create "Found: X was broken because Y" -t bug -p 2 --json | jq -r .id)
+ID=$(pb create "Found: X was broken because Y" -t bug -p 2 --json | jq -r .id)
 
 # 2. Fix it
 # ... make the code change ...
 
 # 3. Comment with what was done
-bd comments add $ID "Fixed in path/to/file.ts:45-52. Changed X to Y."
+pb comments add $ID "Fixed in path/to/file.ts:45-52. Changed X to Y."
 
 # 4. Close
-bd close $ID --reason "Fixed" --json
+pb close $ID --reason "Fixed" --json
 ```
 
 **Why this matters:**
@@ -264,9 +264,9 @@ bd close $ID --reason "Fixed" --json
 ### Create Issues
 
 ```bash
-bd create "Title" -t <type> -p <priority> --description "..." --json
-bd create "Title" -t task --parent <epic-id> --json                    # As child of epic
-bd create "Title" --deps discovered-from:<id>,blocks:<id> --json       # With multiple deps
+pb create "Title" -t <type> -p <priority> --description "..." --json
+pb create "Title" -t task --parent <epic-id> --json                    # As child of epic
+pb create "Title" --deps discovered-from:<id>,blocks:<id> --json       # With multiple deps
 ```
 
 **Types:** `task`, `bug`, `epic`, `feature`, `chore`
@@ -276,10 +276,10 @@ bd create "Title" --deps discovered-from:<id>,blocks:<id> --json       # With mu
 ### Update Issues
 
 ```bash
-bd update <id> --status in_progress --json
-bd update <id> --claim --json                    # Atomically claim (set assignee + in_progress)
-bd update <id> --description "New desc" --json
-bd update <id> --parent <new-parent-id> --json   # Reparent
+pb update <id> --status in_progress --json
+pb update <id> --claim --json                    # Atomically claim (set assignee + in_progress)
+pb update <id> --description "New desc" --json
+pb update <id> --parent <new-parent-id> --json   # Reparent
 ```
 
 **Statuses:** `open`, `in_progress`, `blocked`, `deferred`, `closed`
@@ -292,41 +292,41 @@ blocked → in_progress (blocker resolved)
 in_progress → closed  (work complete)
 ```
 
-Keep status current so `bd ready` and `bd blocked` reflect reality.
+Keep status current so `pb ready` and `pb blocked` reflect reality.
 
 ### Close Issues
 
 ```bash
-bd close <id> --reason "Why it's done" --json
-bd close <id> --suggest-next                     # Show newly unblocked issues
-bd reopen <id> --reason "Why reopening" --json   # Reopen a closed issue
+pb close <id> --reason "Why it's done" --json
+pb close <id> --suggest-next                     # Show newly unblocked issues
+pb reopen <id> --reason "Why reopening" --json   # Reopen a closed issue
 ```
 
 ### View Issues
 
 ```bash
-bd ready                              # What's ready to work on (no open blockers)
-bd blocked                            # Issues waiting on dependencies
-bd show <id>                          # Full issue details
-bd list --status open --pretty        # List open issues as tree
-bd list --parent <epic-id>            # Children of an epic
+pb ready                              # What's ready to work on (no open blockers)
+pb blocked                            # Issues waiting on dependencies
+pb show <id>                          # Full issue details
+pb list --status open --pretty        # List open issues as tree
+pb list --parent <epic-id>            # Children of an epic
 ```
 
 ### Dependencies
 
 ```bash
-bd dep add <issue> <depends-on>       # issue is blocked by depends-on (blocks type)
-bd dep add <issue> <dep> -t <type>    # With specific type
-bd dep list <id>                      # List dependencies of an issue
-bd dep list <id> --direction up       # List what depends on this issue
-bd dep remove <issue> <depends-on>    # Remove a dependency
-bd dep tree <id>                      # Visualize dependency tree
-bd dep tree <id> --direction up       # Show what depends on this issue
+pb dep add <issue> <depends-on>       # issue is blocked by depends-on (blocks type)
+pb dep add <issue> <dep> -t <type>    # With specific type
+pb dep list <id>                      # List dependencies of an issue
+pb dep list <id> --direction up       # List what depends on this issue
+pb dep remove <issue> <depends-on>    # Remove a dependency
+pb dep tree <id>                      # Visualize dependency tree
+pb dep tree <id> --direction up       # Show what depends on this issue
 ```
 
 **Dependency types:**
 
-| Type | Affects `bd ready`? | Purpose |
+| Type | Affects `pb ready`? | Purpose |
 |------|---------------------|---------|
 | `blocks` | **Yes** | Hard blocker — issue can't start until dependency closes |
 | `parent-child` | No | Hierarchy — structural grouping (epic/subtasks) |
@@ -340,7 +340,7 @@ bd dep tree <id> --direction up       # Show what depends on this issue
 **Decision tree:**
 ```
 Does A prevent B from starting?
-  YES → blocks (A blocks B: `bd dep add B A`)
+  YES → blocks (A blocks B: `pb dep add B A`)
   NO  ↓
 
 Is B a subtask of A (epic/task relationship)?
@@ -348,21 +348,21 @@ Is B a subtask of A (epic/task relationship)?
   NO  ↓
 
 Was B discovered while working on A?
-  YES → discovered-from (`bd dep add B A -t discovered-from`)
+  YES → discovered-from (`pb dep add B A -t discovered-from`)
   NO  ↓
 
 Are A and B just related?
-  YES → related (`bd dep add B A -t related`)
+  YES → related (`pb dep add B A -t related`)
 ```
 
-**Direction mnemonic:** `bd dep add <blocked> <blocker>` — the first issue is blocked BY the second.
+**Direction mnemonic:** `pb dep add <blocked> <blocker>` — the first issue is blocked BY the second.
 
-Think: "prerequisite blocks dependent" — so `bd dep add B A` means "B is blocked by A" (A is the prerequisite).
+Think: "prerequisite blocks dependent" — so `pb dep add B A` means "B is blocked by A" (A is the prerequisite).
 
 ### Graph Visualization
 
 ```bash
-bd graph <epic-id> --json                  # ASCII graph of epic and children
+pb graph <epic-id> --json                  # ASCII graph of epic and children
 ```
 
 ---
@@ -375,19 +375,19 @@ Think in **Ready Fronts**, not phases. Walk backward from the goal:
 
 1. "What's the final deliverable?" → Create epic
 2. "What does that need?" → Create tasks, working backward
-3. Add `blocks` deps using requirement language: "X needs Y" → `bd dep add X Y`
-4. `bd ready` shows current Ready Front; as issues close, front advances
+3. Add `blocks` deps using requirement language: "X needs Y" → `pb dep add X Y`
+4. `pb ready` shows current Ready Front; as issues close, front advances
 
 ```bash
 # Walk backward: Tests need Implementation needs Design
-EPIC=$(bd create "Feature X" -t epic --json | jq -r .id)
-T1=$(bd create "Design" -t task --parent $EPIC --json | jq -r .id)
-T2=$(bd create "Implement" -t task --parent $EPIC --json | jq -r .id)
-T3=$(bd create "Test" -t task --parent $EPIC --json | jq -r .id)
+EPIC=$(pb create "Feature X" -t epic --json | jq -r .id)
+T1=$(pb create "Design" -t task --parent $EPIC --json | jq -r .id)
+T2=$(pb create "Implement" -t task --parent $EPIC --json | jq -r .id)
+T3=$(pb create "Test" -t task --parent $EPIC --json | jq -r .id)
 
 # Requirement language: "Implement needs Design", "Test needs Implement"
-bd dep add $T2 $T1    # Implement blocked by Design
-bd dep add $T3 $T2    # Test blocked by Implement
+pb dep add $T2 $T1    # Implement blocked by Design
+pb dep add $T3 $T2    # Test blocked by Implement
 
 # Ready Front 1: Design (no deps)
 # Ready Front 2: Implement (after Design closes)
@@ -399,26 +399,26 @@ bd dep add $T3 $T2    # Test blocked by Implement
 When you find bugs or new work while working on an issue:
 
 ```bash
-bd create "Found: memory leak in cache" -t bug -p 1 --deps discovered-from:$CURRENT_ISSUE --json
+pb create "Found: memory leak in cache" -t bug -p 1 --deps discovered-from:$CURRENT_ISSUE --json
 ```
 
 ### Working Through Issues
 
 ```bash
 # 1. See what's ready
-bd ready
+pb ready
 
 # 2. Claim an issue
-bd update <id> --claim --json
+pb update <id> --claim --json
 
 # 3. Do the work
 # ...
 
 # 4. Add implementation comment
-bd comments add <id> "Implemented X in path/to/file.ts:45-78. Tests in file.test.ts."
+pb comments add <id> "Implemented X in path/to/file.ts:45-78. Tests in file.test.ts."
 
 # 5. Close when done
-bd close <id> --reason "Implemented and tested" --suggest-next
+pb close <id> --reason "Implemented and tested" --suggest-next
 ```
 
 ---
@@ -427,7 +427,7 @@ bd close <id> --reason "Implemented and tested" --suggest-next
 
 1. **Forgetting `--json`** — You need the ID to reference the issue later
 2. **Assuming hierarchy = sequence** — `--parent` creates structure only; add `blocks` deps for order
-3. **Inverting dependency direction** — "B blocked by A" means `bd dep add B A`, not `bd dep add A B`
+3. **Inverting dependency direction** — "B blocked by A" means `pb dep add B A`, not `pb dep add A B`
 4. **Using blocks for preferences** — Only use `blocks` for actual technical dependencies where work literally cannot proceed
 5. **Over-using blocks** — If everything blocks everything, no parallel work is possible. Use `blocks` sparingly.
 6. **Using discovered-from for planning** — For planned task breakdown, use `--parent`. Use `discovered-from` only for emergent discoveries during work.

@@ -176,11 +176,23 @@ is_state_file() {
 }
 
 # Check if this is an update or fresh install
+# Detect existing installation by manifest, version file, or config
 if [[ -f "$TARGET_DIR/$MANIFEST_FILE" ]]; then
   MODE="update"
+  HAS_MANIFEST=true
   log "Existing installation detected, updating..."
+elif [[ -f "$TARGET_DIR/.meridian/.version" || -f "$TARGET_DIR/.meridian/config.yaml" ]]; then
+  MODE="update"
+  HAS_MANIFEST=false
+  log "Existing installation detected (no manifest), updating..."
+else
+  MODE="install"
+  HAS_MANIFEST=false
+  log "Fresh installation..."
+fi
 
-  # Read old manifest and delete those files (except state files)
+# If updating with manifest, delete old managed files (except state files)
+if [[ "$MODE" == "update" && "$HAS_MANIFEST" == true ]]; then
   DELETED=0
   while IFS= read -r file || [[ -n "$file" ]]; do
     [[ -z "$file" ]] && continue
@@ -193,9 +205,6 @@ if [[ -f "$TARGET_DIR/$MANIFEST_FILE" ]]; then
   if [[ $DELETED -gt 0 ]]; then
     info "Removed $DELETED old file(s)"
   fi
-else
-  MODE="install"
-  log "Fresh installation..."
 fi
 
 # Copy files and build manifest

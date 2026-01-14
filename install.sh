@@ -59,6 +59,8 @@ Examples:
 State files preserved on update:
   - .meridian/memory.jsonl
   - .meridian/session-context.md
+  - .meridian/config.yaml (merged with new defaults)
+  - .meridian/required-context-files.yaml
   - .meridian/api-docs/
   - .meridian/tasks/
   - .claude/plans/
@@ -171,6 +173,7 @@ is_state_file() {
     .meridian/memory.jsonl) return 0 ;;
     .meridian/session-context.md) return 0 ;;
     .meridian/config.yaml) return 0 ;;
+    .meridian/required-context-files.yaml) return 0 ;;
     .meridian/api-docs|.meridian/api-docs/*) return 0 ;;
     .meridian/tasks|.meridian/tasks/*) return 0 ;;
     .meridian/.manifest) return 0 ;;
@@ -362,7 +365,8 @@ if [[ "$MODE" == "update" ]]; then
   echo "Updated files are ready. State preserved:"
   echo "  - memory.jsonl"
   echo "  - session-context.md"
-  echo "  - api-docs/"
   echo "  - config.yaml (merged)"
+  echo "  - required-context-files.yaml"
+  echo "  - api-docs/"
   echo ""
 fi

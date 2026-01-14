@@ -16,7 +16,6 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from config import (
     get_project_config,
-    get_in_progress_tasks,
     parse_yaml_list,
     SESSION_CONTEXT_FILE,
     REQUIRED_CONTEXT_CONFIG,
@@ -32,12 +31,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
     if memory_path.exists():
         files.append(str(memory_path))
 
-    # 2. Task backlog
-    backlog_path = base_dir / ".meridian" / "task-backlog.yaml"
-    if backlog_path.exists():
-        files.append(str(backlog_path))
-
-    # 2b. User-provided docs
+    # 2. User-provided docs
     config_path = base_dir / REQUIRED_CONTEXT_CONFIG
     if config_path.exists():
         try:
@@ -55,19 +49,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
     if session_context_path.exists():
         files.append(str(session_context_path))
 
-    # 4. Plan files from task-backlog
-    in_progress_tasks = get_in_progress_tasks(base_dir)
-    for task in in_progress_tasks:
-        plan_path = task.get('plan_path', '')
-        if plan_path:
-            if plan_path.startswith('/'):
-                full_path = Path(plan_path)
-            else:
-                full_path = base_dir / plan_path
-            if full_path.exists():
-                files.append(str(full_path))
-
-    # 4b. Active plan (for Pebble workflows)
+    # 4. Active plan
     active_plan_file = base_dir / ".meridian" / ".active-plan"
     if active_plan_file.exists():
         try:

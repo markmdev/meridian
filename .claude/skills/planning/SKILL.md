@@ -142,6 +142,23 @@ Ask user for depth preference:
 
 Include test types, components to cover, and key scenarios in the plan.
 
+### 9. Verification Features (After Plan Review Passes)
+
+After the plan-reviewer approves the plan (score 9+), run the `feature-writer` agent:
+
+```
+Spawn feature-writer agent with: [path to plan file]
+```
+
+The feature-writer generates 5-20 verification features per phase (based on complexity) and appends them to the plan file. These features:
+
+- Define what "done" actually means for each phase
+- Provide step-by-step verification instructions
+- Become verification subtasks when creating pebble issues
+- Must pass before an issue can be closed
+
+**Present the plan with features to the user for final approval.**
+
 ## Plan Content
 
 **Plans describe WHAT, WHY, and WHERE requirements come from.**

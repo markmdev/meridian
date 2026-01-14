@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.23` (2026-01-13) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.24` (2026-01-14) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -75,8 +75,7 @@ flowchart TB
 
     subgraph Skills["Skills (Structured Workflows)"]
         S1[planning]
-        S2[task-manager]
-        S3[memory-curator]
+        S2[memory-curator]
     end
 
     subgraph Agents["Agents (Quality Gates)"]
@@ -87,10 +86,9 @@ flowchart TB
 
     subgraph Files[".meridian/ (Persistent State)"]
         F1[memory.jsonl]
-        F2[task-backlog.yaml]
-        F3[tasks/TASK-###/]
-        F4[api-docs/]
-        F5[CODE_GUIDE.md]
+        F2[session-context.md]
+        F3[api-docs/]
+        F4[CODE_GUIDE.md]
     end
 
     User -->|talks to| Claude
@@ -213,9 +211,8 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
 | `action-counter.py` | PostToolUse | Tracks actions for stop hook threshold |
 | `periodic-reminder.py` | PostToolUse, UserPromptSubmit, SessionStart | Injects behavior reminders every N actions |
-| `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create task folder |
-| `pre-stop-update.py` | Stop | Requires task/memory updates and implementation review |
-| `startup-prune-completed-tasks.py` | SessionStart | Archives old completed tasks |
+| `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create Pebble issues (if enabled) |
+| `pre-stop-update.py` | Stop | Requires memory updates and implementation review |
 | `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
 | `meridian-path-guard.py` | PermissionRequest | Blocks .meridian/.claude writes outside project root |
 | `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
@@ -241,15 +238,6 @@ Guides Claude through comprehensive planning so plans don't break during impleme
 6. **Documentation** — Each phase must include CLAUDE.md and human docs steps (mandatory)
 
 Plans describe **what and why**, not how. The plan-reviewer agent validates plans against the actual codebase before implementation begins.
-
-### Task Manager Skill
-
-Creates and manages task folders (`.meridian/tasks/TASK-###/`) for storing:
-- Plans copied from `.claude/plans/`
-- Design docs and task-specific artifacts
-- Any task-related documentation
-
-Session context is stored separately in `session-context.md` (always available, not task-dependent).
 
 ### Memory Curator Skill
 
@@ -333,6 +321,24 @@ Researches external tools, APIs, and products:
 
 **Strict rule:** No code using external APIs unless documented in api-docs. Planning skill has mandatory phase to verify/create docs.
 
+### Feature Writer
+
+Generates verification features for approved plans:
+- Creates 5-20 testable acceptance criteria per phase (based on complexity)
+- Each feature has concrete verification steps
+- Supports any verification type: UI, API, CLI, Library, Config/Infra, Data
+- Appends features to plan file in YAML format
+
+### Pebble Scaffolder
+
+Creates Pebble issue hierarchy from plans (when Pebble enabled):
+- Reads plan with verification features
+- Creates epic for overall plan
+- Creates task per phase as children of epic
+- Creates verification subtask per feature (steps in description)
+- Adds dependencies between sequential phases
+- Invoked automatically after plan approval
+
 </details>
 
 <details>
@@ -415,7 +421,6 @@ stop_hook_min_actions: 10  # Skip stop hook if < N actions since last user input
 # Always injected
 core:
   - .meridian/memory.jsonl
-  - .meridian/task-backlog.yaml
   - .meridian/CODE_GUIDE.md
   - .meridian/prompts/agent-operating-manual.md
 
@@ -463,7 +468,6 @@ your-project/
 │   │   ├── block-plan-agent.py
 │   │   ├── action-counter.py  # Tracks actions for stop hook
 │   │   ├── periodic-reminder.py  # Injects reminders every N messages
-│   │   ├── startup-prune-completed-tasks.py
 │   │   ├── permission-auto-approver.py
 │   │   ├── meridian-path-guard.py
 │   │   ├── plan-mode-tracker.py
@@ -472,9 +476,6 @@ your-project/
 │   │   └── work-until.md        # Start work-until loop
 │   ├── skills/
 │   │   ├── planning/SKILL.md
-│   │   ├── task-manager/
-│   │   │   ├── SKILL.md
-│   │   │   └── scripts/create-task.py
 │   │   ├── memory-curator/
 │   │   │   ├── SKILL.md
 │   │   │   └── scripts/
@@ -487,7 +488,9 @@ your-project/
 │       ├── implementation-reviewer.md
 │       ├── code-reviewer.md
 │       ├── browser-verifier.md
-│       └── docs-researcher.md
+│       ├── docs-researcher.md
+│       ├── feature-writer.md
+│       └── pebble-scaffolder.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected
@@ -496,13 +499,8 @@ your-project/
 │   ├── CODE_GUIDE_ADDON_HACKATHON.md # Relaxed rules for prototypes
 │   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
 │   ├── memory.jsonl                  # Persistent lessons/decisions
-│   ├── task-backlog.yaml             # Task index
 │   ├── api-docs/                     # External API documentation
 │   │   └── INDEX.md                  # Index of documented APIs
-│   ├── tasks/
-│   │   ├── TASK-000-template/        # Template for new tasks
-│   │   ├── TASK-001/                 # Plans, docs, artifacts
-│   │   └── archive/                  # Old completed tasks
 │   └── prompts/
 │       └── agent-operating-manual.md # Agent behavior instructions
 └── your-code/

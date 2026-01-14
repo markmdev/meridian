@@ -173,7 +173,6 @@ def get_required_files(base_dir: Path) -> list[str]:
             ".meridian/prompts/agent-operating-manual.md",
             ".meridian/CODE_GUIDE.md",
             ".meridian/memory.jsonl",
-            ".meridian/task-backlog.yaml",
         ]
 
     content = config_path.read_text()
@@ -389,90 +388,6 @@ def cleanup_pending_reads(base_dir: Path) -> None:
 
 
 # =============================================================================
-# TASK BACKLOG HELPERS
-# =============================================================================
-COMPLETED_STATUSES = ('done', 'completed', 'finished', 'cancelled', 'archived')
-
-
-def get_in_progress_tasks(base_dir: Path) -> list[dict]:
-    """Parse task-backlog.yaml and return all non-completed tasks."""
-    backlog_path = base_dir / ".meridian" / "task-backlog.yaml"
-    if not backlog_path.exists():
-        return []
-
-    try:
-        content = backlog_path.read_text()
-    except IOError:
-        return []
-
-    tasks = []
-    current_task = {}
-    in_tasks_section = False
-
-    for line in content.split('\n'):
-        stripped = line.strip()
-
-        # Detect tasks section
-        if stripped.startswith('tasks:'):
-            in_tasks_section = True
-            continue
-
-        if not in_tasks_section:
-            continue
-
-        # New task item
-        if stripped.startswith('- id:'):
-            if current_task and current_task.get('status', '').lower() not in COMPLETED_STATUSES:
-                tasks.append(current_task)
-            current_task = {'id': stripped.split(':', 1)[1].strip().strip('"\'') }
-            continue
-
-        # Task properties
-        if current_task and ':' in stripped and not stripped.startswith('-'):
-            key, value = stripped.split(':', 1)
-            current_task[key.strip()] = value.strip().strip('"\'')
-
-    # Don't forget the last task
-    if current_task and current_task.get('status', '').lower() not in COMPLETED_STATUSES:
-        tasks.append(current_task)
-
-    return tasks
-
-
-def build_task_xml(tasks: list[dict], claude_project_dir: str) -> str:
-    """Build XML representation of in-progress tasks."""
-    if not tasks:
-        return ""
-
-    xml_parts = ["<in_progress_tasks>"]
-    for task in tasks:
-        task_id = task.get('id', 'unknown')
-        status = task.get('status', 'unknown')
-        plan_path = task.get('plan_path', '')
-        task_path = task.get('path', '')
-
-        # Build absolute paths
-        if plan_path and not plan_path.startswith('/'):
-            plan_path = f"{claude_project_dir}/{plan_path}"
-        if task_path and not task_path.startswith('/'):
-            task_path = f"{claude_project_dir}/{task_path}"
-
-        # Handle IDs with or without TASK- prefix
-        id_part = task_id if task_id.startswith('TASK-') else f"TASK-{task_id}"
-
-        xml_parts.append(f"<task_{task_id}>")
-        xml_parts.append(f"  status: {status}")
-        if task_path:
-            xml_parts.append(f"  context: {task_path}{id_part}-context.md")
-        if plan_path:
-            xml_parts.append(f"  plan: {plan_path}")
-        xml_parts.append(f"</task_{task_id}>")
-
-    xml_parts.append("</in_progress_tasks>")
-    return "\n".join(xml_parts)
-
-
-# =============================================================================
 # PEBBLE INTEGRATION
 # =============================================================================
 # PEBBLE_GUIDE.md is injected as a file when pebble is enabled (see build_injected_context)
@@ -501,9 +416,6 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append("Read and internalize it before responding to the user.")
     parts.append("")
 
-    # Get in-progress tasks
-    in_progress_tasks = get_in_progress_tasks(base_dir)
-
     # Build ordered file list
     files_to_inject = []
 
@@ -522,30 +434,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if memory_path.exists():
         files_to_inject.append((".meridian/memory.jsonl", memory_path))
 
-    # 2. Task backlog
-    backlog_path = base_dir / ".meridian" / "task-backlog.yaml"
-    if backlog_path.exists():
-        files_to_inject.append((".meridian/task-backlog.yaml", backlog_path))
-
-    # 3. Session context (rolling cross-session context)
+    # 2. Session context (rolling cross-session context)
     session_context_path = base_dir / SESSION_CONTEXT_FILE
     if session_context_path.exists():
         files_to_inject.append((SESSION_CONTEXT_FILE, session_context_path))
 
-    # 4. Plan files for in-progress tasks (from task-backlog.yaml)
-    injected_plans = set()
-    for task in in_progress_tasks:
-        plan_path = task.get('plan_path', '')
-        if plan_path:
-            if plan_path.startswith('/'):
-                full_path = Path(plan_path)
-            else:
-                full_path = base_dir / plan_path
-            if full_path.exists():
-                files_to_inject.append((plan_path, full_path))
-                injected_plans.add(str(full_path))
-
-    # 4b. Active plan file (for Beads workflows)
+    # 3. Active plan file (if set)
     active_plan_file = base_dir / ".meridian" / ".active-plan"
     if active_plan_file.exists():
         try:
@@ -555,13 +449,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
                     full_path = Path(plan_path)
                 else:
                     full_path = base_dir / plan_path
-                # Only inject if not already injected from task-backlog
-                if full_path.exists() and str(full_path) not in injected_plans:
+                if full_path.exists():
                     files_to_inject.append((plan_path, full_path))
         except IOError:
             pass
 
-    # 5. CODE_GUIDE and addons
+    # 4. CODE_GUIDE and addons
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
     if code_guide_path.exists():
         files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path))

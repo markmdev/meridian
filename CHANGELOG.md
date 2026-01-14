@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.0.24] - 2026-01-14
+
+### Added
+- **pebble-scaffolder agent**: Creates Pebble issue hierarchy (epic, tasks, verification subtasks) from approved plans. Reads PEBBLE_GUIDE.md for rules, parses plan phases and verification features, creates all issues with proper parent-child relationships and dependencies. Invoked automatically after plan approval when Pebble is enabled.
+- **feature-writer agent**: Generates 5-20 verification features per plan phase. Features are testable acceptance criteria with concrete steps. Supports any verification type (UI, API, CLI, Library, Config/Infra, Data).
+
+### Changed
+- **plan-approval-reminder hook**: Now instructs main agent to invoke pebble-scaffolder instead of manually creating issues.
+- **PEBBLE_GUIDE.md**: Added verification subtasks section explaining how to verify and close with evidence.
+- **agent-operating-manual.md**: Compacted from 447 to 145 lines (68% reduction) following prompt-writing-guide principles.
+- **CODE_GUIDE.md**: Expanded Type Safety section (35 lines) emphasizing compiler strictness, no `any`, library type reuse. Variable section sizes instead of artificial uniformity.
+- **CODE_GUIDE_ADDON_PRODUCTION.md**: Reorganized by concern (Security, Reliability, Data, Observability, Build & Deploy). Removed Strengthen/Add labels.
+
+### Removed
+- **task-backlog system**: Removed in favor of Pebble for task tracking. Removed task-backlog.yaml injection, startup-prune-completed-tasks.py hook, and related code.
+
 ## [0.0.23] - 2026-01-13
 
 ### Added

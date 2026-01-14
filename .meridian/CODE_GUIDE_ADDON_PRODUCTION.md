@@ -1,93 +1,54 @@
-<CODE_GUIDE_ADDON_PRODUCTION>
-> ⚠️ **READ BASELINE FIRST**
-> This add-on strengthens `CODE_GUIDE.md` for production systems.
-> Rules here tighten and extend the Baseline.
+# Code Guide — Production Addon
 
-## Interpretation
-- **Strengthen**: Make the baseline rule stricter.
-- **Add**: New requirement that supplements baseline.
-- **Require justification**: Allow exceptions only with documented rationale.
+Stricter requirements for production systems. Applies on top of CODE_GUIDE.md.
 
 ---
 
-## Frontend
+## Security
 
-### TypeScript
-- **Strengthen**: Enable additional strict flags; treat warnings as errors in CI.
+- **CSP**: Configure strict Content-Security-Policy headers
+- **Auth tokens**: httpOnly cookies only, short-lived, no client storage (localStorage/sessionStorage)
+- **User content**: Sanitize all user-generated HTML before rendering
+- **Webhooks**: Per-destination secrets, timestamp tolerance checks, replay protection
+- **Tenant isolation**: Enforce at database layer (row-level policies) in addition to application checks
 
-### Server Components
-- **Strengthen**: Default to server; require justification for client components; document runtime choice per route.
+## Reliability
 
-### Server Actions
-- **Strengthen**: Schema validation mandatory; return typed domain results.
+- **Resilience**: Outbound timeouts, retries with backoff, circuit breakers for external dependencies
+- **Rate limiting**: Per IP/user/endpoint limits with `Retry-After` headers
+- **Caching**: Stampede prevention, explicit invalidation paths, jittered TTLs
+- **Background work**: Separate workers from API processes, DLQs mandatory, observable retry policies
+- **Query safety**: Limit query depth/complexity, bound filters and aggregations
 
-### Data Flow
-- **Strengthen**: Establish per-route caching strategy; document invalidation triggers.
+## Data
 
-### Security
-- **Strengthen**: Configure strict CSP; use sanitizers for any user-generated HTML.
+- **Database migrations**: Online schema changes for zero-downtime, strict indexing discipline
+- **Transactions**: Bounded retry attempts, explicit timeout limits
+- **Idempotency**: Require idempotency keys for unsafe POST endpoints, retain keys for reasonable duration
+- **Data lifecycle**: Retention and purge policies implemented in code, purge jobs idempotent
 
-### Auth Tokens
-- **Strengthen**: httpOnly cookies only; short-lived tokens; prohibit tokens in client storage.
+## Observability
 
-### Assets
-- **Strengthen**: Optimized image formats; responsive sizes; font subsetting.
+- **Logging**: Structured logs with correlation IDs, sensitive data redacted by default
+- **Tracing**: Distributed tracing across services
+- **Dashboards**: RED (Rate/Error/Duration) or USE (Utilization/Saturation/Errors) metrics
+- **Alerting**: SLOs defined with alerts on breach
+- **Error UX**: Standardized error pages with correlation IDs and support paths
 
-### Uploads
-- **Add**: Malware scanning; resumable uploads; robust error handling.
+## Build & Deploy
 
-### Error UX
-- **Add**: Standardized error pages with correlation IDs and support paths.
+- **Config validation**: Environment must validate before startup, exit on invalid config
+- **Containers**: Minimal images, pinned base versions, vulnerability scanning in CI
+- **CI strictness**: Treat warnings as errors, block deploys on failures
 
----
+## Frontend-Specific
 
-## Backend
+- **Server components**: Default to server rendering, document justification for client components
+- **Server actions**: Schema validation mandatory, return typed domain results
+- **Data flow**: Per-route caching strategy documented, invalidation triggers explicit
+- **Assets**: Optimized image formats, responsive sizes, font subsetting
+- **Uploads**: Malware scanning, resumable uploads, robust error handling
 
-### TypeScript
-- **Strengthen**: Strict mode with additional safety flags; CI treats warnings as errors.
+## Backend-Specific
 
-### Config
-- **Strengthen**: Environment validation must pass before start; exit on invalid config.
-
-### Logging
-- **Strengthen**: Structured logs with correlation fields; redact sensitive data by default.
-
-### Rate Limiting
-- **Strengthen**: Implement proper rate limiting per IP/user/endpoint; return `Retry-After`.
-
-### Resilience
-- **Add**: Outbound timeouts, retries with backoff, circuit breakers; classify dependencies by criticality.
-
-### Auth
-- **Strengthen**: If using JWTs, implement token rotation and revocation; consider device binding.
-
-### Tenant Isolation
-- **Strengthen**: Enforce at database layer (e.g., row-level policies) in addition to application checks.
-
-### Database
-- **Strengthen**: Online schema changes for zero-downtime; strict indexing discipline; bounded transaction retries.
-
-### Idempotency
-- **Add**: Require idempotency keys for unsafe POST endpoints; retain keys for reasonable duration.
-
-### Caching
-- **Strengthen**: Stampede prevention; explicit invalidation paths; jittered TTLs.
-
-### Background Work
-- **Strengthen**: Separate workers from API; DLQs mandatory; observable retry policies.
-
-### Webhooks
-- **Strengthen**: Per-destination secrets; timestamp tolerance; replay protection.
-
-### Observability
-- **Add**: Distributed tracing; RED/USE dashboards; SLOs with alerts.
-
-### Query Safety
-- **Strengthen**: Limit query depth/complexity; bound filters and aggregations.
-
-### Data Lifecycle
-- **Add**: Implement retention/purge policies in code; make purge jobs idempotent.
-
-### Build
-- **Strengthen**: Minimal container images; pinned base images; vulnerability scanning in CI.
-</CODE_GUIDE_ADDON_PRODUCTION>
+- **JWT handling**: Token rotation and revocation if using JWTs, consider device binding

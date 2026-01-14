@@ -6,18 +6,16 @@ from pathlib import Path
 from typing import Iterable
 
 MERIDIAN_DIR = ".meridian"
-TASK_BACKLOG = f"{MERIDIAN_DIR}/task-backlog.yaml"
 MEMORY_FILE = f"{MERIDIAN_DIR}/memory.jsonl"
-TASKS_DIR = f"{MERIDIAN_DIR}/tasks"
 
-SKILL_WHITELIST = {"memory-curator", "task-manager", "planning", "claudemd-writer"}
-BASH_SUBSTRINGS = {"add_memory_entry.py", "create-task.py", "setup-work-until.sh"}
+SKILL_WHITELIST = {"memory-curator", "planning", "claudemd-writer"}
+BASH_SUBSTRINGS = {"add_memory_entry.py", "setup-work-until.sh"}
 
 ALLOWED_ACTIONS = {
-    "Write": {"files": [TASK_BACKLOG, MEMORY_FILE], "dirs": [TASKS_DIR]},
-    "Edit": {"files": [TASK_BACKLOG, MEMORY_FILE], "dirs": [TASKS_DIR]},
-    "Read": {"files": [TASK_BACKLOG, MEMORY_FILE], "dirs": [TASKS_DIR]},
-    "Grep": {"files": [TASK_BACKLOG, MEMORY_FILE], "dirs": [TASKS_DIR]},
+    "Write": {"files": [MEMORY_FILE], "dirs": []},
+    "Edit": {"files": [MEMORY_FILE], "dirs": []},
+    "Read": {"files": [MEMORY_FILE], "dirs": []},
+    "Grep": {"files": [MEMORY_FILE], "dirs": []},
     "Glob": {"files": [MEMORY_FILE], "dirs": []},
 }
 

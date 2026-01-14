@@ -34,7 +34,7 @@ pre_compaction_sync_threshold: 144000
 # Session context: Rolling context file for cross-session continuity.
 # Agent saves important information here; oldest lines trimmed when over limit.
 # Set to 0 to disable trimming (unlimited size).
-session_context_max_lines: 850
+session_context_max_lines: 500
 
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.

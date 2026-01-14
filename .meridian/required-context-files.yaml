@@ -4,7 +4,6 @@
 # Always injected (in this order)
 core:
   - .meridian/memory.jsonl
-  - .meridian/task-backlog.yaml
   - .meridian/CODE_GUIDE.md
   - .meridian/prompts/agent-operating-manual.md
 

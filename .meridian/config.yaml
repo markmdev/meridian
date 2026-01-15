@@ -52,3 +52,8 @@ stop_hook_min_actions: 20
 # long sessions. Resets on session start (startup, compaction, clear).
 # Set to 0 to disable.
 reminder_interval: 10
+
+# Feature writer enforcement: Require verification features before exiting plan mode.
+# When enabled, blocks ExitPlanMode until feature-writer agent has run.
+# Disabled by default — enable for projects that need thorough acceptance criteria.
+feature_writer_enforcement_enabled: false

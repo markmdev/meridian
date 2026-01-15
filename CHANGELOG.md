@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.0.25] - 2026-01-15
+
+### Added
+- **docs-researcher SubagentStop hook**: Blocks docs-researcher agent from stopping if it hasn't used the Write tool. Ensures API documentation is actually written to `.meridian/api-docs/`.
+- **Pebble context injection**: Session start now injects `pb summary --pretty` (active epics) and `pb history --type create,close --pretty` (recent activity) when Pebble is enabled. Provides immediate visibility into project state.
+- **feature-writer enforcement hook**: Optional PreToolUse hook blocks ExitPlanMode if plan is missing verification features (`<!-- VERIFICATION_FEATURES -->` marker). Enable via `feature_writer_enforcement_enabled: true` in config.yaml (default: false).
+- **Verification issues with `--verifies` flag**: New Pebble relationship type for verification issues. Verification issues target the task they verify rather than being children. Ready behavior: verification appears in `pb ready` only after its target closes.
+
+### Changed
+- **Plan-review-blocked flag timing**: Flag now clears after plan approval (in PostToolUse), not on second ExitPlanMode attempt. Prevents premature flag clearing.
+- **Pebble Scaffolder path fix**: Added to reviewer-root-guard.py so it reads PEBBLE_GUIDE.md from correct location.
+- **"Fix something → check Epic" guidance**: Agent operating manual now instructs to check relevant Epic/backlog when fixing bugs or making improvements discovered during work.
+- **Session-context.md header**: Now explicitly states "DO NOT read this file" since it's already injected at session start.
+- **install.sh header update**: Installer now updates session-context.md header while preserving user entries (uses `<!-- SESSION ENTRIES START` marker).
+- **Verification issue guidance**: Agent operating manual and PEBBLE_GUIDE.md now explain: if verification can't be performed, don't close — add a comment explaining what's blocking verification.
+- **PEBBLE_GUIDE.md verification section**: Complete rewrite explaining `--verifies` flag, ready behavior, and evidence requirements.
+- **pebble-scaffolder agent**: Updated to use `--verifies` flag for verification issues instead of parent-child relationship.
+
+### Technical
+- New: `docs-researcher-stop.py` SubagentStop hook, `feature-writer-check.py` PreToolUse hook
+- New config option: `feature_writer_enforcement_enabled` (default: false)
+- Updated: `config.py` (get_pebble_context, stop prompt), `plan-review.py`, `plan-approval-reminder.py`, `reviewer-root-guard.py`, `settings.json`, `agent-operating-manual.md`, `PEBBLE_GUIDE.md`, `pebble-scaffolder.md`, `feature-writer.md`, `code-reviewer.md`, `implementation-reviewer.md`, `install.sh`, `session-context.md`
+
 ## [0.0.24] - 2026-01-14
 
 ### Added

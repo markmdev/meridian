@@ -20,7 +20,7 @@ pb dep add <blocked> <blocker>  # First issue blocked BY second
 pb dep tree <id>
 ```
 
-**Types:** `task`, `bug`, `epic` | **Priority:** 0 (critical) to 4 (backlog) | **Status:** `open`, `in_progress`, `blocked`, `closed`
+**Types:** `task`, `bug`, `epic`, `verification` | **Priority:** 0 (critical) to 4 (backlog) | **Status:** `open`, `in_progress`, `blocked`, `closed`
 
 ---
 
@@ -56,53 +56,68 @@ Write like a PM: Purpose, Why It Matters, Requirements, Acceptance Criteria. Fut
 
 ---
 
-## Verification Subtasks
+## Verification Issues
 
-When plans have **Verification Features** (from feature-writer), each feature becomes a subtask:
-
-```
-Task: Implement auth
-├── User can register with email and password
-│   description: Navigate to /register, fill form, submit, check redirect
-├── Invalid login shows error message
-│   description: Navigate to /login, enter wrong password, verify error
-└── ...
-```
-
-Parent can't close until all children close.
+Verification issues are post-completion checks — they become ready AFTER their target is closed.
 
 ```bash
-TASK=$(pb create "Implement auth" -t task --parent $EPIC | jq -r .id)
+# Create verification that targets a task
+pb create "User can log in" --verifies $TASK_ID
 
-# Each feature = subtask with steps in description
-pb create "User can register with email" -t task --parent $TASK \
-  --description "Navigate to /register, fill form, submit, check redirect"
-pb create "Invalid login shows error" -t task --parent $TASK \
-  --description "Navigate to /login, enter wrong password, verify error"
+# List verifications for an issue
+pb verifications $TASK_ID
+
+# Ready verifications (target closed, verification open)
+pb ready --type verification
 ```
 
-### Verifying and Closing
+### Ready Behavior
 
-**You perform the verification.** Follow the steps in the description, capture evidence, comment, then close.
+| Target Status | Verification Status | In `pb ready`? |
+|---------------|---------------------|----------------|
+| open | open | No |
+| closed | open | **Yes** |
+| closed | closed | No |
 
-**Evidence varies by verification type:**
+### Creating Verifications from Plans
+
+When plans have **Verification Features** (from feature-writer), each feature becomes a verification issue:
+
+```bash
+TASK=$(pb create "Implement login" -t task --parent $PHASE | jq -r .id)
+
+# Each feature = verification issue targeting the task
+pb create "User can log in with valid credentials" --verifies $TASK \
+  --description "Navigate to /login, enter valid creds, verify redirect to dashboard"
+pb create "Invalid password shows error" --verifies $TASK \
+  --description "Navigate to /login, enter wrong password, verify error message"
+```
+
+### Performing Verification
+
+When a verification appears in `pb ready`, its target is done. **You perform the verification:**
+
+1. Follow the steps in the description
+2. Capture evidence (screenshots, responses, output)
+3. Comment with proof
+4. Close if passing, or create bug if failing
+
+**Evidence varies by type:**
 - **UI**: Screenshot or description of what you observed
 - **API**: Request sent, response received (status, body)
 - **CLI**: Command run, output produced
 - **Data**: Query executed, results returned
 
-**The comment must contain proof**, not just "verified" or "works". Future agents need to see what was actually tested.
-
 ```bash
 # Good: evidence included
-pb comments add $ID "Sent POST /api/users with {name:'test'}. Got 201, user ID 42 returned. Verified user exists in DB."
+pb comments add $ID "POST /login with valid creds → 200, session cookie set, redirected to /dashboard"
 pb close $ID --reason "Verified"
 
 # Bad: no evidence
-pb comments add $ID "Tested and it works"
+pb comments add $ID "Works"
 ```
 
-**If verification fails:** Don't close. Create a bug issue, link it as a blocker, and fix before re-verifying.
+**If verification fails:** Don't close. Create a bug issue, link it, fix, then re-verify.
 
 ---
 

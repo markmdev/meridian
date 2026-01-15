@@ -2,7 +2,7 @@
 """
 Plan Approval Reminder Hook - PostToolUse ExitPlanMode
 
-Reminds Claude to create Pebble issues after plan is approved.
+Clears plan-review-blocked flag and reminds Claude to create Pebble issues after plan is approved.
 """
 
 import json
@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config
+from config import get_project_config, cleanup_flag, PLAN_REVIEW_FLAG
 
 
 def main():
@@ -26,6 +26,10 @@ def main():
 
     if tool_name != "ExitPlanMode":
         sys.exit(0)
+
+    # Clear the plan-review-blocked flag (ExitPlanMode succeeded = plan approved)
+    if claude_project_dir:
+        cleanup_flag(Path(claude_project_dir), PLAN_REVIEW_FLAG)
 
     # Check if Pebble is enabled
     pebble_enabled = False

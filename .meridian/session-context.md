@@ -4,9 +4,9 @@
 
 ## Rules
 
-**ALWAYS add new entries at the BOTTOM of this file.** Oldest entries are at the top and get trimmed first.
+**DO NOT read this file.** It is already injected into your context at session start. Reading it wastes tokens.
 
-**If you read this file partially (offset/limit, specific lines), you MUST re-read it fully before adding entries.** Partial reads may miss recent context.
+**ALWAYS add new entries at the BOTTOM of this file.** Oldest entries are at the top and get trimmed first.
 
 ## How to Use
 

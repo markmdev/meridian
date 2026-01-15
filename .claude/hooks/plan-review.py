@@ -46,12 +46,11 @@ def main():
     if not config['plan_review_enabled']:
         sys.exit(0)
 
-    # If flag exists: delete and allow (already reviewed)
+    # If flag exists: allow (plan-approval-reminder will clear it after PostToolUse)
     if flag_exists(base_dir, PLAN_REVIEW_FLAG):
-        cleanup_flag(base_dir, PLAN_REVIEW_FLAG)
         sys.exit(0)
 
-    # Flag doesn't exist: create and block
+    # Flag doesn't exist: create and block (first attempt to exit plan mode)
     create_flag(base_dir, PLAN_REVIEW_FLAG)
 
     files_list = '\n'.join(get_additional_review_files(base_dir, absolute=True))

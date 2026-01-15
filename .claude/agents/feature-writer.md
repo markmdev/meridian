@@ -15,6 +15,7 @@ Append to the END of the plan file:
 ```yaml
 ---
 
+<!-- VERIFICATION_FEATURES -->
 ## Verification Features
 
 ### Phase 1: [Phase Title]

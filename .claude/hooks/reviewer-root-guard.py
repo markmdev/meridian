@@ -12,12 +12,13 @@ import os
 import sys
 
 
-# Reviewer agents that require being in project root
+# Agents that require being in project root
 REVIEWER_AGENTS = {
     "plan-reviewer",
     "code-reviewer",
     "implementation-reviewer",
     "browser-verifier",
+    "pebble-scaffolder",
 }
 
 

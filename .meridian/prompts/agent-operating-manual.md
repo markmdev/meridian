@@ -69,6 +69,15 @@ pb comments add $ID "Fixed in src/foo.ts:45. Changed X to Y."
 pb close $ID --reason "Fixed" --json
 ```
 
+**When user mentions fixing something or reports a bug:**
+1. Check `<pebble-context>` (injected at session start) for relevant epics
+2. Use `pb search` to find related existing issues
+3. If an epic exists for this area, create new issues under it
+4. If no epic exists, check if this warrants a new epic or standalone issue
+
+**Verification issues you can't verify right now:**
+If verification isn't possible (backend not running, endpoint not accessible, environment not set up), do NOT close the issue. Add a comment explaining what blocked verification and leave it open. Someone else will verify later.
+
 See PEBBLE_GUIDE.md for full documentation.
 
 # Session Context & Memory

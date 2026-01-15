@@ -2,6 +2,7 @@
 Shared configuration helpers for Meridian hooks.
 """
 
+import subprocess
 from pathlib import Path
 
 
@@ -101,6 +102,7 @@ def get_project_config(base_dir: Path) -> dict:
         'session_context_max_lines': 1000,
         'pebble_enabled': False,
         'stop_hook_min_actions': 10,
+        'feature_writer_enforcement_enabled': False,
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -158,6 +160,11 @@ def get_project_config(base_dir: Path) -> dict:
                 config['stop_hook_min_actions'] = int(min_actions)
             except ValueError:
                 pass
+
+        # Feature writer enforcement
+        fw_enabled = get_config_value(content, 'feature_writer_enforcement_enabled')
+        if fw_enabled:
+            config['feature_writer_enforcement_enabled'] = fw_enabled.lower() == 'true'
 
     except IOError:
         pass
@@ -390,7 +397,54 @@ def cleanup_pending_reads(base_dir: Path) -> None:
 # =============================================================================
 # PEBBLE INTEGRATION
 # =============================================================================
-# PEBBLE_GUIDE.md is injected as a file when pebble is enabled (see build_injected_context)
+
+
+def get_pebble_context(base_dir: Path) -> str:
+    """Get Pebble epic summary and recent activity for context injection.
+
+    Runs pb commands to get:
+    - Epic summary with child counts
+    - Recent create/close activity
+
+    Returns formatted string or empty if commands fail.
+    """
+    parts = []
+
+    try:
+        # Get epic summary
+        result = subprocess.run(
+            ["pb", "summary", "--pretty"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts.append("## Active Epics")
+            parts.append("")
+            parts.append(result.stdout.strip())
+            parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    try:
+        # Get recent activity (create and close events)
+        result = subprocess.run(
+            ["pb", "history", "--type", "create,close", "--pretty"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts.append("## Recent Activity")
+            parts.append("")
+            parts.append(result.stdout.strip())
+            parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    return "\n".join(parts) if parts else ""
 
 
 # =============================================================================
@@ -496,7 +550,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append(f'<file path=".meridian/api-docs/INDEX.md" error="Could not read file" />')
             parts.append("")
 
-    # 7. Pebble guide (if enabled)
+    # 7. Pebble guide and context (if enabled)
     if project_config.get('pebble_enabled', False):
         pebble_guide_path = base_dir / ".meridian" / "PEBBLE_GUIDE.md"
         if pebble_guide_path.exists():
@@ -509,6 +563,14 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             except IOError:
                 parts.append(f'<file path=".meridian/PEBBLE_GUIDE.md" error="Could not read file" />')
                 parts.append("")
+
+        # Get live Pebble context (epics, recent activity)
+        pebble_context = get_pebble_context(base_dir)
+        if pebble_context:
+            parts.append('<pebble-context>')
+            parts.append(pebble_context.rstrip())
+            parts.append('</pebble-context>')
+            parts.append("")
 
     # 8. Agent operating manual
     manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
@@ -677,17 +739,21 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     if config.get('implementation_review_enabled', True):
         parts.append(
             "**IMPLEMENTATION REVIEW**: After finishing a plan, epic, or large multi-file task, run reviewers.\n\n"
-            f"First `cd {claude_project_dir}`, then **spawn in parallel** (no prompts needed — they read from `.meridian/.injected-files`):\n"
-            "1. Implementation Reviewer agent\n"
-            "2. Code Reviewer agent\n"
+            f"First `cd {claude_project_dir}`, then:\n"
         )
 
         if pebble_enabled:
             parts.append(
+                "**Spawn in parallel** — include `Parent issue: #<id>` in the prompt (the epic/task you were working on):\n"
+                "- Implementation Reviewer agent\n"
+                "- Code Reviewer agent\n"
                 "**After reviewers**: If issues created → fix → re-run. Repeat until no issues.\n"
             )
         else:
             parts.append(
+                "**Spawn in parallel** (no prompts needed — they read from `.meridian/.injected-files`):\n"
+                "1. Implementation Reviewer agent\n"
+                "2. Code Reviewer agent\n"
                 "**After reviewers**: Read `.meridian/implementation-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
             )
 

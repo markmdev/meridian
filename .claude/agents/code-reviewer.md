@@ -84,12 +84,9 @@ For each finding: context, impact, evidence (file:line), fix.
 
 **Severity**: Critical (data loss, security, crashes) → p0. Important (bugs) → p1. Suggestion (DRY, minor) → p2.
 
-**Never create orphaned issues.** Before creating:
-1. Check if similar issue already exists
-2. Connect to parent work (epic or parent issue ID)
-3. Use `discovered-from` if found while working on another issue
+**Never create orphaned issues.** The main agent should pass `Parent issue: #<id>` in the prompt. Use that as the parent for all issues you create. If not provided, use `pb search` to find the relevant epic.
 
-**If `pebble_enabled: true`**: See `.meridian/PEBBLE_GUIDE.md` for commands.
+**If `pebble_enabled: true`**: See `.meridian/PEBBLE_GUIDE.md` for commands. Use `--parent <id>` when creating issues.
 
 **If `pebble_enabled: false`**: Write to `.meridian/implementation-reviews/code-review-{random-8-chars}.md` with full analysis, walkthroughs, findings.
 

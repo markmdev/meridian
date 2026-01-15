@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, cleanup_flag, PLAN_REVIEW_FLAG
+from config import get_project_config, cleanup_flag, clear_plan_action_start, PLAN_REVIEW_FLAG
 
 
 def main():
@@ -27,18 +27,21 @@ def main():
     if tool_name != "ExitPlanMode":
         sys.exit(0)
 
-    # Clear the plan-review-blocked flag (ExitPlanMode succeeded = plan approved)
+    # Clear state files (ExitPlanMode succeeded = plan approved)
     if claude_project_dir:
-        cleanup_flag(Path(claude_project_dir), PLAN_REVIEW_FLAG)
+        base_dir = Path(claude_project_dir)
+        cleanup_flag(base_dir, PLAN_REVIEW_FLAG)
+        clear_plan_action_start(base_dir)
 
-    # Check if Pebble is enabled
-    pebble_enabled = False
-    if claude_project_dir:
-        config = get_project_config(Path(claude_project_dir))
-        pebble_enabled = config.get('pebble_enabled', False)
+    # Check if Pebble and scaffolder are enabled
+    if not claude_project_dir:
+        sys.exit(0)
 
-    if not pebble_enabled:
-        # No task tracking - just proceed
+    config = get_project_config(Path(claude_project_dir))
+    pebble_enabled = config.get('pebble_enabled', False)
+    scaffolder_enabled = config.get('pebble_scaffolder_enabled', True)
+
+    if not pebble_enabled or not scaffolder_enabled:
         sys.exit(0)
 
     reason = (

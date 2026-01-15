@@ -3,12 +3,17 @@
 Block Plan Agent Hook - PreToolUse Task
 
 Blocks calls to the Plan agent and redirects to use the Planning skill instead.
-The Planning skill allows the main agent to plan directly while retaining
-full conversation context.
+Configurable via plan_agent_redirect_enabled in config.yaml (default: true).
 """
 
 import json
+import os
 import sys
+from pathlib import Path
+
+# Add lib to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import get_project_config
 
 
 def main():
@@ -29,6 +34,13 @@ def main():
     subagent_type = tool_input.get("subagent_type", "")
     if subagent_type.lower() != "plan":
         sys.exit(0)
+
+    # Check if redirect is enabled
+    claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    if claude_project_dir:
+        config = get_project_config(Path(claude_project_dir))
+        if not config.get('plan_agent_redirect_enabled', True):
+            sys.exit(0)
 
     # Block the Plan agent call
     output = {

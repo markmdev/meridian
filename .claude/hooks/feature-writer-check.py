@@ -4,6 +4,7 @@ Feature Writer Check Hook - PreToolUse ExitPlanMode
 
 Blocks ExitPlanMode if the active plan doesn't have verification features.
 Configurable via feature_writer_enforcement_enabled in config.yaml (default: false).
+Skips enforcement for lightweight plans (fewer than plan_review_min_actions).
 """
 
 import json
@@ -13,7 +14,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config
+from config import get_project_config, get_plan_action_count
 
 VERIFICATION_MARKER = "<!-- VERIFICATION_FEATURES -->"
 
@@ -39,6 +40,13 @@ def main():
     # Check if enabled in config
     config = get_project_config(base_dir)
     if not config.get('feature_writer_enforcement_enabled', False):
+        sys.exit(0)
+
+    # Check if this is a lightweight plan (fewer actions than threshold)
+    min_actions = config.get('plan_review_min_actions', 20)
+    plan_actions = get_plan_action_count(base_dir)
+    if plan_actions >= 0 and plan_actions < min_actions:
+        # Lightweight plan - skip enforcement
         sys.exit(0)
 
     # Find active plan file

@@ -23,6 +23,7 @@ STATE_FILES = [
 # Files to clean up ONLY on fresh startup (not compact/clear)
 STARTUP_ONLY_FILES = [
     PROJECT_DIR / ".meridian/.plan-review-blocked",
+    PROJECT_DIR / ".meridian/.plan-action-start",
 ]
 
 

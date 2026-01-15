@@ -18,6 +18,7 @@ CONTEXT_ACK_FLAG = ".meridian/.context-acknowledgment-pending"
 SESSION_CONTEXT_FILE = ".meridian/session-context.md"
 ACTION_COUNTER_FILE = ".meridian/.action-counter"
 REMINDER_COUNTER_FILE = ".meridian/.reminder-counter"
+PLAN_ACTION_START_FILE = ".meridian/.plan-action-start"
 
 
 # =============================================================================
@@ -103,6 +104,11 @@ def get_project_config(base_dir: Path) -> dict:
         'pebble_enabled': False,
         'stop_hook_min_actions': 10,
         'feature_writer_enforcement_enabled': False,
+        'plan_review_min_actions': 20,
+        'code_review_enabled': True,
+        'docs_researcher_write_required': True,
+        'pebble_scaffolder_enabled': True,
+        'plan_agent_redirect_enabled': True,
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -165,6 +171,34 @@ def get_project_config(base_dir: Path) -> dict:
         fw_enabled = get_config_value(content, 'feature_writer_enforcement_enabled')
         if fw_enabled:
             config['feature_writer_enforcement_enabled'] = fw_enabled.lower() == 'true'
+
+        # Plan review minimum actions threshold
+        plan_min_actions = get_config_value(content, 'plan_review_min_actions')
+        if plan_min_actions:
+            try:
+                config['plan_review_min_actions'] = int(plan_min_actions)
+            except ValueError:
+                pass
+
+        # Code review (separate from implementation review)
+        cr_enabled = get_config_value(content, 'code_review_enabled')
+        if cr_enabled:
+            config['code_review_enabled'] = cr_enabled.lower() != 'false'
+
+        # Docs researcher write requirement
+        dr_write = get_config_value(content, 'docs_researcher_write_required')
+        if dr_write:
+            config['docs_researcher_write_required'] = dr_write.lower() != 'false'
+
+        # Pebble scaffolder auto-invocation
+        ps_enabled = get_config_value(content, 'pebble_scaffolder_enabled')
+        if ps_enabled:
+            config['pebble_scaffolder_enabled'] = ps_enabled.lower() != 'false'
+
+        # Plan agent redirect to planning skill
+        pa_redirect = get_config_value(content, 'plan_agent_redirect_enabled')
+        if pa_redirect:
+            config['plan_agent_redirect_enabled'] = pa_redirect.lower() != 'false'
 
     except IOError:
         pass
@@ -249,6 +283,58 @@ def create_flag(base_dir: Path, flag_path: str) -> None:
 def flag_exists(base_dir: Path, flag_path: str) -> bool:
     """Check if a flag file exists."""
     return (base_dir / flag_path).exists()
+
+
+# =============================================================================
+# ACTION COUNTER HELPERS
+# =============================================================================
+def get_action_counter(base_dir: Path) -> int:
+    """Get current action counter value."""
+    counter_path = base_dir / ACTION_COUNTER_FILE
+    try:
+        if counter_path.exists():
+            return int(counter_path.read_text().strip())
+    except (ValueError, IOError):
+        pass
+    return 0
+
+
+def save_plan_action_start(base_dir: Path) -> None:
+    """Save current action counter as plan mode start point."""
+    current = get_action_counter(base_dir)
+    start_path = base_dir / PLAN_ACTION_START_FILE
+    try:
+        start_path.parent.mkdir(parents=True, exist_ok=True)
+        start_path.write_text(str(current))
+    except IOError:
+        pass
+
+
+def get_plan_action_count(base_dir: Path) -> int:
+    """Get number of actions since plan mode started.
+
+    Returns the difference between current action counter and saved start value.
+    Returns -1 if no start value exists (plan mode not entered properly).
+    """
+    start_path = base_dir / PLAN_ACTION_START_FILE
+    try:
+        if not start_path.exists():
+            return -1
+        start_value = int(start_path.read_text().strip())
+        current = get_action_counter(base_dir)
+        return current - start_value
+    except (ValueError, IOError):
+        return -1
+
+
+def clear_plan_action_start(base_dir: Path) -> None:
+    """Remove plan action start file."""
+    start_path = base_dir / PLAN_ACTION_START_FILE
+    try:
+        if start_path.exists():
+            start_path.unlink()
+    except IOError:
+        pass
 
 
 # =============================================================================
@@ -596,7 +682,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append("4. Confirm you will operate according to the agent-operating-manual")
     parts.append("")
     parts.append("Acknowledge this context by briefly stating what you understand about")
-    parts.append("the current project state, then ask the user what they'd like to work on.")
+    parts.append("the current project state.")
     parts.append("")
     parts.append("</injected-project-context>")
 
@@ -735,25 +821,42 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
     parts = ["[SYSTEM]: Before stopping, complete these checks:\n"]
 
+    # Skip-if-unchanged principle
+    parts.append(
+        "**SKIP IF UNCHANGED**: If you already ran a check (reviewers, tests, lint, build) this session "
+        "and made no significant code changes since, skip re-running it — just state it passed earlier. "
+        "Only re-run checks after significant code changes.\n"
+    )
+
     # Implementation review section (lowest priority - at top)
-    if config.get('implementation_review_enabled', True):
+    impl_review = config.get('implementation_review_enabled', True)
+    code_review = config.get('code_review_enabled', True)
+
+    if impl_review or code_review:
         parts.append(
             "**IMPLEMENTATION REVIEW**: After finishing a plan, epic, or large multi-file task, run reviewers.\n\n"
             f"First `cd {claude_project_dir}`, then:\n"
         )
 
+        # Build reviewer list based on config
+        reviewers = []
+        if impl_review:
+            reviewers.append("Implementation Reviewer agent")
+        if code_review:
+            reviewers.append("Code Reviewer agent")
+
         if pebble_enabled:
+            reviewer_list = "\n".join(f"- {r}" for r in reviewers)
             parts.append(
                 "**Spawn in parallel** — include `Parent issue: #<id>` in the prompt (the epic/task you were working on):\n"
-                "- Implementation Reviewer agent\n"
-                "- Code Reviewer agent\n"
+                f"{reviewer_list}\n"
                 "**After reviewers**: If issues created → fix → re-run. Repeat until no issues.\n"
             )
         else:
+            reviewer_list = "\n".join(f"{i+1}. {r}" for i, r in enumerate(reviewers))
             parts.append(
                 "**Spawn in parallel** (no prompts needed — they read from `.meridian/.injected-files`):\n"
-                "1. Implementation Reviewer agent\n"
-                "2. Code Reviewer agent\n"
+                f"{reviewer_list}\n"
                 "**After reviewers**: Read `.meridian/implementation-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
             )
 
@@ -800,8 +903,8 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
     # Tests/lint/build section (highest priority - near bottom)
     parts.append(
-        "**TESTS/LINT/BUILD**: If work is finished, you MUST ensure codebase is clean. Run tests, lint, build. "
-        "Fix failures and rerun until passing. If already passed and no changes since, state they're clean.\n"
+        "**TESTS/LINT/BUILD**: If work is finished, ensure codebase is clean. Run tests, lint, build. "
+        "Fix failures and rerun until passing.\n"
     )
 
     # Footer

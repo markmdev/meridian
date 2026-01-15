@@ -10,9 +10,18 @@ project_type: standard
 # When false, ExitPlanMode proceeds without review.
 plan_review_enabled: true
 
+# Plan review minimum actions: Skip plan-reviewer and feature-writer enforcement
+# if fewer than this many actions occurred since entering plan mode.
+# Prevents heavyweight review for quick/simple plans. Set to 0 to always enforce.
+plan_review_min_actions: 20
+
 # Implementation review: require implementation-reviewer agent before stopping.
 # When false, pre-stop hook skips the implementation review section.
 implementation_review_enabled: true
+
+# Code review: require code-reviewer agent before stopping (separate from impl review).
+# When false, only implementation reviewer runs. Useful when code review is overkill.
+code_review_enabled: true
 
 # Pre-compaction sync: prompt agent to save context before conversation compacts.
 # When false, no warning is given before compaction.
@@ -57,3 +66,15 @@ reminder_interval: 10
 # When enabled, blocks ExitPlanMode until feature-writer agent has run.
 # Disabled by default — enable for projects that need thorough acceptance criteria.
 feature_writer_enforcement_enabled: false
+
+# Pebble scaffolder: Auto-invoke pebble-scaffolder after plan approval.
+# When false, you can use Pebble without automatic issue scaffolding.
+pebble_scaffolder_enabled: true
+
+# Docs researcher write requirement: Block docs-researcher if it didn't write files.
+# When false, docs-researcher can complete without writing to api-docs.
+docs_researcher_write_required: true
+
+# Plan agent redirect: Redirect Plan agent calls to planning skill.
+# When false, allows direct use of Plan agent (loses conversation context).
+plan_agent_redirect_enabled: true

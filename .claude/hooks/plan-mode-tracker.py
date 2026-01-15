@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config
+from config import get_project_config, save_plan_action_start
 
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 STATE_FILE = PROJECT_DIR / ".meridian/.plan-mode-state"
@@ -39,6 +39,9 @@ def main():
 
     if previous_mode != current_mode:
         if current_mode == "plan":
+            # Save action counter for lightweight plan detection
+            save_plan_action_start(PROJECT_DIR)
+
             config = get_project_config(PROJECT_DIR)
             pebble_enabled = config.get('pebble_enabled', False)
 

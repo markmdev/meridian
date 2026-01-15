@@ -3,12 +3,17 @@
 Docs Researcher Stop Hook - SubagentStop
 
 Blocks docs-researcher agent from stopping if it hasn't used the Write tool.
-The agent's job is to create documentation files - if it didn't write anything,
-it didn't complete its task.
+Configurable via docs_researcher_write_required in config.yaml (default: true).
 """
 
 import json
+import os
 import sys
+from pathlib import Path
+
+# Add lib to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import get_project_config
 
 
 def main():
@@ -20,6 +25,13 @@ def main():
     hook_event = input_data.get("hook_event_name", "")
     if hook_event != "SubagentStop":
         sys.exit(0)
+
+    # Check if enabled in config
+    claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    if claude_project_dir:
+        config = get_project_config(Path(claude_project_dir))
+        if not config.get('docs_researcher_write_required', True):
+            sys.exit(0)
 
     # Check if this is docs-researcher by reading the transcript
     transcript_path = input_data.get("transcript_path", "")

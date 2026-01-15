@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.0.26] - 2026-01-15
+
+### Added
+- **Lightweight plan detection**: Skip plan-reviewer and feature-writer enforcement when fewer than `plan_review_min_actions` (default: 20) actions occurred since entering plan mode. Quick plans skip heavyweight review.
+- **`/coderabbit-review` command**: Wrapper for `/work-until` that handles CodeRabbit AI review cycles. Automatically addresses Critical, Major, Minor, and Out-of-diff comments; skips Nitpicks.
+- **Skip-if-unchanged guidance**: Stop hook now tells agent to skip re-running implementation/code reviewers if no significant code changes since last run.
+- **Four new config options**:
+  - `code_review_enabled` — Control code reviewer separately from implementation reviewer (default: true)
+  - `docs_researcher_write_required` — Block docs-researcher if it didn't write to api-docs (default: true)
+  - `pebble_scaffolder_enabled` — Control auto-scaffolding after plan approval (default: true)
+  - `plan_agent_redirect_enabled` — Control Plan agent → planning skill redirect (default: true)
+
+### Changed
+- **Work-until command refactored**: Extracted loop instructions to shared `.meridian/prompts/work-until-loop.md`. Both `/work-until` and `/coderabbit-review` use the same file, reducing duplication.
+- **Removed legacy sprint_active detection**: Cleaned unused code from `post-compact-guard.py` that referenced removed `/pb-sprint` commands.
+
+### Technical
+- New: `.claude/commands/coderabbit-review.md`, `.meridian/prompts/work-until-loop.md`, `.meridian/prompts/coderabbit-task.md`
+- New config helpers in `lib/config.py`: `save_plan_action_start()`, `get_plan_action_count()`, `clear_plan_action_start()`
+- Updated: `config.py`, `plan-mode-tracker.py`, `plan-review.py`, `feature-writer-check.py`, `plan-approval-reminder.py`, `docs-researcher-stop.py`, `block-plan-agent.py`, `post-compact-guard.py`, `session-cleanup.py`, `work-until.md`, `config.yaml`
+
 ## [0.0.25] - 2026-01-15
 
 ### Added

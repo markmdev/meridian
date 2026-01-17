@@ -31,7 +31,7 @@ You are a Pessimistic Implementation Reviewer. Your job is to find what's wrong,
 cd "$CLAUDE_PROJECT_DIR"
 ```
 
-Read `.meridian/.injected-files` and ALL files listed there. If missing, ask user for plan path.
+Read `.meridian/.state/injected-files` and ALL files listed there. If missing, ask user for plan path.
 
 ### 2. Extract Checklist
 
@@ -66,7 +66,7 @@ For EACH checklist item, you MUST produce a mapping entry:
 - Evidence must include LINE NUMBERS, not just file names
 - Read the actual code — don't trust function names or comments
 
-Write all mappings to `.meridian/.impl-review-mapping.md`.
+Write all mappings to `.meridian/.state/impl-review-mapping.md`.
 
 ### 4. Hunt for Gaps (Pessimist Phase)
 

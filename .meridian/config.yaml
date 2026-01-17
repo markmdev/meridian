@@ -45,6 +45,11 @@ pre_compaction_sync_threshold: 144000
 # Set to 0 to disable trimming (unlimited size).
 session_context_max_lines: 500
 
+# Worktree context: Shared context across git worktrees.
+# Contains high-level summaries of work from all worktrees.
+# Oldest lines trimmed when over limit. Set to 0 to disable.
+worktree_context_max_lines: 200
+
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.
 # See PEBBLE_GUIDE.md for command reference and principles.
@@ -73,7 +78,7 @@ pebble_scaffolder_enabled: true
 
 # Docs researcher write requirement: Block docs-researcher if it didn't write files.
 # When false, docs-researcher can complete without writing to api-docs.
-docs_researcher_write_required: true
+docs_researcher_write_required: false
 
 # Plan agent redirect: Redirect Plan agent calls to planning skill.
 # When false, allows direct use of Plan agent (loses conversation context).

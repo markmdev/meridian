@@ -1,8 +1,9 @@
-# CLAUDE.md Writer Skill
+---
+name: claudemd-writer
+description: Create or update CLAUDE.md files. Use when adding a new module, explaining patterns, or fixing repeated agent mistakes.
+---
 
-Use this skill when creating or updating CLAUDE.md files.
-
-## What is CLAUDE.md?
+# CLAUDE.md Writer
 
 CLAUDE.md files provide context to Claude Code when working in a directory. Claude reads them automatically based on the files being accessed.
 

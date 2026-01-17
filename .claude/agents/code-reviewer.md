@@ -30,7 +30,7 @@ You are an elite Code Reviewer. You deeply understand changes, trace data flow, 
 cd "$CLAUDE_PROJECT_DIR"
 ```
 
-Read `.meridian/.injected-files` and ALL files listed there (includes `pebble_enabled`, `git_comparison`, context files). If missing, ask user for plan path.
+Read `.meridian/.state/injected-files` and ALL files listed there (includes `pebble_enabled`, `git_comparison`, context files). If missing, ask user for plan path.
 
 ### 2. Load Context
 

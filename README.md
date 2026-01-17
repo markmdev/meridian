@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.26` (2026-01-15) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.27` (2026-01-17) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -169,7 +169,7 @@ curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh |
 ### Install specific version
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash -s -- -v 0.0.26
+curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash -s -- -v 0.0.27
 ```
 
 ### Update existing installation
@@ -284,6 +284,24 @@ python3 .claude/skills/memory-curator/scripts/edit_memory_entry.py \
 python3 .claude/skills/memory-curator/scripts/delete_memory_entry.py \
   --id mem-0042
 ```
+
+### Prompt Writing Skill
+
+General-purpose guidance for writing effective prompts for any AI system:
+- **Remove redundancy** — Merge overlapping content, deduplicate examples
+- **Remove noise** — Cut excessive dividers, wrapper tags, verbose explanations
+- **Sharpen instructions** — Make them direct and actionable
+- **Keep load-bearing content** — Workflow steps, quality criteria, rules that matter
+
+Works for Claude Code artifacts (skills, agents, hooks) and any other AI prompts.
+
+### CLAUDE.md Writer Skill
+
+Guidance for writing effective CLAUDE.md files:
+- Hierarchical injection (files at each directory level)
+- "Less is more" principle — every line competes for attention
+- Commands first, then key patterns
+- What/How/Why structure
 
 </details>
 
@@ -504,6 +522,7 @@ your-project/
 │   │   │       ├── add_memory_entry.py
 │   │   │       ├── edit_memory_entry.py
 │   │   │       └── delete_memory_entry.py
+│   │   ├── prompt-writing/SKILL.md
 │   │   └── claudemd-writer/SKILL.md
 │   └── agents/
 │       ├── plan-reviewer.md
@@ -517,12 +536,14 @@ your-project/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected
 │   ├── session-context.md            # Rolling context (always injected)
+│   ├── worktree-context.md           # Shared context across git worktrees
 │   ├── CODE_GUIDE.md                 # Baseline standards
 │   ├── CODE_GUIDE_ADDON_HACKATHON.md # Relaxed rules for prototypes
 │   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
 │   ├── memory.jsonl                  # Persistent lessons/decisions
 │   ├── api-docs/                     # External API documentation
 │   │   └── INDEX.md                  # Index of documented APIs
+│   ├── .state/                       # Ephemeral hook state (gitignored)
 │   └── prompts/
 │       └── agent-operating-manual.md # Agent behavior instructions
 └── your-code/
@@ -565,7 +586,7 @@ The `/work-until` command creates an iterative loop where Claude keeps working o
 - **Session context preserves history**: Between iterations, Claude writes to `session-context.md`, so it knows what was tried
 - **Normal stop checks still run**: Memory, session context, tests/lint/build — all enforced each iteration
 - **Completion phrase must be TRUE**: Claude cannot lie to escape the loop
-- **Monitor progress**: `cat .meridian/.loop-state` shows current iteration
+- **Monitor progress**: `cat .meridian/.state/loop-state` shows current iteration
 
 ### Example Flow
 

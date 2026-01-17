@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.0.27] - 2026-01-17
+
+### Added
+- **`/prompt-writing` skill**: General-purpose prompt writing skill for any AI system. Covers removing redundancy, removing noise, sharpening instructions, and keeping load-bearing content.
+- **Deferral prohibition in planning**: Planning skill now explicitly prohibits deferrals ("TBD", "needs investigation", "figure out later"). All investigation must happen during planning, not implementation.
+- **Deferral detection in plan-reviewer**: New Phase 6 detects and flags deferred investigation as critical findings.
+- **State directory consolidation**: All ephemeral hook state files now live in `.meridian/.state/` for cleaner organization.
+- **Worktree context sharing**: New `worktree-context.md` in main worktree for sharing high-level context across git worktrees. Stop and pre-compaction hooks prompt for standup-style updates. Auto-trims to `worktree_context_max_lines` (default: 200).
+- **docs-researcher flag tracking**: New PostToolUse hook (`docs-researcher-tracker.py`) creates flag when docs-researcher spawns. SubagentStop hook checks flag for reliable agent detection.
+- **install.sh settings.json merge**: Fresh installs now merge user's existing hooks with Meridian's hooks instead of overwriting.
+
+### Changed
+- **Session cleanup simplified**: Now deletes entire `.meridian/.state/` directory on startup instead of individual files.
+- **claudemd-writer skill**: Fixed missing YAML frontmatter (name, description fields).
+- **memory-curator skill**: Cleaned up — removed wrapper tags, excessive dividers, consolidated Field Guidelines section. 143 → 110 lines.
+- **Worktree context guidance**: Stop and pre-compaction hooks now use standup-style guidance (2-3 sentences, what was worked on and achieved, no technical implementation details).
+- **Removed pre-compaction-sync.log**: No longer logs token calculations to file.
+
+### Technical
+- New: `.claude/skills/prompt-writing/SKILL.md`, `.claude/hooks/docs-researcher-tracker.py`, `.meridian/worktree-context.md`
+- New constants in `config.py`: `STATE_DIR`, `DOCS_RESEARCHER_FLAG`, worktree detection functions (`get_main_worktree_path()`, `is_main_worktree()`, `get_worktree_name()`), `trim_worktree_context()`
+- Migrated all flag paths to use `STATE_DIR`: `PENDING_READS_DIR`, `PRE_COMPACTION_FLAG`, `PLAN_REVIEW_FLAG`, `CONTEXT_ACK_FLAG`, `ACTION_COUNTER_FILE`, `REMINDER_COUNTER_FILE`, `PLAN_ACTION_START_FILE`, `PLAN_MODE_STATE`, `ACTIVE_PLAN_FILE`, `INJECTED_FILES_LOG`, `LOOP_STATE_FILE`
+- Updated: All hooks referencing state files, all agent files referencing `.injected-files`, `.gitignore`
+
 ## [0.0.26] - 2026-01-15
 
 ### Added

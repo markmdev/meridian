@@ -76,6 +76,15 @@
         ]
       },
       {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/docs-researcher-tracker.py"
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write|Read",
         "hooks": [
           {

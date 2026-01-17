@@ -1,14 +1,11 @@
 ---
 name: memory-curator
-description: Manage architectural decisions and insights in memory.jsonl. Use when you need to document strategic decisions, lessons learned, fixed problems, or architectural insights.
+description: Manage architectural decisions and insights in memory.jsonl. Use when you need to document strategic decisions, lessons learned, or architectural insights.
 ---
-<memory_curator>
-# Memory Curator Skill
 
-`memory.jsonl` stores durable engineering knowledge that can't be inferred from code.
-- **Never** write to the file manually. Always use the `add_memory_entry.py` script.
+# Memory Curator
 
----
+`memory.jsonl` stores durable engineering knowledge that can't be inferred from code. Never edit the file manually — use the scripts below.
 
 ## The Critical Test
 
@@ -17,8 +14,6 @@ Before adding ANY memory entry, ask:
 > "If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?"
 
 **If the fix is in the code, don't add to memory.** The code IS the memory.
-
----
 
 ## SHOULD Add to Memory
 
@@ -38,8 +33,6 @@ Before adding ANY memory entry, ask:
    - How agents pass context to each other
    - What data format specialized agents expect
 
----
-
 ## SHOULD NOT Add to Memory
 
 1. **One-time bug fixes** → The fix is in the code
@@ -57,26 +50,20 @@ Before adding ANY memory entry, ask:
 4. **Module-specific implementation details** → Belong in CLAUDE.md
    - ❌ "This service uses connection pooling" → Document in module's CLAUDE.md
 
----
+## Examples
 
-## Good Examples
+**Good:**
 
 - "Sequential agent pattern: tool-using agent first (mode:'generate'), then structured output agent receives results via promptVariables. Required because generateObject() doesn't support tools."
 - "Portfolio validation must calculate ALL requirements before checking sufficiency. Two-pass approach: first calculate costs, then validate. Otherwise shows $0 transfer needed when insufficient."
 - "LLM agents ignore validation tool errors unless prompt explicitly says what to do when valid=false. Must include iteration pattern with fix-and-retry loop."
 
-## Poor Examples (don't create)
-
-- "Fixed the parseFloat bug in price service" → Code is fixed, no need to remember
-- "Hermes API returns strings not numbers" → Code handles it, done
-- "Used React Query for data fetching" → Obvious, no decision rationale
-- "Implemented TASK-067" → Task summary belongs in task files
-
----
+**Poor** (don't create):
+- "Fixed the parseFloat bug in price service" → Code is fixed
+- "Hermes API returns strings not numbers" → Code handles it
+- "Used React Query for data fetching" → Obvious, no rationale
 
 ## Workflow
-
-Always use the helper script and never edit the file by hand.
 
 ```bash
 python3 .claude/skills/memory-curator/scripts/add_memory_entry.py \
@@ -112,32 +99,12 @@ python3 .claude/skills/memory-curator/scripts/edit_memory_entry.py \
 python3 .claude/skills/memory-curator/scripts/delete_memory_entry.py \
   --id mem-0042
 ```
-- Only delete when an entry is clearly obsolete or incorrect.  
-- The script rewrites the file without that entry; there is no undo.
+- Only delete when clearly obsolete. No undo.
 
----
+## Field Guidelines
 
-## Summary Format (consistent & skimmable)
+**Summary:** 2-3 sentences max. If longer, it's a design doc — link to it instead.
 
-Write `--summary` as concise paragraph with maximum 2-3 sentences. If it doesn't fit, it's probably a design doc, not a memory entry—link to that doc and keep the summary short.
+**Tags:** Few broad tags. Examples: `architecture`, `lessons-learned`, `pattern`, `decision`, `tradeoff`
 
----
-
-## Tags
-
-Prefer a few broad tags over many hyper‑specific ones.
-
-Examples: `architecture`, `lessons-learned`, `problem-solved`, `pattern`, `decision`, `tradeoff`, `deprecation`, `migration`
-
----
-
-## Links (make future retrieval easy)
-
-Use `--links` for **TASK IDs, critical file paths, or design docs**. Examples:
-
-```
---links "TASK-091 services/web/app/(auth)/route.ts docs/design-docs/authentication.md"
-```
-
-It should be a single string with quotes around it.
-</memory_curator>
+**Links:** Task IDs, file paths, or design docs. Single quoted string: `--links "TASK-091 path/to/file.ts"`

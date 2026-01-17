@@ -246,6 +246,91 @@ copy_dir() {
   done < <(find "$src_base" -type f -print0)
 }
 
+# Merge settings.json if user has existing one (before copy_dir overwrites it)
+if [[ -f "$TARGET_DIR/.claude/settings.json" && -f "$SOURCE_DIR/.claude/settings.json" ]]; then
+  log "Merging settings.json with existing user hooks..."
+  SETTINGS_BACKUP=$(mktemp)
+  cp "$TARGET_DIR/.claude/settings.json" "$SETTINGS_BACKUP"
+
+  python3 - "$SETTINGS_BACKUP" "$SOURCE_DIR/.claude/settings.json" "$TARGET_DIR/.claude/settings.json" << 'PYTHON_SCRIPT'
+import json
+import sys
+
+def merge_settings(user_path, meridian_path, output_path):
+    """Merge user settings with Meridian settings, preserving user hooks."""
+    try:
+        with open(user_path, 'r') as f:
+            user = json.load(f)
+    except (json.JSONDecodeError, IOError):
+        user = {}
+
+    try:
+        with open(meridian_path, 'r') as f:
+            meridian = json.load(f)
+    except (json.JSONDecodeError, IOError):
+        meridian = {}
+
+    # Start with Meridian settings as base
+    result = meridian.copy()
+
+    # Merge hooks: for each event type, combine hook arrays
+    user_hooks = user.get('hooks', {})
+    meridian_hooks = meridian.get('hooks', {})
+    merged_hooks = meridian_hooks.copy()
+
+    for event_type, user_hook_list in user_hooks.items():
+        if event_type not in merged_hooks:
+            # User has hooks for an event Meridian doesn't use
+            merged_hooks[event_type] = user_hook_list
+        else:
+            # Both have hooks for this event - check for user's custom hooks
+            meridian_commands = set()
+            for hook_group in meridian_hooks.get(event_type, []):
+                for hook in hook_group.get('hooks', []):
+                    cmd = hook.get('command', '')
+                    if '/.claude/hooks/' in cmd:
+                        # Extract just the hook filename
+                        meridian_commands.add(cmd.split('/')[-1].strip('"'))
+
+            # Add user hooks that aren't Meridian hooks
+            for user_hook_group in user_hook_list:
+                is_meridian_hook = False
+                for hook in user_hook_group.get('hooks', []):
+                    cmd = hook.get('command', '')
+                    if cmd:
+                        hook_name = cmd.split('/')[-1].strip('"')
+                        if hook_name in meridian_commands:
+                            is_meridian_hook = True
+                            break
+
+                if not is_meridian_hook:
+                    merged_hooks[event_type].append(user_hook_group)
+
+    result['hooks'] = merged_hooks
+
+    # Preserve user's permissions if they have custom ones
+    if 'permissions' in user and user['permissions'] != meridian.get('permissions'):
+        # Keep user's permissions, but ensure defaultMode is set
+        result['permissions'] = user['permissions']
+
+    # Preserve user's companyAnnouncements preference (use Meridian's by default)
+    # Preserve user's includeCoAuthoredBy preference
+    if 'includeCoAuthoredBy' in user:
+        result['includeCoAuthoredBy'] = user['includeCoAuthoredBy']
+
+    with open(output_path, 'w') as f:
+        json.dump(result, f, indent=2)
+        f.write('\n')
+
+    print("Merged user hooks with Meridian hooks")
+
+if __name__ == '__main__':
+    merge_settings(sys.argv[1], sys.argv[2], sys.argv[3])
+PYTHON_SCRIPT
+
+  rm -f "$SETTINGS_BACKUP"
+fi
+
 # Copy directories
 log "Installing files..."
 copy_dir "$SOURCE_DIR/.claude" "$TARGET_DIR/.claude" ".claude/"

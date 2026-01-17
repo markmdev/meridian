@@ -7,23 +7,17 @@ Removes ephemeral state files so next session starts fresh.
 
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
+STATE_DIR = PROJECT_DIR / ".meridian/.state"
 
-# Ephemeral state files to clean up on any session event
-STATE_FILES = [
-    PROJECT_DIR / ".meridian/.plan-mode-state",
-    PROJECT_DIR / ".meridian/.action-counter",
-    PROJECT_DIR / ".meridian/.reminder-counter",
-    PROJECT_DIR / ".meridian/.pre-compaction-synced",
-]
-
-# Files to clean up ONLY on fresh startup (not compact/clear)
+# Files to preserve on compact/clear (only delete on fresh startup)
 STARTUP_ONLY_FILES = [
-    PROJECT_DIR / ".meridian/.plan-review-blocked",
-    PROJECT_DIR / ".meridian/.plan-action-start",
+    "plan-review-blocked",
+    "plan-action-start",
 ]
 
 
@@ -36,22 +30,26 @@ def main():
     except (json.JSONDecodeError, EOFError):
         pass
 
-    # Clean up standard ephemeral state files
-    for state_file in STATE_FILES:
-        try:
-            if state_file.exists():
-                state_file.unlink()
-        except Exception:
-            pass  # Ignore cleanup errors
+    if not STATE_DIR.exists():
+        sys.exit(0)
 
-    # Clean up startup-only files (not on compact/clear - user may still be mid-workflow)
     if source == "startup":
-        for state_file in STARTUP_ONLY_FILES:
-            try:
-                if state_file.exists():
-                    state_file.unlink()
-            except Exception:
-                pass
+        # Fresh startup: delete entire state directory
+        try:
+            shutil.rmtree(STATE_DIR)
+        except Exception:
+            pass
+    else:
+        # Compact/clear: delete all except startup-only files
+        try:
+            for item in STATE_DIR.iterdir():
+                if item.name not in STARTUP_ONLY_FILES:
+                    if item.is_dir():
+                        shutil.rmtree(item)
+                    else:
+                        item.unlink()
+        except Exception:
+            pass
 
     sys.exit(0)
 

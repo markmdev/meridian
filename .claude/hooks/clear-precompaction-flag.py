@@ -9,14 +9,17 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import PRE_COMPACTION_FLAG
+
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
-FLAG_FILE = PROJECT_DIR / ".meridian/.pre-compaction-synced"
 
 
 def main():
+    flag_file = PROJECT_DIR / PRE_COMPACTION_FLAG
     try:
-        if FLAG_FILE.exists():
-            FLAG_FILE.unlink()
+        if flag_file.exists():
+            flag_file.unlink()
     except Exception:
         pass
 

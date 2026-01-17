@@ -45,7 +45,7 @@ STOPPING:
   The phrase must be TRUE - do not lie to exit the loop.
 
 MONITORING:
-  cat .meridian/.loop-state
+  cat .meridian/.state/loop-state
 HELP_EOF
   exit 0
 }
@@ -100,10 +100,10 @@ if [[ -z "$PROMPT" ]]; then
 fi
 
 # Create state file
-mkdir -p .meridian
+mkdir -p .meridian/.state
 
 # Write state file with prompt
-cat > .meridian/.loop-state <<EOF
+cat > .meridian/.state/loop-state <<EOF
 active: true
 iteration: 1
 max_iterations: $MAX_ITERATIONS

@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, get_plan_action_count
+from config import get_project_config, get_plan_action_count, ACTIVE_PLAN_FILE
 
 VERIFICATION_MARKER = "<!-- VERIFICATION_FEATURES -->"
 
@@ -50,7 +50,7 @@ def main():
         sys.exit(0)
 
     # Find active plan file
-    active_plan_file = base_dir / ".meridian" / ".active-plan"
+    active_plan_file = base_dir / ACTIVE_PLAN_FILE
     if not active_plan_file.exists():
         # No active plan, allow exit
         sys.exit(0)

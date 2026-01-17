@@ -11,14 +11,22 @@ from pathlib import Path
 # =============================================================================
 MERIDIAN_CONFIG = ".meridian/config.yaml"
 REQUIRED_CONTEXT_CONFIG = ".meridian/required-context-files.yaml"
-PENDING_READS_DIR = ".meridian/.pending-context-reads"
-PRE_COMPACTION_FLAG = ".meridian/.pre-compaction-synced"
-PLAN_REVIEW_FLAG = ".meridian/.plan-review-blocked"
-CONTEXT_ACK_FLAG = ".meridian/.context-acknowledgment-pending"
 SESSION_CONTEXT_FILE = ".meridian/session-context.md"
-ACTION_COUNTER_FILE = ".meridian/.action-counter"
-REMINDER_COUNTER_FILE = ".meridian/.reminder-counter"
-PLAN_ACTION_START_FILE = ".meridian/.plan-action-start"
+WORKTREE_CONTEXT_FILE = ".meridian/worktree-context.md"
+
+# System state files (ephemeral, cleaned up on session start)
+STATE_DIR = ".meridian/.state"
+PENDING_READS_DIR = f"{STATE_DIR}/pending-context-reads"
+PRE_COMPACTION_FLAG = f"{STATE_DIR}/pre-compaction-synced"
+PLAN_REVIEW_FLAG = f"{STATE_DIR}/plan-review-blocked"
+CONTEXT_ACK_FLAG = f"{STATE_DIR}/context-acknowledgment-pending"
+ACTION_COUNTER_FILE = f"{STATE_DIR}/action-counter"
+REMINDER_COUNTER_FILE = f"{STATE_DIR}/reminder-counter"
+PLAN_ACTION_START_FILE = f"{STATE_DIR}/plan-action-start"
+DOCS_RESEARCHER_FLAG = f"{STATE_DIR}/docs-researcher-active"
+PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
+ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
+INJECTED_FILES_LOG = f"{STATE_DIR}/injected-files"
 
 
 # =============================================================================
@@ -101,6 +109,7 @@ def get_project_config(base_dir: Path) -> dict:
         'pre_compaction_sync_enabled': True,
         'pre_compaction_sync_threshold': 150000,
         'session_context_max_lines': 1000,
+        'worktree_context_max_lines': 200,
         'pebble_enabled': False,
         'stop_hook_min_actions': 10,
         'feature_writer_enforcement_enabled': False,
@@ -151,6 +160,14 @@ def get_project_config(base_dir: Path) -> dict:
         if max_lines:
             try:
                 config['session_context_max_lines'] = int(max_lines)
+            except ValueError:
+                pass
+
+        # Worktree context max lines
+        wt_max_lines = get_config_value(content, 'worktree_context_max_lines')
+        if wt_max_lines:
+            try:
+                config['worktree_context_max_lines'] = int(wt_max_lines)
             except ValueError:
                 pass
 
@@ -286,6 +303,104 @@ def flag_exists(base_dir: Path, flag_path: str) -> bool:
 
 
 # =============================================================================
+# GIT WORKTREE HELPERS
+# =============================================================================
+def get_main_worktree_path(base_dir: Path) -> Path | None:
+    """Get path to main worktree using 'git worktree list --porcelain'.
+
+    The first 'worktree' entry is always the main worktree.
+
+    Args:
+        base_dir: Any directory in the git repository
+
+    Returns:
+        Path to main worktree, or None if not a git repo or command fails
+    """
+    try:
+        result = subprocess.run(
+            ["git", "worktree", "list", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(base_dir)
+        )
+        if result.returncode != 0:
+            return None
+
+        # First 'worktree' line is always the main worktree
+        for line in result.stdout.splitlines():
+            if line.startswith("worktree "):
+                return Path(line.split(" ", 1)[1])
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+    return None
+
+
+def is_main_worktree(base_dir: Path) -> bool:
+    """Check if the given directory is the main worktree.
+
+    Args:
+        base_dir: Directory to check
+
+    Returns:
+        True if base_dir is the main worktree, False otherwise
+    """
+    main = get_main_worktree_path(base_dir)
+    if main is None:
+        return False
+    try:
+        return main.resolve() == base_dir.resolve()
+    except OSError:
+        return False
+
+
+def get_worktree_name(base_dir: Path) -> str:
+    """Get current worktree name (branch name or folder name).
+
+    Uses 'git branch --show-current' to get the branch name.
+    Falls back to folder name if not on a branch.
+
+    Args:
+        base_dir: Directory in the worktree
+
+    Returns:
+        Branch name or folder name as string
+    """
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    # Fallback to folder name
+    return base_dir.resolve().name
+
+
+def get_worktree_context_path(base_dir: Path) -> Path | None:
+    """Get path to worktree-context.md in the main worktree.
+
+    This file stores high-level context shared across all worktrees.
+
+    Args:
+        base_dir: Any directory in the git repository
+
+    Returns:
+        Path to worktree-context.md in main worktree, or None if not found
+    """
+    main = get_main_worktree_path(base_dir)
+    if main is None:
+        return None
+    return main / WORKTREE_CONTEXT_FILE
+
+
+# =============================================================================
 # ACTION COUNTER HELPERS
 # =============================================================================
 def get_action_counter(base_dir: Path) -> int:
@@ -390,6 +505,58 @@ def trim_session_context(base_dir: Path, max_lines: int) -> None:
                 trimmed = header + body[-available_for_body:]
 
         context_file.write_text('\n'.join(trimmed))
+    except Exception:
+        pass
+
+
+def trim_worktree_context(worktree_context_path: Path, max_lines: int) -> None:
+    """Trim worktree context file to max_lines, preserving header.
+
+    Similar to trim_session_context, but operates on the shared worktree context
+    file in the main worktree. Uses 'WORKTREE ENTRIES START' as separator.
+
+    Args:
+        worktree_context_path: Path to worktree-context.md in main worktree
+        max_lines: Maximum lines to keep (0 = no trimming)
+    """
+    if max_lines <= 0:
+        return
+
+    if not worktree_context_path or not worktree_context_path.exists():
+        return
+
+    try:
+        content = worktree_context_path.read_text()
+        lines = content.split('\n')
+
+        if len(lines) <= max_lines:
+            return
+
+        # Find header separator (WORKTREE ENTRIES START comment)
+        separator_idx = -1
+        for i, line in enumerate(lines):
+            if 'WORKTREE ENTRIES START' in line:
+                separator_idx = i
+                break
+
+        if separator_idx == -1:
+            # No separator found, just trim from top
+            trimmed = lines[-max_lines:]
+        else:
+            # Preserve header (including separator)
+            header = lines[:separator_idx + 1]
+            body = lines[separator_idx + 1:]
+
+            # Calculate how many body lines we can keep
+            available_for_body = max_lines - len(header)
+            if available_for_body <= 0:
+                # Header alone exceeds max, just keep header
+                trimmed = header
+            else:
+                # Keep newest body lines (from end)
+                trimmed = header + body[-available_for_body:]
+
+        worktree_context_path.write_text('\n'.join(trimmed))
     except Exception:
         pass
 
@@ -579,8 +746,22 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if session_context_path.exists():
         files_to_inject.append((SESSION_CONTEXT_FILE, session_context_path))
 
+    # 2.5. Worktree context (shared across all worktrees, read from main worktree)
+    worktree_context_path = get_worktree_context_path(base_dir)
+    if worktree_context_path and worktree_context_path.exists():
+        # Trim worktree context before injecting
+        wt_config = get_project_config(base_dir)
+        wt_max_lines = wt_config.get('worktree_context_max_lines', 200)
+        trim_worktree_context(worktree_context_path, wt_max_lines)
+
+        # Use path relative to main worktree for display
+        main_worktree = get_main_worktree_path(base_dir)
+        if main_worktree:
+            rel_path = str(worktree_context_path.relative_to(main_worktree))
+            files_to_inject.append((f"[main-worktree]/{rel_path}", worktree_context_path))
+
     # 3. Active plan file (if set)
-    active_plan_file = base_dir / ".meridian" / ".active-plan"
+    active_plan_file = base_dir / ACTIVE_PLAN_FILE
     if active_plan_file.exists():
         try:
             plan_path = active_plan_file.read_text().strip()
@@ -697,7 +878,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
 # LOOP STATE HELPERS
 # =============================================================================
 
-LOOP_STATE_FILE = ".meridian/.loop-state"
+LOOP_STATE_FILE = f"{STATE_DIR}/loop-state"
 
 
 def is_loop_active(base_dir: Path) -> bool:
@@ -855,7 +1036,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         else:
             reviewer_list = "\n".join(f"{i+1}. {r}" for i, r in enumerate(reviewers))
             parts.append(
-                "**Spawn in parallel** (no prompts needed — they read from `.meridian/.injected-files`):\n"
+                "**Spawn in parallel** (no prompts needed — they read from `.meridian/.state/injected-files`):\n"
                 f"{reviewer_list}\n"
                 "**After reviewers**: Read `.meridian/implementation-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
             )
@@ -877,6 +1058,19 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         f"`{claude_project_dir}/.meridian/session-context.md` with key decisions, discoveries, context worth preserving, "
         "and important user messages (instructions, preferences, constraints — copy verbatim if needed).\n"
     )
+
+    # Worktree context section (only if in a git worktree)
+    main_worktree = get_main_worktree_path(base_dir)
+    if main_worktree:
+        worktree_name = get_worktree_name(base_dir)
+        worktree_context_path = main_worktree / WORKTREE_CONTEXT_FILE
+        parts.append(
+            f"**WORKTREE CONTEXT**: For significant work, append a brief standup-style summary to "
+            f"`{worktree_context_path}` (in main worktree). "
+            f"Format: `## [{worktree_name}] YYYY-MM-DD - Title`\n"
+            "Write 2-3 sentences max: what you worked on and what was achieved. "
+            "No technical implementation details — just outcomes. Skip for trivial changes.\n"
+        )
 
     # Memory section
     parts.append(

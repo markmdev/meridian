@@ -7,6 +7,8 @@ description: Create comprehensive implementation plans for complex tasks. Use wh
 
 Great plans come from deep understanding. Superficial exploration leads to plans that fail during implementation.
 
+**NO DEFERRALS.** Investigate everything NOW — not "later." Phrases like "TBD," "needs investigation," or "figure out during implementation" are plan failures. Front-load all investigation so implementation is mechanical.
+
 ## Research: Direct Tools vs Explore Agents
 
 | Use Direct Tools When | Use Explore Agent When |
@@ -42,13 +44,14 @@ Proceed to Discovery after the user confirms your understanding of business requ
 
 ### 1. Discovery
 
-Use direct tools or Explore agents to deeply understand the codebase:
+Deeply understand the codebase — exhaustively, for EVERY task mentioned:
 
-- **Verify every assumption** — file paths, function signatures, behavior
-- **Search for existing solutions** — don't build what already exists
-- **Trace flows** — data flow, control flow, dependencies
+- **Verify assumptions** — file paths, function signatures, behavior
+- **Search for existing solutions** — don't build what exists
+- **Trace flows** — data, control, dependencies
 - **Find patterns** — how does the codebase do similar things?
-- **Identify external APIs** — list all external libraries/APIs this plan will use
+- **Identify external APIs** — list all libraries/APIs the plan will use
+- **Resolve unknowns** — if something is unclear, investigate until you understand it
 
 **If you can't verify it, you don't know it.**
 
@@ -206,4 +209,5 @@ Before finalizing:
 - [ ] Testing approach defined (after asking user)
 - [ ] Each phase has documentation steps (CLAUDE.md + human docs)
 - [ ] Every requirement from source documents has an explicit step
+- [ ] **No deferrals** — no "TBD", "investigate later", or vague steps; every task fully researched
 </planning_skill>

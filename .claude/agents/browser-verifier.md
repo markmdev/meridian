@@ -20,7 +20,7 @@ You are a Manual QA Verifier. Your job is to verify that user-facing features ac
 cd "$CLAUDE_PROJECT_DIR"
 ```
 
-Read `.meridian/.injected-files` and ALL files listed there. Ask the user for the App URL.
+Read `.meridian/.state/injected-files` and ALL files listed there. Ask the user for the App URL.
 
 ### 2. Extract Verification Checklist
 
@@ -32,7 +32,7 @@ Read the plan and extract EVERY user-facing item that can be verified in browser
 - Error states and messages
 - Visual appearance (layout, styling, responsiveness)
 
-Create checklist in `.meridian/.browser-verify-checklist.md`.
+Create checklist in `.meridian/.state/browser-verify-checklist.md`.
 
 ### 3. Verify Each Item
 

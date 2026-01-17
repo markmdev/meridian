@@ -2,7 +2,7 @@
 """
 Injected Files Log - SessionStart Hook
 
-Logs all files that are injected into context to .meridian/.injected-files.
+Logs all files that are injected into context.
 Runs on startup, compact, and clear.
 """
 
@@ -19,6 +19,8 @@ from config import (
     parse_yaml_list,
     SESSION_CONTEXT_FILE,
     REQUIRED_CONTEXT_CONFIG,
+    ACTIVE_PLAN_FILE,
+    INJECTED_FILES_LOG,
 )
 
 
@@ -50,7 +52,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         files.append(str(session_context_path))
 
     # 4. Active plan
-    active_plan_file = base_dir / ".meridian" / ".active-plan"
+    active_plan_file = base_dir / ACTIVE_PLAN_FILE
     if active_plan_file.exists():
         try:
             plan_path = active_plan_file.read_text().strip()
@@ -116,7 +118,7 @@ def main():
     pebble_enabled = project_config.get('pebble_enabled', False)
 
     # Write to log file
-    log_file = base_dir / ".meridian" / ".injected-files"
+    log_file = base_dir / INJECTED_FILES_LOG
     log_file.parent.mkdir(parents=True, exist_ok=True)
 
     try:

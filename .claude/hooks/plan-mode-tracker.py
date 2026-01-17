@@ -10,21 +10,22 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, save_plan_action_start
+from config import get_project_config, save_plan_action_start, PLAN_MODE_STATE
 
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
-STATE_FILE = PROJECT_DIR / ".meridian/.plan-mode-state"
 
 
 def get_previous_mode() -> str:
-    if STATE_FILE.exists():
-        return STATE_FILE.read_text().strip()
+    state_file = PROJECT_DIR / PLAN_MODE_STATE
+    if state_file.exists():
+        return state_file.read_text().strip()
     return "other"
 
 
 def save_mode(mode: str) -> None:
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(mode)
+    state_file = PROJECT_DIR / PLAN_MODE_STATE
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    state_file.write_text(mode)
 
 
 def main():

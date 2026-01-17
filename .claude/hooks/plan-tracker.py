@@ -3,13 +3,15 @@
 Plan Tracker Hook - PostToolUse
 
 Tracks the active plan by watching Edit/Write/Read operations on .claude/plans/ files.
-Saves the most recently accessed plan path to .meridian/.active-plan for injection.
 """
 
 import json
 import os
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import ACTIVE_PLAN_FILE
 
 
 def main():
@@ -42,16 +44,13 @@ def main():
         sys.exit(0)
 
     base_dir = Path(claude_project_dir)
-    active_plan_file = base_dir / ".meridian" / ".active-plan"
-
-    # Ensure .meridian directory exists
+    active_plan_file = base_dir / ACTIVE_PLAN_FILE
     active_plan_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # Write the plan path
     try:
         active_plan_file.write_text(file_path.strip() + "\n")
     except IOError:
-        pass  # Silent fail - not critical
+        pass
 
     sys.exit(0)
 

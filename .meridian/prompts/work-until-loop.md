@@ -22,4 +22,4 @@ Output the completion phrase in XML tags:
 
 ## Now: Start Working
 
-Read `.meridian/.loop-state` to see your task and settings, then begin working.
+Read `.meridian/.state/loop-state` to see your task and settings, then begin working.

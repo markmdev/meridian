@@ -4,7 +4,7 @@ When feedback arrives, address these comment types:
 - Critical — must fix
 - Major — must fix
 - Minor — must fix
-- Out of diff — must fix (issues in related code)
+- Outside diff range — must fix (issues in related code)
 - Nitpick — skip (style preferences)
 
 After fixing issues:

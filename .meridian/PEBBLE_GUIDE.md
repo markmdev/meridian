@@ -20,7 +20,7 @@ pb dep add <blocked> <blocker>  # First issue blocked BY second
 pb dep tree <id>
 ```
 
-**Types:** `task`, `bug`, `epic`, `verification` | **Priority:** 0 (critical) to 4 (backlog) | **Status:** `open`, `in_progress`, `blocked`, `closed`
+**Types:** `task`, `bug`, `epic`, `verification` | **Priority:** 0 (critical) to 4 (backlog) | **Status:** `open`, `in_progress`, `blocked`, `pending_verification`, `closed`
 
 ---
 
@@ -118,6 +118,44 @@ pb comments add $ID "Works"
 ```
 
 **If verification fails:** Don't close. Create a bug issue, link it, fix, then re-verify.
+
+### Pending Verification Status
+
+When you close an issue that has open verification issues targeting it, it goes to `pending_verification` instead of `closed`. This enforces that verification actually happens.
+
+```bash
+pb close $TASK_ID --reason "Implementation done"
+# Output: Issue set to pending_verification. Pending: BEAD-abc123, BEAD-def456
+
+# Complete the verification issues first
+pb close BEAD-abc123 --reason "Verified"
+pb close BEAD-def456 --reason "Verified"
+
+# Now the task auto-closes, or close it again
+pb close $TASK_ID --reason "All verifications passed"
+```
+
+---
+
+## Related Links
+
+Use `pb dep relate` for issues that share context but don't block each other. Unlike `blocks`, related links are bidirectional and don't affect `pb ready`.
+
+```bash
+# Link related issues (bidirectional, non-blocking)
+pb dep relate $ISSUE1 $ISSUE2
+
+# Remove the link
+pb dep unrelate $ISSUE1 $ISSUE2
+
+# View all dependencies including related
+pb dep list $ISSUE1
+```
+
+**Use cases:**
+- Issues that touch the same code but can run in parallel
+- Cross-references for context without ordering requirements
+- Grouping conceptually linked issues
 
 ---
 

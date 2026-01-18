@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.31] - 2026-01-18
+
+### Changed
+- **PEBBLE_GUIDE.md rewritten**: Comprehensive documentation improvements based on real agent feedback:
+  - New **Quick Reference** organized by workflow (what to work on, epic overview, issue details)
+  - New **Epic Management** section documenting `pb summary`, `pb dep tree`, `pb list --parent`
+  - New **Finding Issues** section documenting `pb search` and `pb blocked -v`
+  - **Verification workflow** expanded: verify immediately, what to do when blocked
+  - **Dependencies** section now shows self-documenting `--blocked-by/--blocks` flags on create
+  - All features already existed — agents just didn't know about them
+
+### Added
+- **Pebble CLI developer spec** (`docs/pebble-cli-dev-spec.md`): Implementation spec for 4 CLI improvements (remove --json warning, verification status hint, `pb dep add --needs/--blocks`, `pb ready --type`)
+- **Pebble improvements spec** (`docs/pebble-improvements-spec.md`): Analysis of agent feedback, what exists vs what needs building
+
 ## [0.0.30] - 2026-01-18
 
 ### Added

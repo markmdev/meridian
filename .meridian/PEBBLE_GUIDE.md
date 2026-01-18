@@ -5,19 +5,33 @@ Git-backed issue tracker for AI agents. Track all work as Pebble issues.
 ## Quick Reference
 
 ```bash
-pb ready                    # Show unblocked issues (start here)
-pb list --status in_progress  # What's being worked on
-pb blocked                  # Issues waiting on dependencies
-pb show <id>                # Issue details
+# What to work on
+pb ready                    # Unblocked issues (start here)
+pb ready -v                 # With full details
+pb blocked -v               # What's blocked and WHY
 
+# Epic overview
+pb summary                  # Open epics with completion counts
+pb dep tree <epic>          # Full hierarchy (epic → tasks → verifications)
+pb list --parent <epic>     # All children of an epic
+
+# Issue details
+pb show <id>                # Full issue details
+pb verifications <id>       # Verifications targeting this issue
+
+# Create with dependencies (self-documenting)
+pb create "Task B" -t task --blocked-by $TASK_A    # B needs A
+pb create "Task A" -t task --blocks $TASK_B        # A blocks B
+
+# Basic workflow
 pb create "Title" -t task -p 1 --parent $EPIC | jq -r .id
-pb claim <id>               # Set in_progress + assignee
-pb update <id> --status blocked
+pb claim <id>               # Set in_progress
 pb comments add <id> "What was done, file:line"
 pb close <id> --reason "Done"
 
-pb dep add <blocked> <blocker>  # First issue blocked BY second
-pb dep tree <id>
+# Dependencies
+pb dep add <blocked> <blocker>  # B blocked BY A: pb dep add B A
+pb dep tree <id>                # View hierarchy
 ```
 
 **Types:** `task`, `bug`, `epic`, `verification` | **Priority:** 0 (critical) to 4 (backlog) | **Status:** `open`, `in_progress`, `blocked`, `pending_verification`, `closed`
@@ -44,6 +58,12 @@ Found and fixed a bug? Create issue → fix → comment → close. Issues are au
 `pb dep add B A` means "B is blocked by A" (A must close before B is ready).
 
 **Think:** "B needs A" → `pb dep add B A`
+
+**Self-documenting alternative:** Use `--blocked-by` or `--blocks` when creating:
+```bash
+pb create "Task B" --blocked-by $TASK_A   # B needs A (clearer)
+pb create "Task A" --blocks $TASK_B       # A blocks B (clearer)
+```
 
 ### 5. Parent ≠ Sequence
 `--parent` creates hierarchy only. Children run in parallel unless you add explicit `pb dep add` between them.
@@ -95,8 +115,9 @@ pb create "Invalid password shows error" --verifies $TASK \
 
 ### Performing Verification
 
-When a verification appears in `pb ready`, its target is done. **You perform the verification:**
+When a verification appears in `pb ready`, its target is done. **Verify immediately** while context is fresh and environment is set up.
 
+**Steps:**
 1. Follow the steps in the description
 2. Capture evidence (screenshots, responses, output)
 3. Comment with proof
@@ -119,6 +140,13 @@ pb comments add $ID "Works"
 
 **If verification fails:** Don't close. Create a bug issue, link it, fix, then re-verify.
 
+**If you can't verify right now** (no browser session, backend not running, need user action):
+```bash
+# Comment what's blocking, leave open
+pb comments add $ID "Cannot verify: backend not running. Need to start server first."
+```
+Don't close without verification. Don't delete the issue. The record shows verification was attempted and blocked.
+
 ### Pending Verification Status
 
 When you close an issue that has open verification issues targeting it, it goes to `pending_verification` instead of `closed`. This enforces that verification actually happens.
@@ -133,6 +161,57 @@ pb close BEAD-def456 --reason "Verified"
 
 # Now the task auto-closes, or close it again
 pb close $TASK_ID --reason "All verifications passed"
+```
+
+---
+
+## Epic Management
+
+### Overview with `pb summary`
+
+See all open epics with completion progress:
+
+```bash
+pb summary --pretty
+
+## Open Epics (2)
+
+BEAD-abc123: Implement authentication
+  Created: 2 days ago | Updated: 1 hour ago
+  Issues: 2/5 done | Verifications: 1/3 done
+
+  Build user auth with login, logout, session management.
+```
+
+Include recently closed epics (last 72h):
+```bash
+pb summary --include-closed --pretty
+```
+
+### Full Hierarchy with `pb dep tree`
+
+See complete epic structure including nested children:
+
+```bash
+pb dep tree $EPIC --pretty
+
+✓ BEAD-abc123: Implement authentication [epic] P1 ◀
+├─ ✓ BEAD-def456: User registration [task] P2
+│  ├─ ✓ BEAD-v001: Can register with email [verification]
+│  └─ ✓ BEAD-v002: Invalid email shows error [verification]
+├─ ○ BEAD-ghi789: Login flow [task] P2
+│  ├─ ○ BEAD-v003: Can login [verification]
+│  └─ ○ BEAD-v004: Wrong password shows error [verification]
+└─ ○ BEAD-jkl012: Session management [task] P2
+```
+
+The `◀` marker indicates the requested issue. `✓` = closed, `○` = open.
+
+### List Children with `pb list --parent`
+
+Flat list of all direct children:
+```bash
+pb list --parent $EPIC --pretty
 ```
 
 ---
@@ -156,6 +235,31 @@ pb dep list $ISSUE1
 - Issues that touch the same code but can run in parallel
 - Cross-references for context without ordering requirements
 - Grouping conceptually linked issues
+
+---
+
+## Finding Issues
+
+### Search
+```bash
+pb search "auth bug" --pretty          # Search titles and descriptions
+pb search "login" --type bug --pretty  # Filter by type
+pb search "refactor" --status open     # Filter by status
+```
+
+### See Why Something Is Blocked
+```bash
+pb blocked -v --pretty
+
+## Blocked Issues (2)
+
+BEAD-ghi789: Session management
+  Type: Task | Priority: P2 | Created: 12 hours ago
+  Epic: BEAD-abc123 (Implement authentication)
+  Blocked by: BEAD-def456
+```
+
+The `-v` (verbose) flag shows which issues are causing the block.
 
 ---
 

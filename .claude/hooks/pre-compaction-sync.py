@@ -136,7 +136,7 @@ def main():
         reason += (
             f"**WORKTREE CONTEXT**: For significant work, also append a summary to:\n"
             f"`{worktree_context_path}`\n"
-            f"Format: `## [{worktree_name}] YYYY-MM-DD - Title`\n"
+            f"Format: `## [{worktree_name}] YYYY-MM-DD HH:MM - Title`\n"
             "Start with what task/epic you were working on, then 2-3 sentences: "
             "what was done, any issues found, current state.\n\n"
         )

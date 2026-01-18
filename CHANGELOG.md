@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.29] - 2026-01-18
+
+### Added
+- **Worktree context preservation**: Install script now preserves `worktree-context.md` entries on update, only refreshing the header (same behavior as `session-context.md`).
+
+### Changed
+- **Timestamp format**: Context entries now use `YYYY-MM-DD HH:MM` format (added time to worktree context).
+
 ## [0.0.28] - 2026-01-18
 
 ### Added

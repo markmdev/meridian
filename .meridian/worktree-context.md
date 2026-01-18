@@ -18,7 +18,7 @@ High-level context shared across all git worktrees. When working in a feature wo
 ## Entry Format
 
 ```
-## [branch-name] YYYY-MM-DD - Brief Title
+## [branch-name] YYYY-MM-DD HH:MM - Brief Title
 
 Working on: [Epic/Task ID and name]
 

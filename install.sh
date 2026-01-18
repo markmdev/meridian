@@ -59,6 +59,7 @@ Examples:
 State files preserved on update:
   - .meridian/memory.jsonl
   - .meridian/session-context.md
+  - .meridian/worktree-context.md
   - .meridian/config.yaml (merged with new defaults)
   - .meridian/required-context-files.yaml
   - .meridian/api-docs/
@@ -159,6 +160,7 @@ fi
 STATE_PATTERNS=(
   ".meridian/memory.jsonl"
   ".meridian/session-context.md"
+  ".meridian/worktree-context.md"
   ".meridian/config.yaml"
   ".meridian/api-docs/"
   ".meridian/tasks/"
@@ -172,6 +174,7 @@ is_state_file() {
   case "$file" in
     .meridian/memory.jsonl) return 0 ;;
     .meridian/session-context.md) return 0 ;;
+    .meridian/worktree-context.md) return 0 ;;
     .meridian/config.yaml) return 0 ;;
     .meridian/required-context-files.yaml) return 0 ;;
     .meridian/api-docs|.meridian/api-docs/*) return 0 ;;
@@ -463,6 +466,43 @@ if __name__ == '__main__':
 PYTHON_SCRIPT
 fi
 
+# Update worktree-context.md header (preserve user entries)
+if [[ "$MODE" == "update" && -f "$TARGET_DIR/.meridian/worktree-context.md" && -f "$SOURCE_DIR/.meridian/worktree-context.md" ]]; then
+  log "Updating worktree-context.md header..."
+  python3 - "$TARGET_DIR/.meridian/worktree-context.md" "$SOURCE_DIR/.meridian/worktree-context.md" << 'PYTHON_SCRIPT'
+import sys
+
+MARKER = "<!-- WORKTREE ENTRIES START"
+
+def update_header(user_path, source_path):
+    with open(user_path, 'r') as f:
+        user_content = f.read()
+    with open(source_path, 'r') as f:
+        source_content = f.read()
+
+    # Find marker in both files
+    user_marker_pos = user_content.find(MARKER)
+    source_marker_pos = source_content.find(MARKER)
+
+    if user_marker_pos == -1 or source_marker_pos == -1:
+        print("Marker not found, skipping header update")
+        return
+
+    # Extract new header and user entries
+    new_header = source_content[:source_marker_pos]
+    user_entries = user_content[user_marker_pos:]
+
+    # Combine and write
+    with open(user_path, 'w') as f:
+        f.write(new_header + user_entries)
+
+    print("Header updated")
+
+if __name__ == '__main__':
+    update_header(sys.argv[1], sys.argv[2])
+PYTHON_SCRIPT
+fi
+
 # Make scripts executable
 log "Setting permissions..."
 find "$TARGET_DIR/.claude" -type f \( -name "*.py" -o -name "*.sh" \) -exec chmod +x {} \; 2>/dev/null || true
@@ -487,6 +527,7 @@ if [[ "$MODE" == "update" ]]; then
   echo "Updated files are ready. State preserved:"
   echo "  - memory.jsonl"
   echo "  - session-context.md"
+  echo "  - worktree-context.md"
   echo "  - config.yaml (merged)"
   echo "  - required-context-files.yaml"
   echo "  - api-docs/"

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.33] - 2026-01-18
+
+### Fixed
+- **plan-action-start cleanup**: Removed redundant `clear_plan_action_start` calls from `plan-review.py`. Now only cleared in `plan-approval-reminder.py` after user approves the plan, ensuring action count is preserved if user rejects and continues planning.
+
 ## [0.0.32] - 2026-01-18
 
 ### Fixed

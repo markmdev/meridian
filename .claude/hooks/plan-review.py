@@ -19,7 +19,6 @@ from config import (
     flag_exists,
     create_flag,
     get_plan_action_count,
-    clear_plan_action_start,
     PLAN_REVIEW_FLAG,
 )
 
@@ -46,7 +45,6 @@ def main():
     # Check if enabled in config
     config = get_project_config(base_dir)
     if not config['plan_review_enabled']:
-        clear_plan_action_start(base_dir)
         sys.exit(0)
 
     # Check if this is a lightweight plan (fewer actions than threshold)
@@ -54,7 +52,6 @@ def main():
     plan_actions = get_plan_action_count(base_dir)
     if plan_actions >= 0 and plan_actions < min_actions:
         # Lightweight plan - skip enforcement
-        clear_plan_action_start(base_dir)
         sys.exit(0)
 
     # If flag exists: allow (plan-approval-reminder will clear it after PostToolUse)

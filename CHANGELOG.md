@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.32] - 2026-01-18
+
+### Fixed
+- **State file cleanup regression**: Fixed v0.0.27 regression where session-cleanup.py was nuking the entire `.meridian/.state/` directory on startup. Now uses per-file deletion with explicit lists for each event type (startup, clear, SessionEnd). Files like `active-plan` and `loop-state` are now correctly preserved across all events.
+
 ## [0.0.31] - 2026-01-18
 
 ### Changed

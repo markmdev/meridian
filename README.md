@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.27` (2026-01-17) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.28` (2026-01-18) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -169,7 +169,7 @@ curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh |
 ### Install specific version
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash -s -- -v 0.0.27
+curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash -s -- -v 0.0.28
 ```
 
 ### Update existing installation

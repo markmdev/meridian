@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.28] - 2026-01-18
+
+### Added
+- **PEBBLE_GUIDE**: `pending_verification` status — auto-set when closing issues with open verifications. Enforces that verification actually happens before full closure.
+- **PEBBLE_GUIDE**: `pb dep relate/unrelate` — bidirectional non-blocking links for issues that share context without blocking each other.
+
+### Changed
+- **Worktree context entry format**: Entries should start with what task/epic was being worked on, then explain what was done, issues found, and current state.
+
+### Fixed
+- **Stale state file paths**: Fixed references to `.meridian/.loop-state` and `.meridian/.active-plan` in prompts and README — now correctly point to `.meridian/.state/` directory.
+
 ## [0.0.27] - 2026-01-17
 
 ### Added

@@ -17,13 +17,15 @@ High-level context shared across all git worktrees. When working in a feature wo
 
 ## Entry Format
 
-Prefix entries with the worktree/branch name:
-
 ```
 ## [branch-name] YYYY-MM-DD - Brief Title
 
-Summary of what was accomplished and key decisions.
+Working on: [Epic/Task ID and name]
+
+What was done, what issues were encountered, current state of the work.
 ```
+
+**Start with context**: What task/epic were you working on? Then explain what was accomplished, any problems found, and where things stand now.
 
 ---
 <!-- WORKTREE ENTRIES START - entries from all worktrees below -->

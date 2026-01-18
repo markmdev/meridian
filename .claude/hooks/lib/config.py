@@ -1065,11 +1065,11 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         worktree_name = get_worktree_name(base_dir)
         worktree_context_path = main_worktree / WORKTREE_CONTEXT_FILE
         parts.append(
-            f"**WORKTREE CONTEXT**: For significant work, append a brief standup-style summary to "
+            f"**WORKTREE CONTEXT**: For significant work, append a summary to "
             f"`{worktree_context_path}` (in main worktree). "
             f"Format: `## [{worktree_name}] YYYY-MM-DD - Title`\n"
-            "Write 2-3 sentences max: what you worked on and what was achieved. "
-            "No technical implementation details — just outcomes. Skip for trivial changes.\n"
+            "Start with what task/epic you were working on, then 2-3 sentences: "
+            "what was done, any issues found, current state. Skip for trivial changes.\n"
         )
 
     # Memory section

@@ -134,11 +134,11 @@ def main():
         worktree_name = get_worktree_name(base_dir)
         worktree_context_path = main_worktree / WORKTREE_CONTEXT_FILE
         reason += (
-            f"**WORKTREE CONTEXT**: For significant work, also append a brief standup-style summary to:\n"
+            f"**WORKTREE CONTEXT**: For significant work, also append a summary to:\n"
             f"`{worktree_context_path}`\n"
             f"Format: `## [{worktree_name}] YYYY-MM-DD - Title`\n"
-            "Write 2-3 sentences max: what you worked on and what was achieved. "
-            "No technical details — just outcomes.\n\n"
+            "Start with what task/epic you were working on, then 2-3 sentences: "
+            "what was done, any issues found, current state.\n\n"
         )
 
     reason += "After updating, you may continue your work."

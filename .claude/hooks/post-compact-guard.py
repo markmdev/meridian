@@ -17,7 +17,9 @@ from config import (
     flag_exists,
     cleanup_flag,
     get_project_config,
+    get_onboarding_status,
     CONTEXT_ACK_FLAG,
+    ACTIVE_PLAN_FILE,
 )
 
 
@@ -42,25 +44,48 @@ def main():
     # Flag exists - block and ask for acknowledgment, then remove flag
     cleanup_flag(base_dir, CONTEXT_ACK_FLAG)
 
-    # Check if Pebble is enabled
+    # Check config and onboarding status
     config = get_project_config(base_dir)
     pebble_enabled = config.get('pebble_enabled', False)
+    onboarding = get_onboarding_status(base_dir)
 
     reason = (
         "**CONTEXT ACKNOWLEDGMENT REQUIRED**\n\n"
         "Project context has been injected into this session. "
         "Before using any tools, please acknowledge that you have read and understood:\n\n"
         "1. Any **user-provided docs** (project-specific documentation)\n"
-        "2. The **memory entries** (past decisions and lessons learned)\n"
-        "3. Any **in-progress tasks** and their current state\n"
-        "4. The **session context** (recent decisions and discoveries)\n"
-        "5. Any **active plans** for in-progress tasks\n"
-        "6. The **CODE_GUIDE** conventions for this project\n"
-        "7. The **agent-operating-manual** instructions\n"
+        "2. The **user profile** (if present — user preferences and working style)\n"
+        "3. The **project profile** (if present — project context and constraints)\n"
+        "4. The **memory entries** (past decisions and lessons learned)\n"
+        "5. Any **in-progress tasks** and their current state\n"
+        "6. The **session context** (recent decisions and discoveries)\n"
+        "7. Any **active plans** for in-progress tasks\n"
+        "8. The **CODE_GUIDE** conventions for this project\n"
+        "9. The **agent-operating-manual** instructions\n"
     )
 
     if pebble_enabled:
-        reason += "8. **Pebble issue tracker** is enabled — check project state and available work\n"
+        reason += "10. **Pebble issue tracker** is enabled — check project state and available work\n"
+
+    # Add onboarding prompts if profiles are missing
+    if not onboarding['user_onboarded'] or not onboarding['project_onboarded']:
+        reason += "\n---\n\n**ONBOARDING AVAILABLE**\n\n"
+
+        if not onboarding['user_onboarded']:
+            reason += (
+                "**User profile not found.** After acknowledging context, offer the user a quick interview "
+                "to learn their preferences (~10-15 min). Explain it helps you communicate their way, "
+                "make decisions at the right autonomy level, and match their quality standards. "
+                "If they agree, invoke the `/onboard-user` skill.\n\n"
+            )
+
+        if not onboarding['project_onboarded']:
+            reason += (
+                "**Project profile not found.** After acknowledging context, offer the user a quick interview "
+                "to learn about this project (~10-15 min). Explain it helps you understand what they're building, "
+                "how critical it is, security requirements, and priorities. "
+                "If they agree, invoke the `/onboard-project` skill.\n\n"
+            )
 
     reason += (
         "\nBriefly summarize what you understand about the current project state, "

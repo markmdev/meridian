@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.0.30] - 2026-01-18
+
+### Added
+- **Onboarding interview system**: Two new skills that capture context through conversation instead of manual documentation:
+  - `/onboard-user` — Learns user preferences, communication style, autonomy levels, quality standards. Saves to `~/.claude/meridian/user-profile.yaml` (global, applies to all projects).
+  - `/onboard-project` — Learns project context, criticality, security requirements, priorities. Saves to `.meridian/project-profile.yaml` (per-project).
+  - Interviews are comprehensive but adaptive — irrelevant questions are skipped based on previous answers.
+  - Post-compaction hook prompts agent to offer onboarding when profiles are missing.
+- **Thinking process**: New workflow for complex problems and post-compaction re-orientation:
+  - Short prompt (`.meridian/prompts/thinking-guide.md`) injected at session start.
+  - Guides agent to write iterative thoughts to `.meridian/.scratch/thinking-*.md` before acting.
+  - Freeform exploration — no structure, no pressure, messy is fine.
+  - Planning skill now has Pre-Phase Thinking for complex tasks.
+
+### Changed
+- **Context injection expanded**: User and project profiles are now injected at session start (when they exist).
+
+### Technical
+- New: `.claude/skills/onboard-user/SKILL.md`, `.claude/skills/onboard-project/SKILL.md`, `.meridian/prompts/thinking-guide.md`
+- New helpers in `lib/config.py`: `get_user_profile_path()`, `get_project_profile_path()`, `user_profile_exists()`, `project_profile_exists()`, `get_onboarding_status()`
+- Updated: `config.py` (profile injection, thinking guide injection), `post-compact-guard.py` (onboarding prompts), `planning/SKILL.md` (Pre-Phase Thinking)
+
 ## [0.0.29] - 2026-01-18
 
 ### Added

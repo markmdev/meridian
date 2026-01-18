@@ -9,6 +9,35 @@ Great plans come from deep understanding. Superficial exploration leads to plans
 
 **NO DEFERRALS.** Investigate everything NOW — not "later." Phrases like "TBD," "needs investigation," or "figure out during implementation" are plan failures. Front-load all investigation so implementation is mechanical.
 
+## Verbatim Requirements (MANDATORY)
+
+Every plan must begin with a **Verbatim Requirements** section that captures the user's exact words. This section is the source of truth and persists through the entire plan lifecycle — never delete or paraphrase it.
+
+**Must include:**
+1. **Original user message(s)** — Copy the user's initial request exactly as written. No summarizing, no trimming. The user's exact words carry nuance that paraphrasing loses.
+2. **All AskUserQuestion exchanges** — Every question you asked and every answer received, verbatim. This is mandatory, not optional. These exchanges ARE the clarified spec.
+3. **Important follow-up context** — Any subsequent user messages that add meaningful context (your discretion on which ones matter).
+
+**Format:**
+```markdown
+## Verbatim Requirements
+
+### Original Request
+> [User's exact message, copied verbatim]
+
+### Clarifications
+**Q:** [Your question]
+**A:** [User's answer, verbatim]
+
+**Q:** [Your question]
+**A:** [User's answer, verbatim]
+
+### Additional Context
+> [Any follow-up messages with important context]
+```
+
+**Why this matters:** When you paraphrase, you apply your interpretation — which might miss exactly what the user cared about. "I don't like our chat UI" carries different meaning than "Chat UI needs improvement." Preserve the original words.
+
 ## Research: Direct Tools vs Explore Agents
 
 | Use Direct Tools When | Use Explore Agent When |
@@ -21,6 +50,22 @@ Great plans come from deep understanding. Superficial exploration leads to plans
 Explore agents run on Opus, return comprehensive findings with file paths and code snippets, and report negative results. Use them liberally for broad research.
 
 ## Phases
+
+### Pre-Phase: Thinking (For Complex Tasks)
+
+Before diving into interviews and discovery, pause to think on paper.
+
+**When to use:** Complex features, unfamiliar domains, tasks where you're not sure where to start, or when something feels uncertain.
+
+**How:**
+1. Create `.meridian/.scratch/thinking-YYYY-MM-DD-<topic>.md`
+2. Write iteratively: What do I think this involves? What could go wrong? What don't I know? What assumptions am I making? What similar problems exist in the codebase?
+3. Explore freely — this is messy exploration, not structured analysis
+4. End with a brief synthesis: key insights, open questions for the user, areas to investigate
+
+**Skip for:** Simple, well-defined tasks where the path is clear.
+
+The thinking file persists — it's useful context for understanding why decisions were made.
 
 ### 0. Business Requirements Interview
 
@@ -197,6 +242,7 @@ This preserves the original plan as context, which helps understand what was alr
 
 Before finalizing:
 
+- [ ] **Verbatim Requirements section present** — original request, all Q&A exchanges, important follow-ups captured exactly as written
 - [ ] Business requirements interview completed — user confirmed understanding
 - [ ] Technical interview completed — implementation approach confirmed
 - [ ] Source documents (if provided) referenced and requirements mapped to plan steps

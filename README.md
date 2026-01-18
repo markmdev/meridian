@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.28` (2026-01-18) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.30` (2026-01-18) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -303,6 +303,27 @@ Guidance for writing effective CLAUDE.md files:
 - Commands first, then key patterns
 - What/How/Why structure
 
+### Onboarding Skills
+
+Two interview-based skills that capture context through conversation:
+
+**`/onboard-user`** — Learns your preferences (global, applies to all projects):
+- Communication style (technical depth, verbosity)
+- Autonomy level (ask vs. decide independently)
+- Quality standards (testing depth, documentation preferences)
+- Working patterns (session length, how you prefer corrections)
+- Saves to `~/.claude/meridian/user-profile.yaml`
+
+**`/onboard-project`** — Learns about this project:
+- What it does, who it's for, what stage it's at
+- Criticality and failure impact
+- Security requirements and compliance
+- Team size and review process
+- Current priorities and deadlines
+- Saves to `.meridian/project-profile.yaml`
+
+Interviews are comprehensive but adaptive — irrelevant questions are skipped based on previous answers. Agent offers onboarding when profiles are missing.
+
 </details>
 
 <details>
@@ -522,6 +543,8 @@ your-project/
 │   │   │       ├── add_memory_entry.py
 │   │   │       ├── edit_memory_entry.py
 │   │   │       └── delete_memory_entry.py
+│   │   ├── onboard-user/SKILL.md      # User preferences interview
+│   │   ├── onboard-project/SKILL.md   # Project context interview
 │   │   ├── prompt-writing/SKILL.md
 │   │   └── claudemd-writer/SKILL.md
 │   └── agents/
@@ -544,8 +567,10 @@ your-project/
 │   ├── api-docs/                     # External API documentation
 │   │   └── INDEX.md                  # Index of documented APIs
 │   ├── .state/                       # Ephemeral hook state (gitignored)
+│   ├── .scratch/                     # Thinking files (gitignored)
 │   └── prompts/
-│       └── agent-operating-manual.md # Agent behavior instructions
+│       ├── agent-operating-manual.md # Agent behavior instructions
+│       └── thinking-guide.md         # Thinking process prompt
 └── your-code/
 ```
 

@@ -14,6 +14,10 @@ REQUIRED_CONTEXT_CONFIG = ".meridian/required-context-files.yaml"
 SESSION_CONTEXT_FILE = ".meridian/session-context.md"
 WORKTREE_CONTEXT_FILE = ".meridian/worktree-context.md"
 
+# Onboarding profile paths
+USER_PROFILE_PATH = "~/.claude/meridian/user-profile.yaml"  # Global, not per-project
+PROJECT_PROFILE_PATH = ".meridian/project-profile.yaml"  # Per-project
+
 # System state files (ephemeral, cleaned up on session start)
 STATE_DIR = ".meridian/.state"
 PENDING_READS_DIR = f"{STATE_DIR}/pending-context-reads"
@@ -653,18 +657,19 @@ def cleanup_pending_reads(base_dir: Path) -> None:
 
 
 def get_pebble_context(base_dir: Path) -> str:
-    """Get Pebble epic summary and recent activity for context injection.
+    """Get Pebble context for injection: epics overview, in-progress work, ready issues.
 
     Runs pb commands to get:
-    - Epic summary with child counts
-    - Recent create/close activity
+    - Epic summary (open epics, progress, verification counts)
+    - Currently in-progress issues
+    - Ready issues (unblocked, can be picked up)
 
     Returns formatted string or empty if commands fail.
     """
     parts = []
 
     try:
-        # Get epic summary
+        # Get epic summary (big picture: what epics exist, progress)
         result = subprocess.run(
             ["pb", "summary", "--pretty"],
             capture_output=True,
@@ -673,7 +678,7 @@ def get_pebble_context(base_dir: Path) -> str:
             cwd=str(base_dir)
         )
         if result.returncode == 0 and result.stdout.strip():
-            parts.append("## Active Epics")
+            parts.append("## Epics Overview")
             parts.append("")
             parts.append(result.stdout.strip())
             parts.append("")
@@ -681,16 +686,33 @@ def get_pebble_context(base_dir: Path) -> str:
         pass
 
     try:
-        # Get recent activity (create and close events)
+        # Get in-progress issues (what's being worked on now)
         result = subprocess.run(
-            ["pb", "history", "--type", "create,close", "--pretty"],
+            ["pb", "list", "--status", "in_progress", "--pretty"],
             capture_output=True,
             text=True,
             timeout=10,
             cwd=str(base_dir)
         )
         if result.returncode == 0 and result.stdout.strip():
-            parts.append("## Recent Activity")
+            parts.append("## In Progress")
+            parts.append("")
+            parts.append(result.stdout.strip())
+            parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    try:
+        # Get ready issues (unblocked, can be picked up)
+        result = subprocess.run(
+            ["pb", "ready", "--pretty"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts.append("## Ready to Work On")
             parts.append("")
             parts.append(result.stdout.strip())
             parts.append("")
@@ -735,6 +757,16 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             full_path = base_dir / doc_path
             if full_path.exists():
                 files_to_inject.append((doc_path, full_path))
+
+    # 0.5. User profile (global preferences - if exists)
+    user_profile_path = get_user_profile_path()
+    if user_profile_path.exists():
+        files_to_inject.append(("[global] ~/.claude/meridian/user-profile.yaml", user_profile_path))
+
+    # 0.6. Project profile (project context - if exists)
+    project_profile_path = get_project_profile_path(base_dir)
+    if project_profile_path.exists():
+        files_to_inject.append((".meridian/project-profile.yaml", project_profile_path))
 
     # 1. Memory (past decisions)
     memory_path = base_dir / ".meridian" / "memory.jsonl"
@@ -839,7 +871,19 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append('</pebble-context>')
             parts.append("")
 
-    # 8. Agent operating manual
+    # 8. Thinking guide
+    thinking_path = base_dir / ".meridian" / "prompts" / "thinking-guide.md"
+    if thinking_path.exists():
+        try:
+            content = thinking_path.read_text()
+            parts.append(f'<file path=".meridian/prompts/thinking-guide.md">')
+            parts.append(content.rstrip())
+            parts.append('</file>')
+            parts.append("")
+        except IOError:
+            pass
+
+    # 9. Agent operating manual
     manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
     if manual_path.exists():
         try:
@@ -872,6 +916,49 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     trim_session_context(base_dir, max_lines)
 
     return "\n".join(parts)
+
+
+# =============================================================================
+# ONBOARDING PROFILE HELPERS
+# =============================================================================
+
+
+def get_user_profile_path() -> Path:
+    """Get the full path to the user profile file."""
+    return Path(USER_PROFILE_PATH).expanduser()
+
+
+def get_project_profile_path(base_dir: Path) -> Path:
+    """Get the full path to the project profile file."""
+    return base_dir / PROJECT_PROFILE_PATH
+
+
+def user_profile_exists() -> bool:
+    """Check if the global user profile exists."""
+    return get_user_profile_path().exists()
+
+
+def project_profile_exists(base_dir: Path) -> bool:
+    """Check if the project profile exists."""
+    return get_project_profile_path(base_dir).exists()
+
+
+def get_onboarding_status(base_dir: Path) -> dict:
+    """Get onboarding status for both user and project.
+
+    Returns:
+        dict with keys:
+        - user_onboarded: bool
+        - project_onboarded: bool
+        - user_profile_path: str
+        - project_profile_path: str
+    """
+    return {
+        'user_onboarded': user_profile_exists(),
+        'project_onboarded': project_profile_exists(base_dir),
+        'user_profile_path': str(get_user_profile_path()),
+        'project_profile_path': str(get_project_profile_path(base_dir)),
+    }
 
 
 # =============================================================================

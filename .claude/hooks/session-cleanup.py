@@ -23,7 +23,7 @@ STARTUP_DELETE = [
     "pre-compaction-synced",
     "plan-mode-state",
     "plan-review-blocked",
-    "plan-action-start",
+    "plan-action-counter",
     "docs-researcher-active",
 ]
 
@@ -40,7 +40,7 @@ CLEAR_DELETE = [
 # Files to delete on SessionEnd
 SESSION_END_DELETE = [
     "reminder-counter",
-    "plan-action-start",
+    "plan-action-counter",
     "docs-researcher-active",
 ]
 

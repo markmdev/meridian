@@ -18,7 +18,7 @@ from config import (
     get_additional_review_files,
     flag_exists,
     create_flag,
-    get_plan_action_count,
+    get_plan_action_counter,
     PLAN_REVIEW_FLAG,
 )
 
@@ -49,8 +49,8 @@ def main():
 
     # Check if this is a lightweight plan (fewer actions than threshold)
     min_actions = config.get('plan_review_min_actions', 20)
-    plan_actions = get_plan_action_count(base_dir)
-    if plan_actions >= 0 and plan_actions < min_actions:
+    plan_actions = get_plan_action_counter(base_dir)
+    if plan_actions < min_actions:
         # Lightweight plan - skip enforcement
         sys.exit(0)
 

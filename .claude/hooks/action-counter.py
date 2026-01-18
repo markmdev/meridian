@@ -17,7 +17,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import ACTION_COUNTER_FILE
+from config import ACTION_COUNTER_FILE, PLAN_MODE_STATE, increment_plan_action_counter
 
 
 def get_counter(base_dir: Path) -> int:
@@ -54,10 +54,17 @@ def main() -> int:
 
     hook_event = input_data.get("hook_event_name", "")
 
-    if hook_event == "PostToolUse":
-        # Increment counter on tool use
+    if hook_event in ("PostToolUse", "UserPromptSubmit"):
+        # Increment main action counter
         current = get_counter(base_dir)
         set_counter(base_dir, current + 1)
+
+        # Also increment plan action counter if in plan mode
+        plan_mode_file = base_dir / PLAN_MODE_STATE
+        if plan_mode_file.exists():
+            mode = plan_mode_file.read_text().strip()
+            if mode == "plan":
+                increment_plan_action_counter(base_dir)
 
     return 0
 

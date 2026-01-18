@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, cleanup_flag, clear_plan_action_start, PLAN_REVIEW_FLAG
+from config import get_project_config, cleanup_flag, clear_plan_action_counter, PLAN_REVIEW_FLAG
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
     if claude_project_dir:
         base_dir = Path(claude_project_dir)
         cleanup_flag(base_dir, PLAN_REVIEW_FLAG)
-        clear_plan_action_start(base_dir)
+        clear_plan_action_counter(base_dir)
 
     # Check if Pebble and scaffolder are enabled
     if not claude_project_dir:

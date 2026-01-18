@@ -49,6 +49,10 @@ def main():
     pebble_enabled = config.get('pebble_enabled', False)
     onboarding = get_onboarding_status(base_dir)
 
+    # Check if api-docs exist
+    api_docs_index = base_dir / ".meridian" / "api-docs" / "INDEX.md"
+    has_api_docs = api_docs_index.exists()
+
     reason = (
         "**CONTEXT ACKNOWLEDGMENT REQUIRED**\n\n"
         "Project context has been injected into this session. "
@@ -64,8 +68,16 @@ def main():
         "9. The **agent-operating-manual** instructions\n"
     )
 
+    item_num = 10
+    if has_api_docs:
+        reason += (
+            f"{item_num}. The **api-docs/INDEX.md** — lists documented external APIs. "
+            "Before using any listed API, read its doc file first.\n"
+        )
+        item_num += 1
+
     if pebble_enabled:
-        reason += "10. **Pebble issue tracker** is enabled — check project state and available work\n"
+        reason += f"{item_num}. **Pebble issue tracker** is enabled — check project state and available work\n"
 
     # Add onboarding prompts if profiles are missing
     if not onboarding['user_onboarded'] or not onboarding['project_onboarded']:

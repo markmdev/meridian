@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.34] - 2026-01-18
+
+### Changed
+- **plan-action-counter**: Simplified lightweight plan detection. Renamed `plan-action-start` to `plan-action-counter`. Now increments directly while in plan mode instead of snapshot-and-diff approach. Clearer logic, same behavior.
+- **Context acknowledgment**: Now includes `api-docs/INDEX.md` when present, reminding agent to read doc files before using listed APIs.
+- **injected-files**: Added `api-docs/INDEX.md` so reviewer agents also know which APIs are documented.
+
 ## [0.0.33] - 2026-01-18
 
 ### Fixed

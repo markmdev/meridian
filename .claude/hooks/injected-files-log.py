@@ -88,6 +88,11 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         if pebble_guide_path.exists():
             files.append(str(pebble_guide_path))
 
+    # 7. API docs index (tells agent which external APIs are documented)
+    api_docs_index = base_dir / ".meridian" / "api-docs" / "INDEX.md"
+    if api_docs_index.exists():
+        files.append(str(api_docs_index))
+
     # Note: agent-operating-manual.md is excluded - not needed for reviewer agents
 
     return files

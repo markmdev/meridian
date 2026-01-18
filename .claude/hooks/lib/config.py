@@ -26,7 +26,7 @@ PLAN_REVIEW_FLAG = f"{STATE_DIR}/plan-review-blocked"
 CONTEXT_ACK_FLAG = f"{STATE_DIR}/context-acknowledgment-pending"
 ACTION_COUNTER_FILE = f"{STATE_DIR}/action-counter"
 REMINDER_COUNTER_FILE = f"{STATE_DIR}/reminder-counter"
-PLAN_ACTION_START_FILE = f"{STATE_DIR}/plan-action-start"
+PLAN_ACTION_COUNTER_FILE = f"{STATE_DIR}/plan-action-counter"
 DOCS_RESEARCHER_FLAG = f"{STATE_DIR}/docs-researcher-active"
 PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
 ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
@@ -418,40 +418,34 @@ def get_action_counter(base_dir: Path) -> int:
     return 0
 
 
-def save_plan_action_start(base_dir: Path) -> None:
-    """Save current action counter as plan mode start point."""
-    current = get_action_counter(base_dir)
-    start_path = base_dir / PLAN_ACTION_START_FILE
+def get_plan_action_counter(base_dir: Path) -> int:
+    """Get current plan action counter value."""
+    counter_path = base_dir / PLAN_ACTION_COUNTER_FILE
     try:
-        start_path.parent.mkdir(parents=True, exist_ok=True)
-        start_path.write_text(str(current))
+        if counter_path.exists():
+            return int(counter_path.read_text().strip())
+    except (ValueError, IOError):
+        pass
+    return 0
+
+
+def increment_plan_action_counter(base_dir: Path) -> None:
+    """Increment plan action counter (only called while in plan mode)."""
+    counter_path = base_dir / PLAN_ACTION_COUNTER_FILE
+    try:
+        current = get_plan_action_counter(base_dir)
+        counter_path.parent.mkdir(parents=True, exist_ok=True)
+        counter_path.write_text(str(current + 1))
     except IOError:
         pass
 
 
-def get_plan_action_count(base_dir: Path) -> int:
-    """Get number of actions since plan mode started.
-
-    Returns the difference between current action counter and saved start value.
-    Returns -1 if no start value exists (plan mode not entered properly).
-    """
-    start_path = base_dir / PLAN_ACTION_START_FILE
+def clear_plan_action_counter(base_dir: Path) -> None:
+    """Clear plan action counter (called when plan is approved)."""
+    counter_path = base_dir / PLAN_ACTION_COUNTER_FILE
     try:
-        if not start_path.exists():
-            return -1
-        start_value = int(start_path.read_text().strip())
-        current = get_action_counter(base_dir)
-        return current - start_value
-    except (ValueError, IOError):
-        return -1
-
-
-def clear_plan_action_start(base_dir: Path) -> None:
-    """Remove plan action start file."""
-    start_path = base_dir / PLAN_ACTION_START_FILE
-    try:
-        if start_path.exists():
-            start_path.unlink()
+        if counter_path.exists():
+            counter_path.unlink()
     except IOError:
         pass
 

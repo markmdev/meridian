@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, get_plan_action_count, ACTIVE_PLAN_FILE
+from config import get_project_config, get_plan_action_counter, ACTIVE_PLAN_FILE
 
 VERIFICATION_MARKER = "<!-- VERIFICATION_FEATURES -->"
 
@@ -44,8 +44,8 @@ def main():
 
     # Check if this is a lightweight plan (fewer actions than threshold)
     min_actions = config.get('plan_review_min_actions', 20)
-    plan_actions = get_plan_action_count(base_dir)
-    if plan_actions >= 0 and plan_actions < min_actions:
+    plan_actions = get_plan_action_counter(base_dir)
+    if plan_actions < min_actions:
         # Lightweight plan - skip enforcement
         sys.exit(0)
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.35] - 2026-01-18
+
+### Changed
+- **Planning skill**: Plans now require explicit "Read first:" sections listing doc paths for each step. External API docs and project docs must be referenced by file path so the implementation agent knows exactly what to read before coding.
+
 ## [0.0.34] - 2026-01-18
 
 ### Changed

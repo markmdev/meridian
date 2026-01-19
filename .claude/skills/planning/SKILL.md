@@ -130,24 +130,26 @@ Proceed to Design after technical decisions are confirmed.
 1. **List all external APIs** identified in Discovery
 2. **Check `.meridian/api-docs/INDEX.md`** for each one
 3. **For missing or incomplete docs**: Run `docs-researcher` agent NOW — before writing the plan
-4. **Document in the plan** which API docs exist and which were created
+4. **Reference docs in plan steps** — each step that uses an API must include "Read first:" with the doc path (see Decomposition)
 
 **NO EXCEPTIONS.** Do not skip this because you "know" the API or are "familiar with it." Your training knowledge is outdated. Run `docs-researcher` anyway.
 
 **Plan mode exception**: You MAY run `docs-researcher` during planning. This overrides the default read-only restriction. Research artifacts (`.meridian/api-docs/`) are not code — they're prerequisites for good planning.
 
-Example plan section:
+Example summary section:
 ```markdown
 ## External APIs
 
-| Library | Doc Status | Operations Needed |
-|---------|------------|-------------------|
-| Chroma | Created (docs-researcher) | add, query, delete |
-| OpenAI | Exists, covers embeddings | embeddings |
-| Stripe | Missing webhooks, appending | webhooks |
+| Library | Doc Path | Operations |
+|---------|----------|------------|
+| Chroma | `.meridian/api-docs/chroma.md` | add, query, delete |
+| OpenAI | `.meridian/api-docs/openai-embeddings.md` | embeddings |
+| Stripe | `.meridian/api-docs/stripe-webhooks.md` | webhooks |
 ```
 
-**The rule**: No implementation step can use an external API that isn't documented. If you discover a new API need during implementation, stop and run docs-researcher first.
+These paths are then referenced in each step's "Read first:" section.
+
+**The rule**: No implementation step can use an external API without "Read first:" pointing to its doc. If you discover a new API need during implementation, stop and run docs-researcher first.
 
 ### 5. Decomposition
 
@@ -158,6 +160,21 @@ For each step:
 - Files involved
 - Dependencies on other steps
 - Verification criteria
+- **Docs to read first** — if this step uses an external API or relies on project documentation, list the file paths explicitly
+
+**Reading docs is an explicit step.** When a step requires understanding an external API or project-specific documentation, include "Read first:" with the file path. The implementation agent won't magically know to check these files.
+
+Example:
+```markdown
+## Step 3: Implement Stripe webhook handler
+
+**Read first:**
+- `.meridian/api-docs/stripe-webhooks.md`
+- `docs/payment-flow.md`
+
+**Deliverable:** WebhookHandler class that validates signatures and routes events
+**Files:** src/payments/webhooks.py, tests/payments/test_webhooks.py
+```
 
 Group related changes (same module, tests with implementation).
 

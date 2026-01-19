@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.36] - 2026-01-19
+
+### Fixed
+- **Pre-compaction sync hook**: Fixed token counting that always returned 0. The hook was reading the last line of the transcript, which is often a "progress" entry (hook execution log) without usage data. Now searches backwards through the transcript to find the most recent entry with `message.usage` data.
+
 ## [0.0.35] - 2026-01-18
 
 ### Changed

@@ -8,6 +8,7 @@ Prompts agent to save context before conversation compacts (based on token usage
 import json
 import sys
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Add lib to path for imports
@@ -22,39 +23,79 @@ from config import (
     get_worktree_name,
 )
 
+LOG_FILE = ".meridian/.pre-compaction-sync.log"
 
-def get_total_tokens(transcript_path: str) -> int:
-    """Read the last entry from transcript and sum token usage."""
+
+def log_calculation(base_dir: Path, request_id: str, usage: dict, total: int,
+                    threshold: int, triggered: bool, error: str = None) -> None:
+    """Append a log entry for debugging token calculations."""
+    log_path = base_dir / LOG_FILE
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        entry = {
+            "timestamp": timestamp,
+            "request_id": request_id,
+            "usage": usage,
+            "total_calculated": total,
+            "threshold": threshold,
+            "triggered": triggered,
+        }
+        if error:
+            entry["error"] = error
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass  # Don't fail the hook if logging fails
+
+
+def get_total_tokens(transcript_path: str, base_dir: Path, threshold: int) -> int:
+    """Read the transcript and find the most recent entry with usage data."""
     if not transcript_path:
+        log_calculation(base_dir, "N/A", {}, 0, threshold, False, "no transcript_path")
         return 0
 
     path = Path(transcript_path)
     if not path.exists():
+        log_calculation(base_dir, "N/A", {}, 0, threshold, False, f"transcript not found: {transcript_path}")
         return 0
 
     try:
-        # Read last line of JSONL file
-        last_line = ""
+        # Read all lines and search backwards for one with usage data
+        lines = []
         with open(path, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.strip():
-                    last_line = line.strip()
+                    lines.append(line.strip())
 
-        if not last_line:
+        if not lines:
+            log_calculation(base_dir, "N/A", {}, 0, threshold, False, "empty transcript")
             return 0
 
-        entry = json.loads(last_line)
-        usage = entry.get("message", {}).get("usage", {})
+        # Search backwards for an entry with message.usage
+        for line in reversed(lines):
+            try:
+                entry = json.loads(line)
+                usage = entry.get("message", {}).get("usage", {})
+                if usage:  # Found an entry with usage data
+                    request_id = entry.get("requestId", "unknown")
+                    total = 0
+                    total += usage.get("input_tokens", 0)
+                    total += usage.get("cache_creation_input_tokens", 0)
+                    total += usage.get("cache_read_input_tokens", 0)
+                    total += usage.get("output_tokens", 0)
 
-        # Sum token fields
-        total = 0
-        total += usage.get("input_tokens", 0)
-        total += usage.get("cache_creation_input_tokens", 0)
-        total += usage.get("cache_read_input_tokens", 0)
-        total += usage.get("output_tokens", 0)
+                    triggered = total >= threshold
+                    log_calculation(base_dir, request_id, usage, total, threshold, triggered)
+                    return total
+            except json.JSONDecodeError:
+                continue
 
-        return total
-    except (json.JSONDecodeError, IOError, KeyError):
+        # No entry with usage found
+        log_calculation(base_dir, "N/A", {}, 0, threshold, False, "no entry with usage data found")
+        return 0
+    except IOError as e:
+        log_calculation(base_dir, "N/A", {}, 0, threshold, False, f"read error: {type(e).__name__}: {e}")
         return 0
 
 
@@ -80,7 +121,7 @@ def main():
     transcript_path = input_data.get("transcript_path", "")
     threshold = config['pre_compaction_sync_threshold']
     already_synced = flag_exists(base_dir, PRE_COMPACTION_FLAG)
-    total_tokens = get_total_tokens(transcript_path)
+    total_tokens = get_total_tokens(transcript_path, base_dir, threshold)
 
     # Already synced this session: allow (fires only once per session)
     if already_synced:

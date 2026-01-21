@@ -16,8 +16,6 @@ import sys
 REVIEWER_AGENTS = {
     "plan-reviewer",
     "code-reviewer",
-    "implementation-reviewer",
-    "browser-verifier",
     "pebble-scaffolder",
     "docs-researcher",
 }

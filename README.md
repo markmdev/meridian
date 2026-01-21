@@ -38,7 +38,7 @@ Meridian uses Claude Code's hooks system to enforce behaviors automatically:
 | **Session continuity** | Rolling `session-context.md` tracks decisions, discoveries, and context across sessions — Claude picks up where it left off |
 | **Pre-compaction warning** | Monitors token usage and prompts Claude to save context before compaction happens |
 | **Detailed plans that work** | Planning skill guides Claude through thorough discovery, design, and integration planning |
-| **Quality gates** | Plan-reviewer and implementation-reviewer agents validate work before proceeding |
+| **Quality gates** | Plan-reviewer and code-reviewer agents validate work before proceeding |
 | **MCP integrations** | Context7 and DeepWiki provide up-to-date library docs and repository knowledge for planning and review |
 | **Your custom docs injected** | Add your architecture docs, API references, etc. to `required-context-files.yaml` — they're injected every session |
 
@@ -80,7 +80,7 @@ flowchart TB
 
     subgraph Agents["Agents (Quality Gates)"]
         A1[plan-reviewer]
-        A2[implementation-reviewer]
+        A2[code-reviewer]
         A3[docs-researcher]
     end
 
@@ -146,9 +146,9 @@ sequenceDiagram
     Dev->>CC: Requests stop
     CC->>Hook: Stop triggers
     Hook->>CC: Blocks until updates done
-    CC->>Agent: Spawns implementation-reviewer
-    Agent->>Files: Compares to plan
-    Agent->>CC: Returns score + findings
+    CC->>Agent: Spawns code-reviewer
+    Agent->>Files: Reviews changes
+    Agent->>CC: Returns issues (if any)
     CC->>Files: Updates task status
     CC->>Skill: Uses memory-curator
     Skill->>Files: Appends to memory.jsonl
@@ -207,7 +207,7 @@ Open your project in Claude Code. Hooks activate automatically, MCP servers conn
 | **Large context** | Claude forgets prompt details as context grows | Hooks reinforce key behaviors throughout the session |
 | **Memory** | None | `memory.jsonl` persists lessons across sessions |
 | **Task continuity** | None — each session starts fresh | Context files track progress, decisions, next steps |
-| **Quality gates** | None | Plan review + implementation review before proceeding |
+| **Quality gates** | None | Plan review + code review before proceeding |
 | **Library docs** | Claude's training data (potentially outdated) | MCP servers provide current documentation |
 | **Custom docs** | Must be read manually each session | Injected automatically via `required-context-files.yaml` |
 
@@ -233,7 +233,7 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `action-counter.py` | PostToolUse | Tracks actions for stop hook threshold |
 | `periodic-reminder.py` | PostToolUse, UserPromptSubmit, SessionStart | Injects behavior reminders every N actions |
 | `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create Pebble issues (if enabled) |
-| `pre-stop-update.py` | Stop | Requires memory updates and implementation review |
+| `pre-stop-update.py` | Stop | Requires memory updates and code review |
 | `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
 | `meridian-path-guard.py` | PermissionRequest | Blocks .meridian/.claude writes outside project root |
 | `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
@@ -341,14 +341,6 @@ Validates plans before implementation:
 - Trusts plan claims about packages/versions (user may have private access)
 - Returns score (must reach 9+ to proceed) + findings
 
-### Implementation Reviewer
-
-Verifies every plan item was implemented:
-- Extracts checklist of EVERY item from the plan
-- Verifies each item individually (no skipping, no assumptions)
-- Creates issues for incomplete items (Pebble issues or markdown file)
-- Loop: fix issues → re-run → repeat until no issues
-
 ### Code Reviewer (CodeRabbit-style)
 
 Deep code review with full context analysis:
@@ -359,17 +351,6 @@ Deep code review with full context analysis:
 5. Creates issues for findings (Pebble issues or markdown file)
 
 Focuses on issues that actually matter, not checklist items or style preferences.
-
-### Browser Verifier (experimental)
-
-Manual QA using Claude for Chrome MCP:
-- Extracts user-facing items from plan
-- Actually uses the application in a browser to verify functionality
-- Checks visual appearance (layout, styling, responsiveness)
-- Tests user flows, form submissions, error states
-- Creates issues for failures (Pebble issues or markdown file)
-
-Requires Claude for Chrome browser extension.
 
 ### Docs Researcher
 
@@ -465,7 +446,7 @@ project_type: standard  # hackathon | standard | production
 
 # Quality gates
 plan_review_enabled: true
-implementation_review_enabled: true
+code_review_enabled: true
 
 # Context preservation
 pre_compaction_sync_enabled: true
@@ -549,11 +530,10 @@ your-project/
 │   │   └── claudemd-writer/SKILL.md
 │   └── agents/
 │       ├── plan-reviewer.md
-│       ├── implementation-reviewer.md
 │       ├── code-reviewer.md
-│       ├── browser-verifier.md
 │       ├── docs-researcher.md
 │       ├── feature-writer.md
+│       ├── explore.md
 │       └── pebble-scaffolder.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
@@ -653,7 +633,7 @@ Yes. Edit `.meridian/CODE_GUIDE.md` to add project-specific rules. It's injected
 Yes. In `.meridian/config.yaml`:
 ```yaml
 plan_review_enabled: false
-implementation_review_enabled: false
+code_review_enabled: false
 pre_compaction_sync_enabled: false
 ```
 

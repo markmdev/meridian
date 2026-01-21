@@ -2,7 +2,7 @@
 """
 Stop Hook - Pre-Stop Update
 
-Prompts agent to update task files, memory, and optionally run implementation review.
+Prompts agent to update task files, memory, and optionally run code review.
 Skips if a work-until loop is active (loop hook handles everything).
 """
 
@@ -83,7 +83,7 @@ def main():
     output = {
         "decision": "block",
         "reason": reason,
-        "systemMessage": "[Meridian] Before stopping, Claude is updating session context, backlog, and memory, verifying tests/lint/build, and running implementation review if needed."
+        "systemMessage": "[Meridian] Before stopping, Claude is updating session context, backlog, and memory, verifying tests/lint/build, and running code review if needed."
     }
 
     print(json.dumps(output))

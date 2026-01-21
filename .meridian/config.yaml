@@ -15,12 +15,8 @@ plan_review_enabled: true
 # Prevents heavyweight review for quick/simple plans. Set to 0 to always enforce.
 plan_review_min_actions: 20
 
-# Implementation review: require implementation-reviewer agent before stopping.
-# When false, pre-stop hook skips the implementation review section.
-implementation_review_enabled: true
-
-# Code review: require code-reviewer agent before stopping (separate from impl review).
-# When false, only implementation reviewer runs. Useful when code review is overkill.
+# Code review: require code-reviewer agent before stopping.
+# When false, code review is skipped.
 code_review_enabled: true
 
 # Pre-compaction sync: prompt agent to save context before conversation compacts.
@@ -43,7 +39,7 @@ pre_compaction_sync_threshold: 144000
 # Session context: Rolling context file for cross-session continuity.
 # Agent saves important information here; oldest lines trimmed when over limit.
 # Set to 0 to disable trimming (unlimited size).
-session_context_max_lines: 500
+session_context_max_lines: 350
 
 # Worktree context: Shared context across git worktrees.
 # Contains high-level summaries of work from all worktrees.

@@ -88,7 +88,7 @@ For each finding: context, impact, evidence (file:line), fix.
 
 **If `pebble_enabled: true`**: See `.meridian/PEBBLE_GUIDE.md` for commands. Use `--parent <id>` when creating issues.
 
-**If `pebble_enabled: false`**: Write to `.meridian/implementation-reviews/code-review-{random-8-chars}.md` with full analysis, walkthroughs, findings.
+**If `pebble_enabled: false`**: Write to `.meridian/code-reviews/code-review-{random-8-chars}.md` with full analysis, walkthroughs, findings.
 
 ### 9. Cleanup and Return
 

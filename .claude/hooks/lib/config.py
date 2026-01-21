@@ -28,6 +28,9 @@ ACTION_COUNTER_FILE = f"{STATE_DIR}/action-counter"
 REMINDER_COUNTER_FILE = f"{STATE_DIR}/reminder-counter"
 PLAN_ACTION_COUNTER_FILE = f"{STATE_DIR}/plan-action-counter"
 DOCS_RESEARCHER_FLAG = f"{STATE_DIR}/docs-researcher-active"
+CODE_REVIEWER_FLAG = f"{STATE_DIR}/code-reviewer-active"
+EDITS_SINCE_REVIEW_FILE = f"{STATE_DIR}/edits-since-review"
+EDITS_SINCE_MEMORY_FILE = f"{STATE_DIR}/edits-since-memory"
 PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
 ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
 INJECTED_FILES_LOG = f"{STATE_DIR}/injected-files"
@@ -109,7 +112,6 @@ def get_project_config(base_dir: Path) -> dict:
     config = {
         'project_type': 'standard',
         'plan_review_enabled': True,
-        'implementation_review_enabled': True,
         'pre_compaction_sync_enabled': True,
         'pre_compaction_sync_threshold': 150000,
         'session_context_max_lines': 1000,
@@ -140,11 +142,6 @@ def get_project_config(base_dir: Path) -> dict:
         pr = get_config_value(content, 'plan_review_enabled')
         if pr:
             config['plan_review_enabled'] = pr.lower() != 'false'
-
-        # Implementation review
-        ir = get_config_value(content, 'implementation_review_enabled')
-        if ir:
-            config['implementation_review_enabled'] = ir.lower() != 'false'
 
         # Pre-compaction sync
         pcs = get_config_value(content, 'pre_compaction_sync_enabled')
@@ -201,7 +198,7 @@ def get_project_config(base_dir: Path) -> dict:
             except ValueError:
                 pass
 
-        # Code review (separate from implementation review)
+        # Code review
         cr_enabled = get_config_value(content, 'code_review_enabled')
         if cr_enabled:
             config['code_review_enabled'] = cr_enabled.lower() != 'false'
@@ -304,6 +301,46 @@ def create_flag(base_dir: Path, flag_path: str) -> None:
 def flag_exists(base_dir: Path, flag_path: str) -> bool:
     """Check if a flag file exists."""
     return (base_dir / flag_path).exists()
+
+
+# =============================================================================
+# EDIT COUNTER HELPERS
+# =============================================================================
+def increment_edits_since(base_dir: Path, counter_file: str) -> None:
+    """Increment an edit counter."""
+    path = base_dir / counter_file
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        current = 0
+        if path.exists():
+            try:
+                current = int(path.read_text().strip())
+            except (ValueError, IOError):
+                pass
+        path.write_text(str(current + 1))
+    except IOError:
+        pass
+
+
+def reset_edits_since(base_dir: Path, counter_file: str) -> None:
+    """Reset an edit counter to 0."""
+    path = base_dir / counter_file
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("0")
+    except IOError:
+        pass
+
+
+def get_edits_since(base_dir: Path, counter_file: str) -> int:
+    """Get current edit counter value."""
+    path = base_dir / counter_file
+    try:
+        if path.exists():
+            return int(path.read_text().strip())
+    except (ValueError, IOError):
+        pass
+    return 0
 
 
 # =============================================================================
@@ -865,19 +902,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append('</pebble-context>')
             parts.append("")
 
-    # 8. Thinking guide
-    thinking_path = base_dir / ".meridian" / "prompts" / "thinking-guide.md"
-    if thinking_path.exists():
-        try:
-            content = thinking_path.read_text()
-            parts.append(f'<file path=".meridian/prompts/thinking-guide.md">')
-            parts.append(content.rstrip())
-            parts.append('</file>')
-            parts.append("")
-        except IOError:
-            pass
-
-    # 9. Agent operating manual
+    # 8. Agent operating manual
     manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
     if manual_path.exists():
         try:
@@ -1081,6 +1106,10 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     pebble_enabled = config.get('pebble_enabled', False)
     claude_project_dir = str(base_dir)
 
+    # Get edit counters for context
+    edits_since_review = get_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
+    edits_since_memory = get_edits_since(base_dir, EDITS_SINCE_MEMORY_FILE)
+
     parts = ["[SYSTEM]: Before stopping, complete these checks:\n"]
 
     # Skip-if-unchanged principle
@@ -1090,36 +1119,25 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         "Only re-run checks after significant code changes.\n"
     )
 
-    # Implementation review section (lowest priority - at top)
-    impl_review = config.get('implementation_review_enabled', True)
+    # Code review section (lowest priority - at top)
     code_review = config.get('code_review_enabled', True)
 
-    if impl_review or code_review:
+    if code_review:
+        review_context = f"(**{edits_since_review} file edits** since last code review)" if edits_since_review > 0 else "(ran this session)"
         parts.append(
-            "**IMPLEMENTATION REVIEW**: After finishing a plan, epic, or large multi-file task, run reviewers.\n\n"
+            f"**CODE REVIEW** {review_context}: After finishing a plan, epic, or large multi-file task, run Code Reviewer.\n\n"
             f"First `cd {claude_project_dir}`, then:\n"
         )
 
-        # Build reviewer list based on config
-        reviewers = []
-        if impl_review:
-            reviewers.append("Implementation Reviewer agent")
-        if code_review:
-            reviewers.append("Code Reviewer agent")
-
         if pebble_enabled:
-            reviewer_list = "\n".join(f"- {r}" for r in reviewers)
             parts.append(
-                "**Spawn in parallel** — include `Parent issue: #<id>` in the prompt (the epic/task you were working on):\n"
-                f"{reviewer_list}\n"
-                "**After reviewers**: If issues created → fix → re-run. Repeat until no issues.\n"
+                "**Spawn** Code Reviewer agent — include `Parent issue: #<id>` in the prompt (the epic/task you were working on).\n"
+                "**After reviewer**: If issues created → fix → re-run. Repeat until no issues.\n"
             )
         else:
-            reviewer_list = "\n".join(f"{i+1}. {r}" for i, r in enumerate(reviewers))
             parts.append(
-                "**Spawn in parallel** (no prompts needed — they read from `.meridian/.state/injected-files`):\n"
-                f"{reviewer_list}\n"
-                "**After reviewers**: Read `.meridian/implementation-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
+                "**Spawn** Code Reviewer agent (no prompt needed — it reads from `.meridian/.state/injected-files`).\n"
+                "**After reviewer**: Read `.meridian/code-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
             )
 
     # Pebble reminder if enabled (before session context - higher priority)
@@ -1138,6 +1156,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         "**SESSION CONTEXT**: Append timestamped entry (`YYYY-MM-DD HH:MM`) to "
         f"`{claude_project_dir}/.meridian/session-context.md` with key decisions, discoveries, context worth preserving, "
         "and important user messages (instructions, preferences, constraints — copy verbatim if needed).\n"
+        f"First, check recent entries to avoid duplicating: `tail -50 \"{claude_project_dir}/.meridian/session-context.md\"`\n"
     )
 
     # Worktree context section (always required)
@@ -1152,14 +1171,16 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     parts.append(
         f"**WORKTREE CONTEXT**: Append a summary to "
         f"`{worktree_context_path}`. "
+        f"First, check recent entries: `tail -50 \"{worktree_context_path}\"`\n"
         f"Format: {format_header}\n"
         "Start with what task/epic you were working on, then 2-3 sentences: "
         "what was done, any issues found, current state.\n"
     )
 
     # Memory section
+    memory_context = f"(**{edits_since_memory} file edits** since last memory update)" if edits_since_memory > 0 else "(updated this session)"
     parts.append(
-        "**MEMORY**: Consider if you learned something that future agents need to know.\n"
+        f"**MEMORY** {memory_context}: Consider if you learned something that future agents need to know.\n"
         "The test: \"If I don't record this, will a future agent make the same mistake — or is the fix already in the code?\"\n"
         "- **Add**: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination patterns.\n"
         "- **Skip**: One-time bug fixes (code handles it), SDK quirks (code works around them), agent behavior rules (use agent-operating-manual.md), module-specific details (use CLAUDE.md).\n"
@@ -1189,7 +1210,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     # Footer
     parts.append(
         "If you have nothing to update and were not working on a plan, your response to this hook must be exactly the same as the message that was blocked. "
-        "If you did update something or called implementation-reviewer, resend the same message you sent before you were interrupted by this hook. "
+        "If you did update something or ran code-reviewer, resend the same message you sent before you were interrupted by this hook. "
         "Before marking a task as complete, review the 'Definition of Done' section in "
         f"`{claude_project_dir}/.meridian/prompts/agent-operating-manual.md`."
     )

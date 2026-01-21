@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.0.38] - 2026-01-21
+
+### Removed
+- **implementation-reviewer agent**: Deleted — agent follows plans anyway, reviewer added no value
+- **browser-verifier agent**: Deleted — never used in practice
+
+### Added
+- **Edit tracking for code review**: Tracks file edits since last code review. Counter shown in stop prompt so agent can't claim "this was a small bug fix" after hundreds of edits. Resets when code-reviewer completes.
+- **Edit tracking for memory**: Tracks file edits since last memory update. Prevents dismissing memory entries with "nothing significant happened" after substantial work.
+- **CodeRabbit workflow guidance**: New "Responding to Review Feedback" section in agent-operating-manual — reply inline to comments, don't defer valid issues as "out of scope", create Pebble issues for findings.
+- **Verification judgment guidance**: Agent-operating-manual now instructs to scale verification to the change — don't run full test/lint/typecheck suite after trivial single-line fixes.
+- **code-reviewer-stop.py**: New SubagentStop hook that resets edit-since-review counter when code-reviewer completes.
+
+### Changed
+- **pebble-scaffolder**: Now supports flexible scopes (epic, task, bug, follow-up) instead of always creating epic hierarchies. Main agent passes scope hint based on work size.
+- **plan-approval-reminder**: Updated guidance to tell main agent to assess scope and pass appropriate hint (epic/task/bug/follow-up) to pebble-scaffolder.
+- **docs-researcher**: Now installs npm packages to temp folder for inspection (`mktemp -d && npm install`) instead of assuming they're already in node_modules.
+- **code-reviewer**: Output folder changed from `implementation-reviews/` to `code-reviews/`.
+- **Stop prompt**: Now shows edit counts for both code review and memory sections.
+
+### Technical
+- New state files: `edits-since-review`, `edits-since-memory`, `code-reviewer-active`
+- Memory scripts (`add_memory_entry.py`, `edit_memory_entry.py`) now reset memory counter on update
+- Removed `implementation_review_enabled` config option
+- Cleaned up all implementation-reviewer and browser-verifier references from: config.py, README.md, agent-operating-manual.md, reviewer-root-guard.py, work-until-stop.py, pre-stop-update.py
+
 ## [0.0.37] - 2026-01-21
 
 ### Changed

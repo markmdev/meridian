@@ -175,6 +175,7 @@ def main():
     reason += (
         "**SESSION CONTEXT**: Append a dated entry to:\n"
         f"`{claude_project_dir}/.meridian/session-context.md`\n\n"
+        f"First, check recent entries to avoid duplicating: `tail -50 \"{claude_project_dir}/.meridian/session-context.md\"`\n\n"
         "**What survives compaction well:**\n"
         "- Concrete decisions with rationale (\"chose X because Y\")\n"
         "- Specific file paths and line numbers\n"
@@ -201,6 +202,7 @@ def main():
     reason += (
         f"**WORKTREE CONTEXT**: Append a summary to:\n"
         f"`{worktree_context_path}`\n"
+        f"First, check recent entries: `tail -50 \"{worktree_context_path}\"`\n"
         f"Format: {format_header}\n"
         "Start with what task/epic you were working on, then 2-3 sentences: "
         "what was done, any issues found, current state.\n\n"

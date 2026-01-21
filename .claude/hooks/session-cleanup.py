@@ -25,6 +25,7 @@ STARTUP_DELETE = [
     "plan-review-blocked",
     "plan-action-counter",
     "docs-researcher-active",
+    "code-reviewer-active",
 ]
 
 # Files to delete on clear (user cleared conversation)
@@ -35,6 +36,7 @@ CLEAR_DELETE = [
     "plan-mode-state",
     "plan-review-blocked",
     "docs-researcher-active",
+    "code-reviewer-active",
 ]
 
 # Files to delete on SessionEnd
@@ -42,6 +44,7 @@ SESSION_END_DELETE = [
     "reminder-counter",
     "plan-action-counter",
     "docs-researcher-active",
+    "code-reviewer-active",
 ]
 
 

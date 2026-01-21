@@ -3,7 +3,8 @@
 Action Counter Hook - Tracks tool calls for stop hook threshold.
 
 Handles:
-- PostToolUse: Increment counter
+- PostToolUse: Increment counter, track file edits
+- PreToolUse: Detect code-reviewer spawn
 
 Counter is reset by stop hooks (pre-stop-update.py, work-until-stop.py)
 when they actually fire. This ensures actions accumulate across user
@@ -17,7 +18,17 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import ACTION_COUNTER_FILE, PLAN_MODE_STATE, increment_plan_action_counter
+from config import (
+    ACTION_COUNTER_FILE,
+    PLAN_MODE_STATE,
+    CODE_REVIEWER_FLAG,
+    EDITS_SINCE_REVIEW_FILE,
+    EDITS_SINCE_MEMORY_FILE,
+    increment_plan_action_counter,
+    increment_edits_since,
+    reset_edits_since,
+    create_flag,
+)
 
 
 def get_counter(base_dir: Path) -> int:
@@ -53,13 +64,44 @@ def main() -> int:
     base_dir = Path(claude_project_dir)
 
     hook_event = input_data.get("hook_event_name", "")
+    tool_name = input_data.get("tool_name", "")
 
-    if hook_event in ("PostToolUse", "UserPromptSubmit"):
+    # PreToolUse: Detect code-reviewer spawn
+    if hook_event == "PreToolUse" and tool_name == "Task":
+        tool_input = input_data.get("tool_input", {})
+        subagent_type = tool_input.get("subagent_type", "").lower()
+        if subagent_type == "code-reviewer":
+            create_flag(base_dir, CODE_REVIEWER_FLAG)
+
+    # PostToolUse: Increment counters
+    if hook_event == "PostToolUse":
         # Increment main action counter
         current = get_counter(base_dir)
         set_counter(base_dir, current + 1)
 
         # Also increment plan action counter if in plan mode
+        plan_mode_file = base_dir / PLAN_MODE_STATE
+        if plan_mode_file.exists():
+            mode = plan_mode_file.read_text().strip()
+            if mode == "plan":
+                increment_plan_action_counter(base_dir)
+
+        # Track Edit/Write for review and memory counters
+        if tool_name in ("Edit", "Write"):
+            increment_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
+            increment_edits_since(base_dir, EDITS_SINCE_MEMORY_FILE)
+
+            # Reset memory counter if writing to memory.jsonl
+            tool_input = input_data.get("tool_input", {})
+            file_path = tool_input.get("file_path", "")
+            if file_path.endswith("memory.jsonl"):
+                reset_edits_since(base_dir, EDITS_SINCE_MEMORY_FILE)
+
+    # UserPromptSubmit: Just increment main counter
+    if hook_event == "UserPromptSubmit":
+        current = get_counter(base_dir)
+        set_counter(base_dir, current + 1)
+
         plan_mode_file = base_dir / PLAN_MODE_STATE
         if plan_mode_file.exists():
             mode = plan_mode_file.read_text().strip()

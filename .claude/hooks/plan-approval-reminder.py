@@ -45,14 +45,17 @@ def main():
         sys.exit(0)
 
     reason = (
-        f"[SYSTEM]: If the user has approved the plan, **invoke the `pebble-scaffolder` agent** "
-        f"with the plan file path to create the Pebble issue hierarchy.\n\n"
-        f"The agent will create:\n"
-        f"- Epic for the overall plan\n"
-        f"- Task per phase\n"
-        f"- Verification subtask per feature\n"
-        f"- Dependencies between sequential phases\n\n"
-        f"Skip only for trivial changes that don't need tracking."
+        f"[SYSTEM]: Plan approved. **Invoke the `pebble-scaffolder` agent** to document the work.\n\n"
+        f"Pass the agent:\n"
+        f"1. **Plan file path** — the plan you just created\n"
+        f"2. **Scope hint** — assess the work and choose:\n"
+        f"   - `epic` — large multi-phase work (multiple distinct phases/modules)\n"
+        f"   - `task` — focused work (single feature, refactor, or enhancement)\n"
+        f"   - `bug` — fix for a discovered issue\n"
+        f"   - `follow-up` — continuation of previous work (pass parent issue ID)\n"
+        f"3. **Parent context** (optional) — existing epic/issue ID if this relates to prior work\n\n"
+        f"The scaffolder will create the appropriate structure based on scope.\n"
+        f"Skip only for trivial 5-minute fixes that don't need tracking."
     )
 
     output = {

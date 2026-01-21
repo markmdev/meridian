@@ -113,10 +113,10 @@ def build_loop_prompt(base_dir: Path, config: dict, state: dict) -> str:
         parts.append("- The phrase MUST be completely and genuinely true\n")
         parts.append("- Do NOT output a false statement to escape the loop\n")
         parts.append("- If you're stuck, keep trying — the loop continues until genuine completion\n\n")
-        parts.append("**BEFORE OUTPUTTING COMPLETION PHRASE**: You MUST run reviewer agents first.\n")
-        parts.append("1. Run Implementation Reviewer and Code Reviewer agents in parallel\n")
-        parts.append("2. If they return ANY issues → fix them → re-run reviewers\n")
-        parts.append("3. Only when reviewers return 0 issues can you output the completion phrase\n\n")
+        parts.append("**BEFORE OUTPUTTING COMPLETION PHRASE**: You MUST run Code Reviewer first.\n")
+        parts.append("1. Run Code Reviewer agent\n")
+        parts.append("2. If it returns ANY issues → fix them → re-run reviewer\n")
+        parts.append("3. Only when reviewer returns 0 issues can you output the completion phrase\n\n")
     else:
         parts.append("**TO EXIT LOOP**: No completion phrase set. Loop will run until max iterations.\n\n")
 

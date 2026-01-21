@@ -100,14 +100,25 @@ No exceptions. Your training data is outdated. Run docs-researcher even for "fam
 
 **In plan mode**: You MAY run docs-researcher — research artifacts aren't code.
 
-# Implementation Review
+# Code Review
 
-Before stopping after implementing a plan, run in parallel:
+Before stopping after implementing a plan, run **Code Reviewer** for line-by-line review of changes.
 
-1. **Implementation Reviewer** — verifies every plan item was implemented
-2. **Code Reviewer** — line-by-line review of changes
+**Loop**: Run reviewer → fix any issues → re-run → repeat until no issues.
 
-**Loop**: Run reviewers → fix any issues created → re-run → repeat until no issues.
+# Responding to Review Feedback
+
+When addressing feedback from CodeRabbit, human reviewers, or any PR comments:
+
+**Reply inline.** Respond directly to the comment thread, not as a new top-level comment. This keeps the conversation connected.
+
+**No "out of scope" deferrals.** If a reviewer raises a valid concern — even if it touches code outside your immediate changes — fix it now. Don't say "good point, but out of scope for this PR" and move on. The reviewer is right; the code needs fixing. Do it.
+
+**Dismiss false positives with explanation.** Not every suggestion is valid. If a reviewer is wrong (misunderstands context, suggests something that breaks other code, etc.), explain why and dismiss. Don't blindly implement bad suggestions.
+
+**Create Pebble issues for findings.** If Pebble is enabled, every valid issue raised by reviewers becomes a Pebble issue — even if you fix it immediately. This creates an audit trail: issue found → fixed → closed with comment.
+
+**The principle:** Review feedback is a gift. Valid concerns get fixed, not deferred. Invalid concerns get explained, not ignored.
 
 # Definition of Done
 
@@ -118,6 +129,16 @@ Before stopping after implementing a plan, run in parallel:
 - Session context updated with important decisions
 
 **NOT done if**: Tests failing (even "unrelated" ones), linter warnings ignored, build warnings present, TODO comments for critical logic.
+
+# Verification Judgment
+
+**Scale verification to the change.** Don't run the full test/lint/typecheck suite after trivial changes.
+
+- **After significant changes** (new features, refactors, bug fixes): Run full verification (tests, typecheck, lint, build)
+- **After trivial changes** (typos, comments, config tweaks, doc updates): Skip or run only the directly affected check
+- **After single-file changes**: Run only tests for that file/module, not the entire suite
+
+The goal is catching real issues, not ritual compliance. A one-line typo fix doesn't need 5 minutes of CI.
 
 # CI/Build Failures
 

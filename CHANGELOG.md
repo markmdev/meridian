@@ -1,10 +1,16 @@
 # Changelog
 
+## [0.0.39] - 2026-01-21
+
+### Changed
+- **`/clear` now behaves like auto-compact**: Changed SessionStart hook matchers so `/clear` triggers the same hooks as `compact`. State (action-counter, plan-mode-state, etc.) is now preserved instead of reset. Users can disable auto-compact and use `/clear` manually for cleaner context without CC's file duplication.
+
 ## [0.0.38] - 2026-01-21
 
 ### Removed
 - **implementation-reviewer agent**: Deleted — agent follows plans anyway, reviewer added no value
 - **browser-verifier agent**: Deleted — never used in practice
+- **thinking-guide.md**: Replaced by `/think` command
 
 ### Added
 - **Edit tracking for code review**: Tracks file edits since last code review. Counter shown in stop prompt so agent can't claim "this was a small bug fix" after hundreds of edits. Resets when code-reviewer completes.
@@ -12,8 +18,10 @@
 - **CodeRabbit workflow guidance**: New "Responding to Review Feedback" section in agent-operating-manual — reply inline to comments, don't defer valid issues as "out of scope", create Pebble issues for findings.
 - **Verification judgment guidance**: Agent-operating-manual now instructs to scale verification to the change — don't run full test/lint/typecheck suite after trivial single-line fixes.
 - **code-reviewer-stop.py**: New SubagentStop hook that resets edit-since-review counter when code-reviewer completes.
+- **`/think` command**: New command for explicit thinking mode. User invokes `/think [LINES] [TOPIC]` to start structured thinking. Replaces auto-injected thinking-guide.md.
 
 ### Changed
+- **Planning skill completely rewritten**: Removed rigid numbered phases (0-9) that caused "7-phase 500-line" plans regardless of task complexity. New philosophy: "Plans are documentation of understanding, not templates." Core loop: ASK → EXPLORE → LEARN → MORE QUESTIONS? → REPEAT. Spawn as many agents as needed. Run follow-up explorations when findings raise questions. Required specifics: data, flow, decisions, existing patterns to reuse.
 - **pebble-scaffolder**: Now supports flexible scopes (epic, task, bug, follow-up) instead of always creating epic hierarchies. Main agent passes scope hint based on work size.
 - **plan-approval-reminder**: Updated guidance to tell main agent to assess scope and pass appropriate hint (epic/task/bug/follow-up) to pebble-scaffolder.
 - **docs-researcher**: Now installs npm packages to temp folder for inspection (`mktemp -d && npm install`) instead of assuming they're already in node_modules.

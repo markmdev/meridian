@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.37] - 2026-01-21
+
+### Changed
+- **Pre-compaction hook**: Now prompts to save plan state FIRST (before Pebble, before session context) when in plan mode or with active plan. Instructs agent to capture verbatim requirements — all user messages and AskUserQuestion exchanges without paraphrasing.
+- **Planning skill**: Strengthened Verbatim Requirements section with explicit "DO NOT paraphrase. DO NOT compress. DO NOT summarize." and changed from capturing "important" follow-up context to capturing ALL follow-up context. Section header now includes "WRITE THIS FIRST".
+
+### Added
+- **reviewer-root-guard**: Now enforces project root for `docs-researcher` agent (same as plan-reviewer, code-reviewer, etc.). Blocks spawning from subdirectories with clear error message.
+
 ## [0.0.36] - 2026-01-19
 
 ### Fixed

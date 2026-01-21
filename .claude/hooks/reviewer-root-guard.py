@@ -19,6 +19,7 @@ REVIEWER_AGENTS = {
     "implementation-reviewer",
     "browser-verifier",
     "pebble-scaffolder",
+    "docs-researcher",
 }
 
 

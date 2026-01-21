@@ -441,11 +441,11 @@ def increment_plan_action_counter(base_dir: Path) -> None:
 
 
 def clear_plan_action_counter(base_dir: Path) -> None:
-    """Clear plan action counter (called when plan is approved)."""
+    """Reset plan action counter to 0 (called when plan is approved)."""
     counter_path = base_dir / PLAN_ACTION_COUNTER_FILE
     try:
-        if counter_path.exists():
-            counter_path.unlink()
+        counter_path.parent.mkdir(parents=True, exist_ok=True)
+        counter_path.write_text("0")
     except IOError:
         pass
 
@@ -1140,18 +1140,22 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         "and important user messages (instructions, preferences, constraints — copy verbatim if needed).\n"
     )
 
-    # Worktree context section (only if in a git worktree)
+    # Worktree context section (always required)
     main_worktree = get_main_worktree_path(base_dir)
-    if main_worktree:
-        worktree_name = get_worktree_name(base_dir)
-        worktree_context_path = main_worktree / WORKTREE_CONTEXT_FILE
-        parts.append(
-            f"**WORKTREE CONTEXT**: For significant work, append a summary to "
-            f"`{worktree_context_path}` (in main worktree). "
-            f"Format: `## [{worktree_name}] YYYY-MM-DD HH:MM - Title`\n"
-            "Start with what task/epic you were working on, then 2-3 sentences: "
-            "what was done, any issues found, current state. Skip for trivial changes.\n"
-        )
+    worktree_root = main_worktree if main_worktree else base_dir
+    worktree_name = get_worktree_name(base_dir) if main_worktree else None
+    worktree_context_path = worktree_root / WORKTREE_CONTEXT_FILE
+    if worktree_name:
+        format_header = f"`## [{worktree_name}] YYYY-MM-DD HH:MM - Title`"
+    else:
+        format_header = "`## YYYY-MM-DD HH:MM - Title`"
+    parts.append(
+        f"**WORKTREE CONTEXT**: Append a summary to "
+        f"`{worktree_context_path}`. "
+        f"Format: {format_header}\n"
+        "Start with what task/epic you were working on, then 2-3 sentences: "
+        "what was done, any issues found, current state.\n"
+    )
 
     # Memory section
     parts.append(

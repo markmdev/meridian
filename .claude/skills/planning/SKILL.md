@@ -9,34 +9,40 @@ Great plans come from deep understanding. Superficial exploration leads to plans
 
 **NO DEFERRALS.** Investigate everything NOW — not "later." Phrases like "TBD," "needs investigation," or "figure out during implementation" are plan failures. Front-load all investigation so implementation is mechanical.
 
-## Verbatim Requirements (MANDATORY)
+## Verbatim Requirements (MANDATORY — WRITE THIS FIRST)
 
-Every plan must begin with a **Verbatim Requirements** section that captures the user's exact words. This section is the source of truth and persists through the entire plan lifecycle — never delete or paraphrase it.
+This section goes at the **TOP of every plan file** and is written **FIRST** — before any other planning work.
 
-**Must include:**
-1. **Original user message(s)** — Copy the user's initial request exactly as written. No summarizing, no trimming. The user's exact words carry nuance that paraphrasing loses.
-2. **All AskUserQuestion exchanges** — Every question you asked and every answer received, verbatim. This is mandatory, not optional. These exchanges ARE the clarified spec.
-3. **Important follow-up context** — Any subsequent user messages that add meaningful context (your discretion on which ones matter).
+**DO NOT paraphrase. DO NOT compress. DO NOT summarize.**
+
+Capture the user's exact words. Your interpretation loses nuance. "I don't like our chat UI" carries different meaning than "Chat UI needs improvement." The original words are the spec.
+
+**Must include (ALL of these, no exceptions):**
+1. **Original user message(s)** — The user's initial request, word for word. Copy the entire message. Every sentence matters.
+2. **ALL AskUserQuestion exchanges** — Every question you asked, every answer received. Verbatim. Not a summary. Not "key points." The entire exchange.
+3. **ALL follow-up context** — Every subsequent user message. Capture the whole conversation, not just what seems "important."
+
+**Why capture everything:** You don't know which details will matter during implementation. A casual comment like "oh and make sure it works offline" is a requirement. Paraphrasing it as "consider offline support" loses the directive.
 
 **Format:**
 ```markdown
 ## Verbatim Requirements
 
 ### Original Request
-> [User's exact message, copied verbatim]
+> [User's ENTIRE message, copied word for word]
 
 ### Clarifications
 **Q:** [Your question]
-**A:** [User's answer, verbatim]
+**A:** [User's ENTIRE answer, verbatim]
 
 **Q:** [Your question]
-**A:** [User's answer, verbatim]
+**A:** [User's ENTIRE answer, verbatim]
 
 ### Additional Context
-> [Any follow-up messages with important context]
+> [EVERY follow-up message from the user]
 ```
 
-**Why this matters:** When you paraphrase, you apply your interpretation — which might miss exactly what the user cared about. "I don't like our chat UI" carries different meaning than "Chat UI needs improvement." Preserve the original words.
+This section persists through the entire plan lifecycle. Never delete it. Never rewrite it. Only append new exchanges.
 
 ## Research: Direct Tools vs Explore Agents
 

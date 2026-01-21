@@ -19,6 +19,8 @@ from config import (
     create_flag,
     PRE_COMPACTION_FLAG,
     WORKTREE_CONTEXT_FILE,
+    PLAN_MODE_STATE,
+    ACTIVE_PLAN_FILE,
     get_main_worktree_path,
     get_worktree_name,
 )
@@ -141,7 +143,25 @@ def main():
         "to preserve context for the agent that will continue after compaction.\n\n"
     )
 
-    # Add Pebble instructions FIRST if enabled (higher priority)
+    # Check if in plan mode or active plan exists
+    plan_mode_file = base_dir / PLAN_MODE_STATE
+    active_plan_file = base_dir / ACTIVE_PLAN_FILE
+    in_plan_mode = plan_mode_file.exists() and plan_mode_file.read_text().strip() == "plan"
+    has_active_plan = active_plan_file.exists()
+
+    # Add PLAN STATE section FIRST (highest priority)
+    if in_plan_mode or has_active_plan:
+        reason += (
+            "**PLAN STATE** (HIGHEST PRIORITY — DO THIS FIRST):\n"
+            "Update the plan file's **Verbatim Requirements** section at the TOP:\n"
+            "- Capture the user's ENTIRE original request (word for word)\n"
+            "- Capture ALL AskUserQuestion exchanges (questions AND answers, verbatim)\n"
+            "- Capture all follow-up context from the user\n"
+            "- DO NOT paraphrase. DO NOT compress. DO NOT summarize.\n"
+            "- Everything the user said matters — paraphrasing loses nuance.\n\n"
+        )
+
+    # Add Pebble instructions if enabled
     if config.get('pebble_enabled', False):
         reason += (
             "**PEBBLE (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
@@ -169,18 +189,22 @@ def main():
         "Write as if briefing a new agent who has zero context.\n\n"
     )
 
-    # Add worktree context section if in a git worktree
+    # Worktree context section (always required)
     main_worktree = get_main_worktree_path(base_dir)
-    if main_worktree:
-        worktree_name = get_worktree_name(base_dir)
-        worktree_context_path = main_worktree / WORKTREE_CONTEXT_FILE
-        reason += (
-            f"**WORKTREE CONTEXT**: For significant work, also append a summary to:\n"
-            f"`{worktree_context_path}`\n"
-            f"Format: `## [{worktree_name}] YYYY-MM-DD HH:MM - Title`\n"
-            "Start with what task/epic you were working on, then 2-3 sentences: "
-            "what was done, any issues found, current state.\n\n"
-        )
+    worktree_root = main_worktree if main_worktree else base_dir
+    worktree_name = get_worktree_name(base_dir) if main_worktree else None
+    worktree_context_path = worktree_root / WORKTREE_CONTEXT_FILE
+    if worktree_name:
+        format_header = f"`## [{worktree_name}] YYYY-MM-DD HH:MM - Title`"
+    else:
+        format_header = "`## YYYY-MM-DD HH:MM - Title`"
+    reason += (
+        f"**WORKTREE CONTEXT**: Append a summary to:\n"
+        f"`{worktree_context_path}`\n"
+        f"Format: {format_header}\n"
+        "Start with what task/epic you were working on, then 2-3 sentences: "
+        "what was done, any issues found, current state.\n\n"
+    )
 
     reason += "After updating, you may continue your work."
 

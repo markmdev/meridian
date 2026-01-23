@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.41] - 2026-01-23
+
+### Fixed
+- **Active plan state files**: Instructions now specify that `active-plan` and `active-subplan` state files must contain **absolute paths**, not relative paths.
+
 ## [0.0.40] - 2026-01-23
 
 ### Added

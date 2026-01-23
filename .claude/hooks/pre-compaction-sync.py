@@ -144,8 +144,9 @@ def main():
     create_flag(base_dir, PRE_COMPACTION_FLAG)
 
     # Build reason message
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
     reason = (
-        f"**CONTEXT PRESERVATION REQUIRED** (Token usage: {total_tokens:,} / {threshold:,})\n\n"
+        f"**CONTEXT PRESERVATION REQUIRED** (Token usage: {total_tokens:,} / {threshold:,}) — Current time: {now}\n\n"
         "The conversation is approaching compaction. Before continuing, you MUST save your current work "
         "to preserve context for the agent that will continue after compaction.\n\n"
     )

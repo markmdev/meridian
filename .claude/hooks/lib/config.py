@@ -1144,6 +1144,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     Returns:
         The stop prompt string
     """
+    from datetime import datetime
     pebble_enabled = config.get('pebble_enabled', False)
     claude_project_dir = str(base_dir)
 
@@ -1151,7 +1152,8 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     edits_since_review = get_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
     edits_since_memory = get_edits_since(base_dir, EDITS_SINCE_MEMORY_FILE)
 
-    parts = ["[SYSTEM]: Before stopping, complete these checks:\n"]
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    parts = [f"[SYSTEM]: Before stopping, complete these checks: (Current time: {now})\n"]
 
     # Skip-if-unchanged principle
     parts.append(

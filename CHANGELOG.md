@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.43] - 2026-01-23
+
+### Added
+- **Recent commits in context**: Session start now injects `git log --oneline -5` alongside datetime and uncommitted changes.
+
 ## [0.0.42] - 2026-01-23
 
 ### Fixed

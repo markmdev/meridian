@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.44] - 2026-01-23
+
+### Added
+- **Datetime in stop/pre-compaction prompts**: Both hooks now include current timestamp so agents know when context entries were written.
+
 ## [0.0.43] - 2026-01-23
 
 ### Added

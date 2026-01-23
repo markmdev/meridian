@@ -21,6 +21,8 @@ from config import (
     clear_loop_state,
     build_stop_prompt,
     ACTION_COUNTER_FILE,
+    flag_exists,
+    PRE_COMPACTION_FLAG,
 )
 
 
@@ -147,6 +149,11 @@ def main():
     if not claude_project_dir:
         sys.exit(0)
     base_dir = Path(claude_project_dir)
+
+    # Bypass stop checks if this is a pre-compact stop with auto_compact_off
+    config = get_project_config(base_dir)
+    if config.get('auto_compact_off', False) and flag_exists(base_dir, PRE_COMPACTION_FLAG):
+        sys.exit(0)  # Allow stop without blocking
 
     # Check if loop is active
     state = get_loop_state(base_dir)

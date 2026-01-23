@@ -111,6 +111,16 @@ Plans document your understanding. They should include:
 - What order changes must happen in
 - What existing patterns and code to reuse
 
+**Acceptance criteria per step:**
+- What must be true when this step is "done"
+- Verifiable conditions (compiles, exported, returns expected shape)
+- Not vague ("works correctly") — specific ("returns object with `status` field")
+
+**Test cases (for behavioral changes):**
+- Example inputs → expected outputs
+- Edge cases the plan author has in mind
+- Format: "Empty input array → returns empty array, not error"
+
 ## What Plans Should NOT Be
 
 **Not a template.** There's no "7 phases" or "standard structure." A plan for a simple rename might be 20 lines. A plan for a complex feature might be 2000 lines. Size matches complexity.
@@ -118,6 +128,19 @@ Plans document your understanding. They should include:
 **Not vague.** "Update the data layer" is not a plan step. "Add `reconciled_at` timestamp to `transactions` table, update `TransactionService.reconcile()` to set it, add index for queries" is.
 
 **Not deferred.** If the plan says "TBD" or "figure out during implementation," you haven't planned — you've procrastinated. Investigate NOW.
+
+**Not literal code.** Code snippets become brittle when variable names differ. Instead:
+- Describe structure: "Function that fetches user, validates permissions, returns filtered data"
+- Reference patterns: "Follow the pattern in existing validateUser function"
+- Use placeholders if showing structure: `/* adapt to actual variable names */`
+
+## Anti-Patterns
+
+**Repetition:** Don't define the same schema 3 times. Define once, reference by name.
+
+**Obvious details:** "Add export keyword" doesn't need a step — agents know syntax.
+
+**Incremental changelog:** Don't list every micro-step. Group into meaningful units.
 
 ## External APIs
 
@@ -138,6 +161,40 @@ If your plan creates new modules or touches multiple systems, explicitly documen
 
 Plans fail when code exists but isn't wired up.
 
+## Epic-Level Planning
+
+For large tasks spanning multiple systems or weeks of work:
+
+**Detection signals:**
+- "Build X from scratch"
+- Multiple distinct subsystems (auth, billing, API, UI)
+- User says "this is a big project"
+- Initial exploration reveals massive scope
+
+**When detected, propose epic planning:**
+"This looks like a multi-phase project. Should I create an epic plan with separate subplans for each phase?"
+
+**Epic planning workflow:**
+1. Create specs (optional) for major areas — requirements, data models, API contracts
+2. Create epic plan with phases, dependencies, and codified workflow
+3. Each phase triggers a full planning cycle (enter plan mode → subplan → review → implement)
+
+**Epic plan structure:**
+- Phases are epics, not implementation steps
+- Each phase includes "Workflow" section telling agent to enter plan mode
+- Reference specs (`.meridian/specs/`) and subplans (`.meridian/subplans/`) by path
+- Track phase status: Not started | In progress | Complete
+
+**Specs (optional):**
+- Store in `.meridian/specs/`
+- Requirements that span multiple phases
+- Data models, API contracts, acceptance criteria
+
+**Subplans:**
+- Store in `.meridian/subplans/`
+- Created just-in-time when starting a phase
+- Same format as regular plans
+
 ## Testing
 
 Ask the user what testing depth they want:
@@ -154,6 +211,25 @@ If it changes behavior users see:
 - Update CLAUDE.md for the module
 - Update human docs (README, API docs, etc.)
 
+## Verification
+
+Every plan should end with a verification section:
+
+**Per-step checks:** Quick commands to verify each step works
+**Review checkpoints:** For large plans (5+ phases), include intermediate code reviews
+**End-to-end:** Command to verify the full implementation
+
+Example:
+```
+## Verification
+- Step 1: `npm run typecheck` passes
+- After Phase 3: Run code-reviewer on auth module changes
+- Step 5: `curl localhost:3001/api/users/1` returns user object with `role` field
+- End-to-end: Create user, assign role, verify permissions work
+```
+
+Review checkpoints catch issues early when context is fresh, rather than reviewing everything at the end.
+
 ## Quality Check
 
 Before finalizing, verify:
@@ -167,4 +243,10 @@ Before finalizing, verify:
 - [ ] External APIs documented in api-docs
 - [ ] No "TBD" or "investigate later" anywhere
 - [ ] Plan size matches actual complexity (not a template)
+- [ ] Acceptance criteria defined for each step
+- [ ] Test cases included for behavioral changes
+- [ ] Verification section with concrete commands
+- [ ] Review checkpoints for large plans (5+ phases)
+- [ ] No literal code snippets (structural descriptions instead)
+- [ ] No repeated definitions (define once, reference)
 </planning_skill>

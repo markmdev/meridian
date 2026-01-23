@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.37` (2026-01-21) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.40` (2026-01-23) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -362,13 +362,40 @@ Researches external tools, APIs, and products:
 
 **Strict rule:** No code using external APIs unless documented in api-docs. Planning skill has mandatory phase to verify/create docs.
 
-### Feature Writer
+### Test Writer
 
-Generates verification features for approved plans:
-- Creates 5-20 testable acceptance criteria per phase (based on complexity)
-- Each feature has concrete verification steps
-- Supports any verification type: UI, API, CLI, Library, Config/Infra, Data
-- Appends features to plan file in YAML format
+Generates comprehensive tests for files/functions:
+- Detects testing framework from package.json and config files
+- Reads existing tests to learn project patterns (imports, setup/teardown, mocking)
+- Generates tests at conventional location following existing patterns
+- Covers happy path, edge cases, error cases
+- Runs tests after generation, fixes failures up to 3 iterations
+
+### Refactor
+
+Performs mechanical refactors with comprehensive symbol search:
+- **Rename**: Change symbol name across codebase (function, class, variable, type)
+- **Extract**: Pull code block into new function/module
+- **Move**: Relocate symbol to different file, update all imports
+- Handles re-exports, barrel files, type-only imports
+- Runs typecheck + tests after changes, flags ambiguous cases for human review
+
+### Diff Summarizer
+
+Generates PR descriptions from branch changes:
+- Reads git diff and commit messages
+- Checks for PR template in `.github/PULL_REQUEST_TEMPLATE.md`
+- Categorizes changes: features, fixes, refactoring, docs, tests, deps, config
+- Focuses on user/business value, not implementation details
+- Returns title + body ready for `gh pr create`
+
+### Implement
+
+Executes detailed implementation specs autonomously:
+- Takes a specific spec and implements it precisely
+- Reports ambiguity instead of asking questions (non-blocking for parallel execution)
+- Runs typecheck/tests and fixes failures up to 3 iterations
+- Spawn multiple in parallel for independent tasks
 
 ### Pebble Scaffolder
 
@@ -532,9 +559,12 @@ your-project/
 │       ├── plan-reviewer.md
 │       ├── code-reviewer.md
 │       ├── docs-researcher.md
-│       ├── feature-writer.md
 │       ├── explore.md
-│       └── pebble-scaffolder.md
+│       ├── pebble-scaffolder.md
+│       ├── test-writer.md
+│       ├── refactor.md
+│       ├── diff-summarizer.md
+│       └── implement.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected

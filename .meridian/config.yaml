@@ -10,9 +10,9 @@ project_type: standard
 # When false, ExitPlanMode proceeds without review.
 plan_review_enabled: true
 
-# Plan review minimum actions: Skip plan-reviewer and feature-writer enforcement
-# if fewer than this many actions occurred since entering plan mode.
-# Prevents heavyweight review for quick/simple plans. Set to 0 to always enforce.
+# Plan review minimum actions: Skip plan-reviewer if fewer than this many actions
+# occurred since entering plan mode. Prevents heavyweight review for quick plans.
+# Set to 0 to always enforce.
 plan_review_min_actions: 20
 
 # Code review: require code-reviewer agent before stopping.
@@ -25,6 +25,11 @@ pre_compaction_sync_enabled: true
 
 # Token threshold for pre-compaction sync warning (default: 150000).
 pre_compaction_sync_threshold: 144000
+
+# Auto-compact off: When true, agent stops after pre-compaction sync
+# instead of allowing auto-compaction. User must run /clear manually.
+# This gives you control over when sessions reset.
+auto_compact_off: false
 
 # Folders to ignore for CLAUDE.md review suggestions.
 # When agent modifies files, stop hook suggests reviewing CLAUDE.md files
@@ -39,12 +44,12 @@ pre_compaction_sync_threshold: 144000
 # Session context: Rolling context file for cross-session continuity.
 # Agent saves important information here; oldest lines trimmed when over limit.
 # Set to 0 to disable trimming (unlimited size).
-session_context_max_lines: 350
+session_context_max_lines: 170
 
 # Worktree context: Shared context across git worktrees.
 # Contains high-level summaries of work from all worktrees.
 # Oldest lines trimmed when over limit. Set to 0 to disable.
-worktree_context_max_lines: 200
+worktree_context_max_lines: 150
 
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.
@@ -55,18 +60,13 @@ pebble_enabled: false
 # Stop hook minimum actions: Skip stop hook prompts if fewer than this many
 # tool calls occurred since the user's last input. Prevents interruption
 # on quick/simple tasks. Set to 0 to always run stop hook.
-stop_hook_min_actions: 20
+stop_hook_min_actions: 40
 
 # Periodic reminder interval: Inject a short reminder about key behaviors
 # every N actions (tool calls + user messages). Helps maintain focus during
 # long sessions. Resets on session start (startup, compaction, clear).
 # Set to 0 to disable.
 reminder_interval: 10
-
-# Feature writer enforcement: Require verification features before exiting plan mode.
-# When enabled, blocks ExitPlanMode until feature-writer agent has run.
-# Disabled by default — enable for projects that need thorough acceptance criteria.
-feature_writer_enforcement_enabled: false
 
 # Pebble scaffolder: Auto-invoke pebble-scaffolder after plan approval.
 # When false, you can use Pebble without automatic issue scaffolding.

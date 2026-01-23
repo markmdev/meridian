@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.0.40] - 2026-01-23
+
+### Added
+- **Four new utility agents**:
+  - `test-writer` — Generates comprehensive tests for files/functions. Detects testing framework, learns patterns from existing tests, runs tests after generation.
+  - `refactor` — Mechanical refactors (rename, extract, move) with semantic symbol search. Handles imports/exports, verifies with typecheck/tests.
+  - `diff-summarizer` — Generates PR descriptions from branch changes. Reads git diff and commits, follows project PR template if present.
+  - `implement` — Executes detailed implementation specs autonomously. Spawn multiple in parallel for independent tasks. Reports ambiguity instead of asking questions (non-blocking).
+- **Auto-compact off mode**: New `auto_compact_off` config option. When enabled, agent saves context at pre-compaction then STOPS. User manually runs `/clear` for cleaner session resets.
+- **Epic planning system**: Planning skill now detects large multi-phase projects and proposes epic planning with subplans for each phase.
+- **Plan management system**: Plans are copied to `.meridian/plans/` (or `.meridian/subplans/`) on approval. State files track active plan/subplan.
+- **Context injection improvements**: Session start now includes current datetime and `git diff --stat` for uncommitted changes.
+- **Nested Pebble hierarchy example**: PEBBLE_GUIDE.md now shows Epic → Phases → Tasks → Verifications structure.
+
+### Changed
+- **Planning skill improvements**:
+  - Acceptance criteria per step — what "done" looks like
+  - Test cases for behavioral changes — input → output examples
+  - Verification section at end of plan with review checkpoints for large plans (5+ phases)
+  - No literal code — describe structure, not copy-paste snippets
+  - Anti-patterns section — repetition, obvious details, micro-steps
+- **Session context philosophy**: Changed from "append journal" to "living document with current state". Update existing entries for same task/phase instead of appending duplicates. Skip task tables (use Pebble), obvious reasoning.
+- **Pre-compaction hook**: Writes to `.meridian/` or `.claude/` paths now bypass blocking (these ARE the context-saving actions).
+- **Plan approval reminder**: Now includes instructions to archive plans to project folder.
+
+### Removed
+- **feature-writer agent**: Deprecated in favor of acceptance criteria built into planning skill.
+- **feature-writer-check.py hook**: No longer needed.
+- **plan-tracker.py hook**: Disabled to not conflict with new plan management (file still exists but removed from settings.json).
+
+### Technical
+- New state files: `active-subplan`
+- Stop hooks bypass all checks when `auto_compact_off: true` and `PRE_COMPACTION_FLAG` exists
+- Removed `feature_writer_enforcement_enabled` config option
+
 ## [0.0.39] - 2026-01-21
 
 ### Changed

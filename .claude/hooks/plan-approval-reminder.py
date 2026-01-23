@@ -41,22 +41,31 @@ def main():
     pebble_enabled = config.get('pebble_enabled', False)
     scaffolder_enabled = config.get('pebble_scaffolder_enabled', True)
 
-    if not pebble_enabled or not scaffolder_enabled:
-        sys.exit(0)
-
-    reason = (
-        f"[SYSTEM]: Plan approved. **Invoke the `pebble-scaffolder` agent** to document the work.\n\n"
-        f"Pass the agent:\n"
-        f"1. **Plan file path** — the plan you just created\n"
-        f"2. **Scope hint** — assess the work and choose:\n"
-        f"   - `epic` — large multi-phase work (multiple distinct phases/modules)\n"
-        f"   - `task` — focused work (single feature, refactor, or enhancement)\n"
-        f"   - `bug` — fix for a discovered issue\n"
-        f"   - `follow-up` — continuation of previous work (pass parent issue ID)\n"
-        f"3. **Parent context** (optional) — existing epic/issue ID if this relates to prior work\n\n"
-        f"The scaffolder will create the appropriate structure based on scope.\n"
-        f"Skip only for trivial 5-minute fixes that don't need tracking."
+    # Build plan management instructions (always runs)
+    plan_instructions = (
+        f"[SYSTEM]: Plan approved. **Archive the plan to the project folder:**\n\n"
+        f"1. **Copy the plan** from `~/.claude/plans/[name].md` to:\n"
+        f"   - `.meridian/plans/[name].md` for regular or epic plans\n"
+        f"   - `.meridian/subplans/[name].md` if this is a subplan for an epic phase\n"
+        f"   Create the directory if it doesn't exist.\n\n"
+        f"2. **Update active plan tracking:**\n"
+        f"   - Write the plan path to `.meridian/.state/active-plan`\n"
+        f"   - If this is a subplan, also write to `.meridian/.state/active-subplan`\n\n"
+        f"3. **Clear the global plan file** (`~/.claude/plans/[name].md`) — content is now in project.\n\n"
     )
+
+    # Add Pebble scaffolder instructions if enabled
+    if pebble_enabled and scaffolder_enabled:
+        plan_instructions += (
+            f"4. **Invoke the `pebble-scaffolder` agent** to document the work.\n\n"
+            f"Pass the agent:\n"
+            f"- **Plan file path** — the archived plan path (`.meridian/plans/...`)\n"
+            f"- **Scope hint** — `epic`, `task`, `bug`, or `follow-up`\n"
+            f"- **Parent context** (optional) — existing epic/issue ID if related\n\n"
+            f"Skip scaffolder only for trivial 5-minute fixes."
+        )
+
+    reason = plan_instructions
 
     output = {
         "hookSpecificOutput": {

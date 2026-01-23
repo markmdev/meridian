@@ -133,6 +133,14 @@ def main():
     if total_tokens < threshold:
         sys.exit(0)
 
+    # Allow writes to .meridian or .claude folders (these ARE the context-saving actions)
+    tool_name = input_data.get("tool_name", "")
+    tool_input = input_data.get("tool_input", {})
+    if tool_name in {"Write", "Edit"}:
+        file_path = tool_input.get("file_path", "")
+        if "/.meridian/" in file_path or "/.claude/" in file_path:
+            sys.exit(0)  # Allow without blocking
+
     # Over threshold: create flag and block
     create_flag(base_dir, PRE_COMPACTION_FLAG)
 
@@ -173,21 +181,22 @@ def main():
         )
 
     reason += (
-        "**SESSION CONTEXT**: Append a dated entry to:\n"
+        "**SESSION CONTEXT**: Update or append to:\n"
         f"`{claude_project_dir}/.meridian/session-context.md`\n\n"
-        f"First, check recent entries to avoid duplicating: `tail -50 \"{claude_project_dir}/.meridian/session-context.md\"`\n\n"
-        "**What survives compaction well:**\n"
-        "- Concrete decisions with rationale (\"chose X because Y\")\n"
-        "- Specific file paths and line numbers\n"
-        "- Error messages that took time to debug\n"
-        "- Explicit next steps with full context\n"
-        "- Assumptions you're making (stated clearly)\n\n"
-        "**What does NOT survive well:**\n"
-        "- Vague summaries (\"made good progress\")\n"
-        "- References to \"the code we discussed\" without specifics\n"
-        "- Implicit context that requires the full conversation\n"
-        "- Progress updates without decisions\n\n"
-        "Write as if briefing a new agent who has zero context.\n\n"
+        f"First, read recent entries: `tail -70 \"{claude_project_dir}/.meridian/session-context.md\"`\n\n"
+        "**Update vs Append:**\n"
+        "- If recent entry covers the SAME task/phase, UPDATE it (don't create another)\n"
+        "- Only APPEND when starting genuinely new work\n\n"
+        "**What to write:**\n"
+        "- Current state + next action (not a changelog)\n"
+        "- Non-obvious decisions: contradicts intuition, user preference, tradeoff, or pivot\n"
+        "- Full absolute paths (e.g., `/path/to/project/src/file.py:42`)\n\n"
+        "**What to skip:**\n"
+        "- Task tables (use Pebble)\n"
+        "- Self-evident reasoning (\"created helper because reuse\")\n"
+        "- Incremental progress (consolidate into one entry)\n\n"
+        "**Good:** \"Phase 8 complete. User requested inline warnings instead of toasts. Starting Phase 9 task olympus-wur6ex.\"\n"
+        "**Bad:** Multiple entries for same phase, task status tables, obvious reasoning.\n\n"
     )
 
     # Worktree context section (always required)
@@ -208,7 +217,15 @@ def main():
         "what was done, any issues found, current state.\n\n"
     )
 
-    reason += "After updating, you may continue your work."
+    # Check if auto_compact_off is enabled
+    if config.get('auto_compact_off', False):
+        reason += (
+            "**STOP NOW.** After saving context, stop immediately and tell the user:\n"
+            "\"Context saved. Please run /clear to start a new session.\"\n\n"
+            "Do NOT continue working. The session will be manually cleared."
+        )
+    else:
+        reason += "After updating, you may continue your work."
 
     output = {
         "hookSpecificOutput": {

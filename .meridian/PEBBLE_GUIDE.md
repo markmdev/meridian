@@ -101,7 +101,7 @@ pb ready --type verification
 
 ### Creating Verifications from Plans
 
-When plans have **Verification Features** (from feature-writer), each feature becomes a verification issue:
+When plans have **Verification** sections, each verification step can become a verification issue:
 
 ```bash
 TASK=$(pb create "Implement login" -t task --parent $PHASE | jq -r .id)
@@ -265,17 +265,57 @@ The `-v` (verbose) flag shows which issues are causing the block.
 
 ## Common Workflows
 
-### Create Epic with Tasks
+### Create Epic with Phases and Tasks (Nested)
+
+For larger work, create a hierarchy: Epic → Phases → Tasks → Subtasks
+
+```bash
+# Create epic
+EPIC=$(pb create "Feature X" -t epic | jq -r .id)
+
+# Create phases under epic
+P1=$(pb create "Phase 1: Design" -t task --parent $EPIC | jq -r .id)
+P2=$(pb create "Phase 2: Implementation" -t task --parent $EPIC | jq -r .id)
+P3=$(pb create "Phase 3: Testing" -t task --parent $EPIC | jq -r .id)
+
+# Sequence phases
+pb dep add $P2 $P1    # Phase 2 needs Phase 1
+pb dep add $P3 $P2    # Phase 3 needs Phase 2
+
+# Create tasks under Phase 1
+T1A=$(pb create "Design data model" -t task --parent $P1 | jq -r .id)
+T1B=$(pb create "Design API contracts" -t task --parent $P1 | jq -r .id)
+
+# Create tasks under Phase 2 (can have subtasks too)
+T2A=$(pb create "Implement backend" -t task --parent $P2 | jq -r .id)
+T2B=$(pb create "Implement frontend" -t task --parent $P2 --blocked-by $T2A | jq -r .id)
+
+# Create verification issues targeting tasks
+pb create "API returns correct schema" --verifies $T2A
+pb create "UI displays data correctly" --verifies $T2B
+```
+
+Result:
+```
+Epic: Feature X
+├── Phase 1: Design
+│   ├── Design data model
+│   └── Design API contracts
+├── Phase 2: Implementation (blocked by Phase 1)
+│   ├── Implement backend
+│   └── Implement frontend (blocked by backend)
+└── Phase 3: Testing (blocked by Phase 2)
+```
+
+### Create Simple Epic (Flat)
+
+For smaller work, flat structure is fine:
 
 ```bash
 EPIC=$(pb create "Feature X" -t epic | jq -r .id)
 T1=$(pb create "Design" -t task --parent $EPIC | jq -r .id)
-T2=$(pb create "Implement" -t task --parent $EPIC | jq -r .id)
-T3=$(pb create "Test" -t task --parent $EPIC | jq -r .id)
-
-# Sequence them (otherwise parallel)
-pb dep add $T2 $T1    # Implement needs Design
-pb dep add $T3 $T2    # Test needs Implement
+T2=$(pb create "Implement" -t task --parent $EPIC --blocked-by $T1 | jq -r .id)
+T3=$(pb create "Test" -t task --parent $EPIC --blocked-by $T2 | jq -r .id)
 ```
 
 ### Discovered Blocker

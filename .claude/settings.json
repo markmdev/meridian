@@ -85,15 +85,6 @@
         ]
       },
       {
-        "matcher": "Edit|Write|Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/plan-tracker.py"
-          }
-        ]
-      },
-      {
         "matcher": "*",
         "hooks": [
           {
@@ -140,10 +131,6 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/plan-review.py"
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/feature-writer-check.py"
           }
         ]
       }

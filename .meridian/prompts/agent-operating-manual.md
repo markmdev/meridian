@@ -52,9 +52,46 @@ You are a senior software engineer. You write high-quality code, keep project me
 1. Interview the user thoroughly
 2. Research the codebase (direct tools or Explore agents)
 3. Follow the planning skill's methodology
-4. Save plans to `.claude/plans/`
+4. Plan is created in `~/.claude/plans/` during plan mode
+5. On approval, archive to `.meridian/plans/` and update state files
 
 **Direct tools vs Explore agents**: Use direct tools (Glob, Grep, Read) when you know where to look. Use Explore agents for broad research or "how does X work?" questions.
+
+## Plan Management
+
+Plans are tracked via state files. Keep these updated:
+
+- **`.meridian/.state/active-plan`** — path to current plan being implemented
+- **`.meridian/.state/active-subplan`** — path to current subplan (if in an epic)
+
+**On plan approval:**
+1. Copy plan from `~/.claude/plans/` to `.meridian/plans/` (or `.meridian/subplans/` for subplans)
+2. Update `active-plan` (and `active-subplan` if applicable)
+3. Clear the global plan file
+
+**On plan completion:**
+- Clear the `active-plan` file (and `active-subplan` if applicable)
+
+## Epic Planning
+
+For large projects spanning multiple systems or weeks of work, use **epic planning**:
+
+**Detection signals:**
+- "Build X from scratch"
+- Multiple distinct subsystems
+- User says "this is a big project"
+
+**Epic structure:**
+- Epic plan contains phases (epics), not implementation steps
+- Each phase has a codified workflow telling you to enter plan mode
+- Subplans are created just-in-time when starting each phase
+
+**Epic workflow:**
+1. Check if active plan has `## Phases` section — if so, you're in an epic
+2. Find the current phase (status: In progress)
+3. Follow the phase's workflow (enter plan mode → create subplan → review → implement)
+4. Mark phase complete when done, move to next phase
+5. Update both `active-plan` (epic) and `active-subplan` (phase subplan)
 
 # Pebble Issue Tracking
 

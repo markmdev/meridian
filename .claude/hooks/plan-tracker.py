@@ -24,7 +24,7 @@ def main():
         sys.exit(0)
 
     tool_name = input_data.get("tool_name", "")
-    if tool_name not in ("Edit", "Write", "Read"):
+    if tool_name not in ("Edit", "Write"):
         sys.exit(0)
 
     tool_input = input_data.get("tool_input", {})

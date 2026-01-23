@@ -33,6 +33,7 @@ EDITS_SINCE_REVIEW_FILE = f"{STATE_DIR}/edits-since-review"
 EDITS_SINCE_MEMORY_FILE = f"{STATE_DIR}/edits-since-memory"
 PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
 ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
+ACTIVE_SUBPLAN_FILE = f"{STATE_DIR}/active-subplan"
 INJECTED_FILES_LOG = f"{STATE_DIR}/injected-files"
 
 
@@ -114,11 +115,11 @@ def get_project_config(base_dir: Path) -> dict:
         'plan_review_enabled': True,
         'pre_compaction_sync_enabled': True,
         'pre_compaction_sync_threshold': 150000,
+        'auto_compact_off': False,
         'session_context_max_lines': 1000,
         'worktree_context_max_lines': 200,
         'pebble_enabled': False,
         'stop_hook_min_actions': 10,
-        'feature_writer_enforcement_enabled': False,
         'plan_review_min_actions': 20,
         'code_review_enabled': True,
         'docs_researcher_write_required': True,
@@ -156,6 +157,11 @@ def get_project_config(base_dir: Path) -> dict:
             except ValueError:
                 pass
 
+        # Auto-compact off
+        aco = get_config_value(content, 'auto_compact_off')
+        if aco:
+            config['auto_compact_off'] = aco.lower() == 'true'
+
         # Session context max lines
         max_lines = get_config_value(content, 'session_context_max_lines')
         if max_lines:
@@ -184,11 +190,6 @@ def get_project_config(base_dir: Path) -> dict:
                 config['stop_hook_min_actions'] = int(min_actions)
             except ValueError:
                 pass
-
-        # Feature writer enforcement
-        fw_enabled = get_config_value(content, 'feature_writer_enforcement_enabled')
-        if fw_enabled:
-            config['feature_writer_enforcement_enabled'] = fw_enabled.lower() == 'true'
 
         # Plan review minimum actions threshold
         plan_min_actions = get_config_value(content, 'plan_review_min_actions')
@@ -733,23 +734,6 @@ def get_pebble_context(base_dir: Path) -> str:
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
-    try:
-        # Get ready issues (unblocked, can be picked up)
-        result = subprocess.run(
-            ["pb", "ready", "--pretty"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            cwd=str(base_dir)
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            parts.append("## Ready to Work On")
-            parts.append("")
-            parts.append(result.stdout.strip())
-            parts.append("")
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        pass
-
     return "\n".join(parts) if parts else ""
 
 
@@ -775,6 +759,30 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append("This context contains critical project information you MUST understand before working.")
     parts.append("Read and internalize it before responding to the user.")
     parts.append("")
+
+    # Current datetime
+    from datetime import datetime
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    parts.append(f"**Current datetime:** {now}")
+    parts.append("")
+
+    # Uncommitted changes (git diff --stat)
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--stat"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts.append("## Uncommitted Changes")
+            parts.append("```")
+            parts.append(result.stdout.strip())
+            parts.append("```")
+            parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
 
     # Build ordered file list
     files_to_inject = []
@@ -835,6 +843,21 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
                     full_path = base_dir / plan_path
                 if full_path.exists():
                     files_to_inject.append((plan_path, full_path))
+        except IOError:
+            pass
+
+    # 3.5. Active subplan file (if in an epic)
+    active_subplan_file = base_dir / ACTIVE_SUBPLAN_FILE
+    if active_subplan_file.exists():
+        try:
+            subplan_path = active_subplan_file.read_text().strip()
+            if subplan_path:
+                if subplan_path.startswith('/'):
+                    full_path = Path(subplan_path)
+                else:
+                    full_path = base_dir / subplan_path
+                if full_path.exists():
+                    files_to_inject.append((subplan_path, full_path))
         except IOError:
             pass
 
@@ -1153,10 +1176,12 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
     # Session context section
     parts.append(
-        "**SESSION CONTEXT**: Append timestamped entry (`YYYY-MM-DD HH:MM`) to "
-        f"`{claude_project_dir}/.meridian/session-context.md` with key decisions, discoveries, context worth preserving, "
-        "and important user messages (instructions, preferences, constraints — copy verbatim if needed).\n"
-        f"First, check recent entries to avoid duplicating: `tail -50 \"{claude_project_dir}/.meridian/session-context.md\"`\n"
+        "**SESSION CONTEXT**: Update or append to "
+        f"`{claude_project_dir}/.meridian/session-context.md`.\n"
+        f"First, read recent: `tail -70 \"{claude_project_dir}/.meridian/session-context.md\"`\n"
+        "If recent entry covers same task/phase, UPDATE it. Only append for new work.\n"
+        "Write: current state + next action + non-obvious decisions (full paths). "
+        "Skip: task tables, obvious reasoning, incremental updates.\n"
     )
 
     # Worktree context section (always required)

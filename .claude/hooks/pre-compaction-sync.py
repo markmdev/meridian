@@ -20,7 +20,6 @@ from config import (
     PRE_COMPACTION_FLAG,
     WORKTREE_CONTEXT_FILE,
     PLAN_MODE_STATE,
-    ACTIVE_PLAN_FILE,
     get_main_worktree_path,
     get_worktree_name,
 )
@@ -151,14 +150,12 @@ def main():
         "to preserve context for the agent that will continue after compaction.\n\n"
     )
 
-    # Check if in plan mode or active plan exists
+    # Check if in plan mode
     plan_mode_file = base_dir / PLAN_MODE_STATE
-    active_plan_file = base_dir / ACTIVE_PLAN_FILE
     in_plan_mode = plan_mode_file.exists() and plan_mode_file.read_text().strip() == "plan"
-    has_active_plan = active_plan_file.exists()
 
-    # Add PLAN STATE section FIRST (highest priority)
-    if in_plan_mode or has_active_plan:
+    # Add PLAN STATE section FIRST (highest priority) - only when in plan mode
+    if in_plan_mode:
         reason += (
             "**PLAN STATE** (HIGHEST PRIORITY — DO THIS FIRST):\n"
             "Update the plan file's **Verbatim Requirements** section at the TOP:\n"

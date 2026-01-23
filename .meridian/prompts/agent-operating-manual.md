@@ -61,12 +61,12 @@ You are a senior software engineer. You write high-quality code, keep project me
 
 Plans are tracked via state files. Keep these updated:
 
-- **`.meridian/.state/active-plan`** — path to current plan being implemented
-- **`.meridian/.state/active-subplan`** — path to current subplan (if in an epic)
+- **`.meridian/.state/active-plan`** — absolute path to current plan being implemented
+- **`.meridian/.state/active-subplan`** — absolute path to current subplan (if in an epic)
 
 **On plan approval:**
 1. Copy plan from `~/.claude/plans/` to `.meridian/plans/` (or `.meridian/subplans/` for subplans)
-2. Update `active-plan` (and `active-subplan` if applicable)
+2. Write the **absolute path** to `active-plan` (and `active-subplan` if applicable)
 3. Clear the global plan file
 
 **On plan completion:**
@@ -91,7 +91,7 @@ For large projects spanning multiple systems or weeks of work, use **epic planni
 2. Find the current phase (status: In progress)
 3. Follow the phase's workflow (enter plan mode → create subplan → review → implement)
 4. Mark phase complete when done, move to next phase
-5. Update both `active-plan` (epic) and `active-subplan` (phase subplan)
+5. Update both `active-plan` (epic) and `active-subplan` (phase subplan) with absolute paths
 
 # Pebble Issue Tracking
 

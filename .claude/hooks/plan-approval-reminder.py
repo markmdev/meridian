@@ -48,9 +48,9 @@ def main():
         f"   - `.meridian/plans/[name].md` for regular or epic plans\n"
         f"   - `.meridian/subplans/[name].md` if this is a subplan for an epic phase\n"
         f"   Create the directory if it doesn't exist.\n\n"
-        f"2. **Update active plan tracking:**\n"
-        f"   - Write the plan path to `.meridian/.state/active-plan`\n"
-        f"   - If this is a subplan, also write to `.meridian/.state/active-subplan`\n\n"
+        f"2. **Update active plan tracking** (use ABSOLUTE paths):\n"
+        f"   - Write the absolute plan path to `.meridian/.state/active-plan`\n"
+        f"   - If this is a subplan, also write the absolute path to `.meridian/.state/active-subplan`\n\n"
         f"3. **Clear the global plan file** (`~/.claude/plans/[name].md`) — content is now in project.\n\n"
     )
 

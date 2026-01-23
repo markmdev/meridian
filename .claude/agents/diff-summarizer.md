@@ -1,6 +1,6 @@
 ---
 name: diff-summarizer
-description: Generate PR descriptions from branch changes. Reads git diff and commits, focuses on user value, follows project PR template if present.
+description: Use when creating a pull request. Generates PR title and description from branch changes. Reads git diff and commits, focuses on user value, follows project PR template. Returns markdown ready for `gh pr create`.
 tools: Glob, Grep, Read, Bash
 model: sonnet
 color: blue

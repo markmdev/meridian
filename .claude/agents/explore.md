@@ -1,6 +1,6 @@
 ---
 name: Explore
-description: Deep codebase exploration with Opus-level thoroughness. Returns comprehensive findings, not summaries.
+description: Use for broad codebase research when you don't know where to look, need to understand "how does X work?", or want comprehensive findings across many files. Returns file paths, line numbers, code snippets, and negative results. Read-only — cannot modify files.
 tools: Glob, Grep, Read, Bash
 model: opus
 color: green

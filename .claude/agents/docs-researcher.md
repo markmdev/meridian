@@ -1,6 +1,6 @@
 ---
 name: docs-researcher
-description: Research external tools, APIs, and products. Build knowledge docs that include everything the main agent needs to work with them.
+description: Use BEFORE writing code that uses an external API, library, or tool not already documented in `.meridian/api-docs/`. Researches via web scraping and builds comprehensive knowledge docs with current versions, API operations, limits, and gotchas.
 tools: Read, Write, Edit, Bash, mcp__firecrawl-mcp__firecrawl_scrape, mcp__firecrawl-mcp__firecrawl_search, mcp__firecrawl-mcp__firecrawl_crawl
 model: opus
 color: yellow

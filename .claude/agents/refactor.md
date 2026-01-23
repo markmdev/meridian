@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: Mechanical refactors (rename, extract, move) with comprehensive symbol search. Handles imports/exports, verifies with typecheck/tests.
+description: Use for mechanical refactors across the codebase — "rename X to Y", "extract this to a helper", "move function to shared module". Performs comprehensive symbol search, updates all imports/exports, verifies with typecheck/tests. Flags ambiguous cases for human review.
 tools: Glob, Grep, Read, Write, Edit, Bash
 model: opus
 color: yellow

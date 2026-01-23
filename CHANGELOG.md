@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.42] - 2026-01-23
+
+### Fixed
+- **PLAN STATE prompt**: Now only shows when actually in plan mode (plan-mode-state = "plan"), not when an active plan file exists.
+
 ## [0.0.41] - 2026-01-23
 
 ### Fixed

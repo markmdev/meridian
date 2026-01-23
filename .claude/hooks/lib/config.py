@@ -784,6 +784,24 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
+    # Recent commits (git log)
+    try:
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-5"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts.append("## Recent Commits")
+            parts.append("```")
+            parts.append(result.stdout.strip())
+            parts.append("```")
+            parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
     # Build ordered file list
     files_to_inject = []
 

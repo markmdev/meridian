@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.45] - 2026-01-23
+
+### Changed
+- **Agent descriptions improved**: Updated frontmatter descriptions for diff-summarizer, docs-researcher, implement, explore, refactor, and test-writer to explain WHEN to use each agent, helping the main agent discover and invoke them appropriately.
+
 ## [0.0.44] - 2026-01-23
 
 ### Added

@@ -84,9 +84,13 @@ For each finding: context, impact, evidence (file:line), fix.
 
 **Severity**: Critical (data loss, security, crashes) → p0. Important (bugs) → p1. Suggestion (DRY, minor) → p2.
 
-**Never create orphaned issues.** The main agent should pass `Parent issue: #<id>` in the prompt. Use that as the parent for all issues you create. If not provided, use `pb search` to find the relevant epic.
+**Parent context**: The main agent MUST pass `Parent task: <id>` in the prompt — the task being reviewed. Use that ID as the parent for all issues, even if that task is already closed. Issues found during code review belong to the task being reviewed, not to the epic.
 
-**If `pebble_enabled: true`**: See `.meridian/PEBBLE_GUIDE.md` for commands. Use `--parent <id>` when creating issues.
+- If parent task ID provided: `pb create "..." --parent <task-id>`
+- If parent task is closed: Still use it as parent — issues found in closed work are valid children
+- If no parent provided: Use `pb search` to find the task, not the epic. Only use epic as parent if no task exists.
+
+**If `pebble_enabled: true`**: See `.meridian/PEBBLE_GUIDE.md` for commands.
 
 **If `pebble_enabled: false`**: Write to `.meridian/code-reviews/code-review-{random-8-chars}.md` with full analysis, walkthroughs, findings.
 

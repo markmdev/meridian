@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.51] - 2026-01-24
+
+### Changed
+- **Code reviewer parent context**: Now explicitly requires `Parent task: <task-id>` (not the epic) in the prompt. Issues from code review belong to the task being reviewed, even if closed.
+- **Stop hook code review prompt**: Now instructs main agent to pass the specific task ID, not the epic. Includes `pb list --parent <epic-id>` hint.
+
 ## [0.0.50] - 2026-01-24
 
 ### Added

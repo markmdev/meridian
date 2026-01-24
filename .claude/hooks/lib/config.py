@@ -1172,7 +1172,8 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
         if pebble_enabled:
             parts.append(
-                "**Spawn** Code Reviewer agent — include `Parent issue: #<id>` in the prompt (the epic/task you were working on).\n"
+                "**Spawn** Code Reviewer agent — include `Parent task: <task-id>` in the prompt (the specific task you were working on, NOT the epic). "
+                "Find with `pb list --parent <epic-id>` if needed.\n"
                 "**After reviewer**: If issues created → fix → re-run. Repeat until no issues.\n"
             )
         else:

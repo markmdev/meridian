@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.53] - 2026-01-24
+
+### Fixed
+- **Context injection deduplication**: Files are now deduplicated by resolved path. If `active-plan` and `active-subplan` point to the same file, it's only injected once.
+
 ## [0.0.52] - 2026-01-24
 
 ### Added

@@ -895,8 +895,13 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         if addon_path.exists():
             files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path))
 
-    # Inject each file with XML tags
+    # Inject each file with XML tags (deduplicate by resolved path)
+    injected_paths = set()
     for rel_path, full_path in files_to_inject:
+        resolved = full_path.resolve()
+        if resolved in injected_paths:
+            continue
+        injected_paths.add(resolved)
         try:
             content = full_path.read_text()
             parts.append(f'<file path="{rel_path}">')

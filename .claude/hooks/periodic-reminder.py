@@ -14,6 +14,7 @@ Handles:
 
 import json  # For reading stdin
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -28,6 +29,23 @@ REMINDER_TEXT = (
     "Follow existing codebase patterns. Ask before pivoting from the plan. "
     "Save important user messages to session-context. Check memory.jsonl for past lessons."
 )
+
+
+def get_uncommitted_count(base_dir: Path) -> int:
+    """Get count of uncommitted files."""
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return len([l for l in result.stdout.strip().split('\n') if l])
+    except Exception:
+        pass
+    return 0
 
 
 def get_counter(base_dir: Path) -> int:
@@ -86,7 +104,12 @@ def main() -> int:
         if new_count >= interval:
             # Reset counter and inject reminder
             set_counter(base_dir, 0)
-            print(REMINDER_TEXT)
+            reminder = REMINDER_TEXT
+            # Add commit nudge if uncommitted changes
+            uncommitted = get_uncommitted_count(base_dir)
+            if uncommitted > 0:
+                reminder += f" | {uncommitted} file{'s' if uncommitted != 1 else ''} uncommitted — commit now for smaller, logical commits."
+            print(reminder)
         else:
             # Just increment
             set_counter(base_dir, new_count)

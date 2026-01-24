@@ -6,6 +6,7 @@ Prompts agent to save context before conversation compacts (based on token usage
 """
 
 import json
+import subprocess
 import sys
 import os
 from datetime import datetime, timezone
@@ -214,6 +215,24 @@ def main():
         "Start with what task/epic you were working on, then 2-3 sentences: "
         "what was done, any issues found, current state.\n\n"
     )
+
+    # Add commit nudge if uncommitted changes
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            changed_files = len([l for l in result.stdout.strip().split('\n') if l])
+            reason += (
+                f"**COMMIT**: {changed_files} file{'s' if changed_files != 1 else ''} uncommitted. "
+                "Consider committing now for smaller, logical commits.\n\n"
+            )
+    except Exception:
+        pass
 
     # Check if auto_compact_off is enabled
     if config.get('auto_compact_off', False):

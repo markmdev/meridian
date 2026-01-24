@@ -21,13 +21,10 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from config import (
     ACTION_COUNTER_FILE,
     PLAN_MODE_STATE,
-    CODE_REVIEWER_FLAG,
     EDITS_SINCE_REVIEW_FILE,
-    EDITS_SINCE_MEMORY_FILE,
     increment_plan_action_counter,
     increment_edits_since,
     reset_edits_since,
-    create_flag,
 )
 
 
@@ -66,12 +63,12 @@ def main() -> int:
     hook_event = input_data.get("hook_event_name", "")
     tool_name = input_data.get("tool_name", "")
 
-    # PreToolUse: Detect code-reviewer spawn
+    # PreToolUse: Reset review counter when code-reviewer is spawned
     if hook_event == "PreToolUse" and tool_name == "Task":
         tool_input = input_data.get("tool_input", {})
         subagent_type = tool_input.get("subagent_type", "").lower()
         if subagent_type == "code-reviewer":
-            create_flag(base_dir, CODE_REVIEWER_FLAG)
+            reset_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
 
     # PostToolUse: Increment counters
     if hook_event == "PostToolUse":
@@ -86,16 +83,9 @@ def main() -> int:
             if mode == "plan":
                 increment_plan_action_counter(base_dir)
 
-        # Track Edit/Write for review and memory counters
+        # Track Edit/Write for review counter
         if tool_name in ("Edit", "Write"):
             increment_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
-            increment_edits_since(base_dir, EDITS_SINCE_MEMORY_FILE)
-
-            # Reset memory counter if writing to memory.jsonl
-            tool_input = input_data.get("tool_input", {})
-            file_path = tool_input.get("file_path", "")
-            if file_path.endswith("memory.jsonl"):
-                reset_edits_since(base_dir, EDITS_SINCE_MEMORY_FILE)
 
     # UserPromptSubmit: Just increment main counter
     if hook_event == "UserPromptSubmit":

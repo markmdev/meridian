@@ -28,9 +28,7 @@ ACTION_COUNTER_FILE = f"{STATE_DIR}/action-counter"
 REMINDER_COUNTER_FILE = f"{STATE_DIR}/reminder-counter"
 PLAN_ACTION_COUNTER_FILE = f"{STATE_DIR}/plan-action-counter"
 DOCS_RESEARCHER_FLAG = f"{STATE_DIR}/docs-researcher-active"
-CODE_REVIEWER_FLAG = f"{STATE_DIR}/code-reviewer-active"
 EDITS_SINCE_REVIEW_FILE = f"{STATE_DIR}/edits-since-review"
-EDITS_SINCE_MEMORY_FILE = f"{STATE_DIR}/edits-since-memory"
 PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
 ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
 ACTIVE_SUBPLAN_FILE = f"{STATE_DIR}/active-subplan"
@@ -1151,7 +1149,6 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
     # Get edit counters for context
     edits_since_review = get_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
-    edits_since_memory = get_edits_since(base_dir, EDITS_SINCE_MEMORY_FILE)
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     parts = [f"[SYSTEM]: Before stopping, complete these checks: (Current time: {now})\n"]
@@ -1224,9 +1221,8 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     )
 
     # Memory section
-    memory_context = f"(**{edits_since_memory} file edits** since last memory update)" if edits_since_memory > 0 else "(updated this session)"
     parts.append(
-        f"**MEMORY** {memory_context}: Consider if you learned something that future agents need to know.\n"
+        "**MEMORY**: Consider if you learned something that future agents need to know.\n"
         "The test: \"If I don't record this, will a future agent make the same mistake — or is the fix already in the code?\"\n"
         "- **Add**: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination patterns.\n"
         "- **Skip**: One-time bug fixes (code handles it), SDK quirks (code works around them), agent behavior rules (use agent-operating-manual.md), module-specific details (use CLAUDE.md).\n"
@@ -1252,6 +1248,24 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         "**TESTS/LINT/BUILD**: If work is finished, ensure codebase is clean. Run tests, lint, build. "
         "Fix failures and rerun until passing.\n"
     )
+
+    # Commit nudge - check for uncommitted changes
+    try:
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            changed_files = len([l for l in result.stdout.strip().split('\n') if l])
+            parts.append(
+                f"**COMMIT**: {changed_files} file{'s' if changed_files != 1 else ''} changed, uncommitted. "
+                "Consider committing now for smaller, logical commits rather than one big commit at the end.\n"
+            )
+    except Exception:
+        pass
 
     # Footer
     parts.append(

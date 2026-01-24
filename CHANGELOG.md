@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.47] - 2026-01-24
+
+### Added
+- **Commit nudge**: Stop hook, periodic reminder, and pre-compaction hook now show uncommitted file count and nudge to commit for smaller, logical commits.
+
+### Changed
+- **Plan archival preserves original**: No longer clears the global plan file after copying to project folder.
+- **Simplified code-reviewer counter**: Reset happens on spawn (PreToolUse) instead of completion (SubagentStop). Removed `code-reviewer-stop.py` hook.
+
+### Removed
+- **Memory edit counter**: Removed `edits-since-memory` tracking — added no value over the existing memory prompt.
+
 ## [0.0.46] - 2026-01-23
 
 ### Added

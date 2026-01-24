@@ -52,7 +52,6 @@ def main():
         f"2. **Update active plan tracking** (use ABSOLUTE paths):\n"
         f"   - Write the absolute plan path to `.meridian/.state/active-plan`\n"
         f"   - If this is a subplan, also write the absolute path to `.meridian/.state/active-subplan`\n\n"
-        f"3. **Clear the global plan file** (`~/.claude/plans/[name].md`) — content is now in project.\n\n"
     )
 
     # Add Pebble scaffolder instructions if enabled

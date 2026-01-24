@@ -202,16 +202,6 @@ def _next_id(path: Path) -> str:
     return f"{ID_PREFIX}{(max_n + 1):04d}-{_generate_suffix()}"
 
 
-def _reset_memory_counter(project_root: Path) -> None:
-    """Reset the edits-since-memory counter after updating memory."""
-    counter_path = project_root / ".meridian/.state/edits-since-memory"
-    try:
-        counter_path.parent.mkdir(parents=True, exist_ok=True)
-        counter_path.write_text("0")
-    except IOError:
-        pass  # Non-critical
-
-
 def append_entry(path: Path, summary: str, tags: List[str], links: List[str]) -> MemoryEntry:
     _ensure_parent_dir(path)
     entry = MemoryEntry(
@@ -226,13 +216,6 @@ def append_entry(path: Path, summary: str, tags: List[str], links: List[str]) ->
     with path.open('a', encoding='utf-8') as f:
         f.write(entry.to_json())
         f.write('\n')
-
-    # Reset the memory edit counter
-    try:
-        project_root = get_project_root()
-        _reset_memory_counter(project_root)
-    except FileNotFoundError:
-        pass  # Can't find project root, skip counter reset
 
     return entry
 

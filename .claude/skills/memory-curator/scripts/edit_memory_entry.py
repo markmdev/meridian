@@ -116,16 +116,6 @@ def _write_entries(path: Path, entries: List[dict]) -> None:
             handle.write("\n")
 
 
-def _reset_memory_counter(project_root: Path) -> None:
-    """Reset the edits-since-memory counter after updating memory."""
-    counter_path = project_root / ".meridian/.state/edits-since-memory"
-    try:
-        counter_path.parent.mkdir(parents=True, exist_ok=True)
-        counter_path.write_text("0")
-    except IOError:
-        pass  # Non-critical
-
-
 def edit_entry(entries: List[dict], entry_id: str, summary: str | None, tags: List[str], links: List[str]) -> bool:
     updated = False
     for entry in entries:
@@ -170,13 +160,6 @@ def main() -> int:
         return 1
 
     _write_entries(path, entries)
-
-    # Reset the memory edit counter
-    try:
-        project_root = get_project_root()
-        _reset_memory_counter(project_root)
-    except FileNotFoundError:
-        pass  # Can't find project root, skip counter reset
 
     print(f"Updated {args.id} in {path}")
     return 0

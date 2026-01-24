@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.54] - 2026-01-24
+
+### Changed
+- **Planning skill reframed**: Shifted from checkbox mentality to "handoff test" — could someone implement this plan without asking questions? Added "Finding Gaps" section with simulation technique. Lists are now "starting points, not completeness criteria." Added "entry point context" to flow specifics.
+
 ## [0.0.53] - 2026-01-24
 
 ### Fixed

@@ -164,7 +164,9 @@ If you have 5 distinct questions, spawn 5 agents. If you have 15, spawn 15. Don'
 
 ## What Plans Must Contain
 
-Plans document your understanding. They should include:
+Plans document your understanding. The categories below are starting points — real plans answer every question that would come up during implementation.
+
+**The handoff test:** If you gave this plan to another developer, what would they ask? Answer those questions now.
 
 **Data specifics:**
 - What tables/collections/files are involved
@@ -177,6 +179,7 @@ Plans document your understanding. They should include:
 - What functions/endpoints are called in what order
 - Where state changes happen
 - What triggers what
+- What context each entry point has (and where it comes from)
 
 **Decision specifics:**
 - Why this approach over alternatives
@@ -310,9 +313,19 @@ Example:
 
 Review checkpoints catch issues early when context is fresh, rather than reviewing everything at the end.
 
+## Finding Gaps
+
+Checklists create false confidence. To find real gaps:
+
+**Simulate execution** — Walk through the code mentally. "Request comes in, then what? I call X. X needs Y. Where does Y come from?" When you hit uncertainty, that's a gap. Investigate it.
+
+**The handoff test** — Could someone implement this plan without asking you questions? If not, find what's missing.
+
 ## Quality Check
 
-Before finalizing, verify:
+The real test: **someone could implement this plan without asking clarifying questions.**
+
+The checklist below is a starting point. If you're uncertain whether the plan is complete, simulate implementing it step by step.
 
 - [ ] Verbatim requirements captured (original request + all Q&A)
 - [ ] User confirmed understanding of requirements

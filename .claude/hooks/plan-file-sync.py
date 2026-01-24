@@ -74,8 +74,8 @@ def main():
     if old_plan_path == current_plan_path:
         sys.exit(0)
 
-    # Slug changed! Copy old plan content to new plan file
-    if old_plan_path.exists() and (not current_plan_path.exists() or current_plan_path.stat().st_size == 0):
+    # Slug changed! Copy old plan content to new plan file (overwrite stale content)
+    if old_plan_path.exists():
         try:
             content = old_plan_path.read_text()
             current_plan_path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.48] - 2026-01-24
+
+### Fixed
+- **Plan file sync overwrite**: When slug changes after /clear, always overwrite the new plan file with old content. Previously skipped if new file had stale content from previous sessions.
+
 ## [0.0.47] - 2026-01-24
 
 ### Added

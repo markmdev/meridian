@@ -31,6 +31,86 @@ Before anything else, capture the user's exact words at the top of the plan file
 
 Capture ALL exchanges. You don't know which details matter until implementation.
 
+## PRD vs Implementation Plan
+
+Plans have two parts:
+
+1. **PRD sections** — What to build and why (Vision, Problem, User Stories, Feature Spec, MVP Scope)
+2. **Implementation sections** — How to build it (Files, Steps, Verification)
+
+**When to include PRD sections:**
+- New project from scratch
+- New feature with unclear scope (user stories not obvious)
+- Multi-phase work spanning weeks
+- User explicitly requests "requirements" or "PRD"
+
+**When to skip PRD sections:**
+- Bug fixes
+- Small, well-defined features
+- Refactoring
+- Changes where scope is already clear
+
+**If PRD criteria detected:**
+Ask: "This looks like it needs requirements definition. Should I include PRD sections (Vision, Problem, User Stories, Feature Spec) in the plan?"
+
+### PRD Sections Structure
+
+```markdown
+## Vision
+
+What this is and why it matters. 1-2 paragraphs.
+
+## Problem Statement
+
+**User:** Who is this for?
+
+**Pain points:**
+1. ...
+2. ...
+
+**Current workflow:** How they handle this today.
+
+## User Stories
+
+### [Category]
+- **As a [user]**, I want [goal] so I can [benefit].
+
+## Feature Specification
+
+### 1. [Feature Area]
+
+Detailed breakdown:
+- Data fields and sources
+- Display format
+- Actions available
+- Edge cases
+
+(Use tables where helpful)
+
+## MVP Scope
+
+**Must have (v0.1):**
+- [ ] Feature 1
+- [ ] Feature 2
+
+**Nice to have (v0.2+):**
+- [ ] Future feature 1
+
+## Open Questions
+
+1. Unknowns to resolve before implementation
+```
+
+### PRD Quality Check
+
+- [ ] Vision is clear and compelling
+- [ ] Problem statement names specific user and pain points
+- [ ] User stories cover all user types and workflows
+- [ ] Feature spec is detailed enough to estimate work
+- [ ] MVP scope has clear boundaries
+- [ ] Open questions are genuine unknowns (not things to research now)
+- [ ] No implementation details in PRD sections (that comes after)
+
 ## The Core Loop: Explore Until You Understand
 
 Planning is not a sequence of phases. It's a loop:

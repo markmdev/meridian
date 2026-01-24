@@ -57,11 +57,18 @@ def main():
     # Add Pebble scaffolder instructions if enabled
     if pebble_enabled and scaffolder_enabled:
         plan_instructions += (
-            f"4. **Invoke the `pebble-scaffolder` agent** to document the work.\n\n"
-            f"Pass the agent:\n"
-            f"- **Plan file path** — the archived plan path (`.meridian/plans/...`)\n"
-            f"- **Scope hint** — `epic`, `task`, `bug`, or `follow-up`\n"
-            f"- **Parent context** (optional) — existing epic/issue ID if related\n\n"
+            f"3. **Invoke the `pebble-scaffolder` agent** to document the work.\n\n"
+            f"**For epic plans** (new project/feature with phases):\n"
+            f"- Scope: `epic`\n"
+            f"- Creates: epic + phase tasks as children\n\n"
+            f"**For subplans** (planning a specific phase):\n"
+            f"- Scope: `task`\n"
+            f"- Parent: the existing phase task ID (e.g., `MERI-70jfoe`)\n"
+            f"- Creates: step tasks as children of the phase\n"
+            f"- Find the phase task ID with `pb list` or `pb search`\n\n"
+            f"**For standalone tasks** (bug fix, small feature):\n"
+            f"- Scope: `task`, `bug`, or `follow-up`\n"
+            f"- Parent: epic ID if part of larger work, otherwise none\n\n"
             f"Skip scaffolder only for trivial 5-minute fixes."
         )
 

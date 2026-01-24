@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.49] - 2026-01-24
+
+### Added
+- **PRD sections in planning**: For complex work (new projects, unclear scope, multi-phase), plans can include PRD sections (Vision, Problem Statement, User Stories, Feature Spec, MVP Scope) before implementation details. Agent asks user whether to include PRD sections when criteria detected.
+- **EnterPlanMode tracking**: Plan mode state now updates immediately when agent uses `EnterPlanMode` tool, not just on next user message.
+- **Utility agents guidance**: Agent operating manual now documents when to use non-enforced agents (explore, docs-researcher, test-writer, refactor, implement, diff-summarizer).
+
+### Changed
+- **Pebble scaffolder for subplans**: Instructions now explicitly cover three scenarios: epic plans (scope=epic), subplans (scope=task with parent=phase ID), and standalone tasks. Prevents "epic already exists" confusion when planning phases.
+
 ## [0.0.48] - 2026-01-24
 
 ### Fixed

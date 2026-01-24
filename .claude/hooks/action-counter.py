@@ -3,12 +3,15 @@
 Action Counter Hook - Tracks tool calls for stop hook threshold.
 
 Handles:
-- PostToolUse: Increment counter, track file edits
+- PostToolUse: Increment counter, track file edits, track plan mode transitions
 - PreToolUse: Detect code-reviewer spawn
 
 Counter is reset by stop hooks (pre-stop-update.py, work-until-stop.py)
 when they actually fire. This ensures actions accumulate across user
 interruptions until the agent sees the stop message.
+
+Plan mode is tracked via EnterPlanMode/ExitPlanMode tool usage for immediate
+state updates (rather than waiting for next UserPromptSubmit).
 """
 
 import json
@@ -70,14 +73,21 @@ def main() -> int:
         if subagent_type == "code-reviewer":
             reset_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
 
-    # PostToolUse: Increment counters
+    # PostToolUse: Increment counters and track plan mode
     if hook_event == "PostToolUse":
+        # Track plan mode transitions from tool usage
+        plan_mode_file = base_dir / PLAN_MODE_STATE
+        plan_mode_file.parent.mkdir(parents=True, exist_ok=True)
+        if tool_name == "EnterPlanMode":
+            plan_mode_file.write_text("plan")
+        elif tool_name == "ExitPlanMode":
+            plan_mode_file.write_text("other")
+
         # Increment main action counter
         current = get_counter(base_dir)
         set_counter(base_dir, current + 1)
 
         # Also increment plan action counter if in plan mode
-        plan_mode_file = base_dir / PLAN_MODE_STATE
         if plan_mode_file.exists():
             mode = plan_mode_file.read_text().strip()
             if mode == "plan":

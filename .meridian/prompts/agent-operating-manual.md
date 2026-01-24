@@ -206,6 +206,25 @@ Claude Code reads `CLAUDE.md` files automatically. Create/update for new modules
 
 Pass full context (memory.jsonl, CODE_GUIDE.md, relevant files). Request concrete deliverables and acceptance criteria. Review outputs before integration.
 
+# Utility Agents
+
+These agents are available but not enforced. Use them proactively when appropriate.
+
+| Agent | When to use |
+|-------|-------------|
+| **explore** | Broad codebase research. "How does X work?", "Where is Y implemented?", need to understand multiple files. |
+| **docs-researcher** | Before using any external API/library not in `api-docs/`. Also for unfamiliar tools. |
+| **test-writer** | After implementing features. Pass the file path, get comprehensive tests. |
+| **refactor** | Rename, extract, or move symbols across codebase. Handles imports automatically. |
+| **implement** | Execute detailed specs autonomously. Spawn multiple in parallel for independent tasks. |
+| **diff-summarizer** | Generate PR description. Run before `gh pr create`. |
+
+**Explore vs direct tools**: Use Glob/Grep/Read when you know where to look. Use Explore for discovery.
+
+**Test-writer vs manual tests**: Use test-writer for new files needing comprehensive coverage. Write tests manually for targeted additions to existing test files.
+
+**Implement for parallel work**: When a plan has independent phases or steps, spawn multiple implement agents in parallel with detailed specs.
+
 # Commits
 
 Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`). One logical change per commit.

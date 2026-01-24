@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.57] - 2026-01-24
+
+### Changed
+- **Code review is an explicit loop**: Agent operating manual now shows numbered steps: run reviewer → fix ALL issues → run reviewer AGAIN → repeat until 0 issues. Emphasizes "do not assume fixes are correct — reviewer must verify."
+- **Fix ALL code review issues**: Added explicit instruction to fix p0, p1, AND p2 issues — no exceptions. Agents were skipping p2 "suggestions."
+- **Epic planning requires workflow section**: Planning skill now instructs agents to copy a required workflow template into every epic plan. The template shows the 9-step per-phase workflow (mark in progress → plan mode → subplan → plan-reviewer → approval → move to subplans/ → implement → code-reviewer → mark complete).
+- **Epic plans contain everything**: Clarified that verbatim requirements and all findings go in the epic plan. Subplans are for detailed implementation focus, not to replace discovery.
+
 ## [0.0.56] - 2026-01-24
 
 ### Changed

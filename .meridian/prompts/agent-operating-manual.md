@@ -141,7 +141,13 @@ No exceptions. Your training data is outdated. Run docs-researcher even for "fam
 
 Before stopping after implementing a plan, run **Code Reviewer** for line-by-line review of changes.
 
-**Loop**: Run reviewer → fix any issues → re-run → repeat until no issues.
+**This is a loop, not a one-time check:**
+1. Run code-reviewer
+2. Fix ALL issues it finds (p0, p1, and p2 — no exceptions)
+3. Run code-reviewer AGAIN
+4. Repeat until code-reviewer returns 0 issues
+
+You cannot proceed until the reviewer finds nothing. Do not assume your fixes are correct — the reviewer must verify.
 
 # Responding to Review Feedback
 

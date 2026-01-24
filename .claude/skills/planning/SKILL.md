@@ -258,25 +258,52 @@ For large tasks spanning multiple systems or weeks of work:
 "This looks like a multi-phase project. Should I create an epic plan with separate subplans for each phase?"
 
 **Epic planning workflow:**
-1. Create specs (optional) for major areas — requirements, data models, API contracts
-2. Create epic plan with phases, dependencies, and codified workflow
-3. Each phase triggers a full planning cycle (enter plan mode → subplan → review → implement)
+1. Interview and explore as usual — capture verbatim requirements and all findings
+2. Create PRDs and specs (optional) for major areas — requirements, data models, API contracts
+3. Create epic plan with phases and the required workflow section (see below)
+
+**Epic plans contain everything:**
+- Verbatim requirements (same as any plan)
+- All research findings and discoveries
+- Phase breakdown with dependencies
+- The workflow instructions that the implementing agent must follow
+
+Subplans are for detailed implementation focus on a single phase. They don't replace the discovery work in the epic plan — they build on it.
 
 **Epic plan structure:**
 - Phases are epics, not implementation steps
-- Each phase includes "Workflow" section telling agent to enter plan mode
 - Reference specs (`.meridian/specs/`) and subplans (`.meridian/subplans/`) by path
 - Track phase status: Not started | In progress | Complete
+
+**Required: Include this workflow section at the end of every epic plan:**
+
+```markdown
+## Epic Workflow (REQUIRED)
+
+For EACH phase, you MUST follow this workflow. This is not optional.
+
+1. Mark phase status: `In progress`
+2. Enter plan mode
+3. Create a subplan for this phase
+4. Run plan-reviewer on the subplan
+5. Get user approval
+6. Move approved subplan to `.meridian/subplans/`
+7. Implement the subplan
+8. Run code-reviewer on the implementation
+9. Mark phase status: `Complete`
+
+Do NOT skip the subplan step, even if this epic plan contains detailed specs for the phase. Subplans incorporate learnings from prior phases and get validated against current codebase state.
+```
 
 **Specs (optional):**
 - Store in `.meridian/specs/`
 - Requirements that span multiple phases
 - Data models, API contracts, acceptance criteria
 
-**Subplans:**
-- Store in `.meridian/subplans/`
-- Created just-in-time when starting a phase
-- Same format as regular plans
+**Subplans (required per phase):**
+- Created just-in-time when starting each phase
+- Moved to `.meridian/subplans/` after approval
+- Focused on implementation details for that phase
 
 ## Testing
 

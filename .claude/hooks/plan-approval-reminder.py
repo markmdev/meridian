@@ -44,10 +44,11 @@ def main():
     # Build plan management instructions (always runs)
     plan_instructions = (
         f"[SYSTEM]: Plan approved. **Archive the plan to the project folder:**\n\n"
-        f"1. **Copy the plan** from `~/.claude/plans/[name].md` to:\n"
-        f"   - `.meridian/plans/[name].md` for regular or epic plans\n"
-        f"   - `.meridian/subplans/[name].md` if this is a subplan for an epic phase\n"
-        f"   Create the directory if it doesn't exist.\n\n"
+        f"1. **Copy the plan** using bash `cp` command:\n"
+        f"   ```bash\n"
+        f"   mkdir -p .meridian/plans && cp ~/.claude/plans/[name].md .meridian/plans/\n"
+        f"   ```\n"
+        f"   (Use `.meridian/subplans/` if this is a subplan for an epic phase)\n\n"
         f"2. **Update active plan tracking** (use ABSOLUTE paths):\n"
         f"   - Write the absolute plan path to `.meridian/.state/active-plan`\n"
         f"   - If this is a subplan, also write the absolute path to `.meridian/.state/active-subplan`\n\n"

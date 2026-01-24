@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.46] - 2026-01-23
+
+### Added
+- **Plan file sync on /clear**: New `plan-file-sync.py` hook tracks the current plan file by reading slug from transcript. When user clears and Claude Code assigns a new slug, the hook copies plan content to the new file automatically.
+- **`current-plan-auto` state file**: Tracks the Claude Code plan file path (`~/.claude/plans/[slug].md`), separate from `active-plan` which tracks archived plans.
+
+### Changed
+- **Plan archival uses `cp` command**: Plan approval instructions now tell Claude to use bash `cp` instead of manual read/write for copying plans to `.meridian/plans/`.
+
 ## [0.0.45] - 2026-01-23
 
 ### Changed

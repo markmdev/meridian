@@ -34,6 +34,7 @@ EDITS_SINCE_MEMORY_FILE = f"{STATE_DIR}/edits-since-memory"
 PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
 ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
 ACTIVE_SUBPLAN_FILE = f"{STATE_DIR}/active-subplan"
+CURRENT_PLAN_AUTO_FILE = f"{STATE_DIR}/current-plan-auto"
 INJECTED_FILES_LOG = f"{STATE_DIR}/injected-files"
 
 

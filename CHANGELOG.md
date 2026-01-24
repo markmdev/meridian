@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.56] - 2026-01-24
+
+### Changed
+- **Periodic reminder interval**: Default increased from 10 to 20 actions. Reduces noise while maintaining focus.
+- **Periodic reminder format**: Uses `<system_reminder>` XML tags instead of `[REMINDER]:` prefix.
+
 ## [0.0.55] - 2026-01-24
 
 ### Fixed

@@ -23,11 +23,13 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from config import get_project_config, REMINDER_COUNTER_FILE
 
 REMINDER_TEXT = (
-    "[REMINDER]: Research before implementing — search, don't assume. "
+    "<system_reminder>"
+    "Research before implementing — search, don't assume. "
     "No external tool code without docs — check api-docs/INDEX.md, run docs-researcher if missing. "
     "Every code change needs a Beads issue — even bugs fixed immediately (issue → fix → comment → close). "
     "Follow existing codebase patterns. Ask before pivoting from the plan. "
     "Save important user messages to session-context. Check memory.jsonl for past lessons."
+    "</system_reminder>"
 )
 
 
@@ -90,7 +92,7 @@ def main() -> int:
     if hook_event in ("PostToolUse", "UserPromptSubmit"):
         # Get config
         config = get_project_config(base_dir)
-        interval = config.get('reminder_interval', 10)
+        interval = config.get('reminder_interval', 20)
 
         if interval <= 0:
             # Disabled

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.50] - 2026-01-24
+
+### Added
+- **`/save-context` command**: Manual trigger to save context before `/clear` or `/compact`. Prompts agent to update session-context, memory, Pebble issues, and worktree context.
+
 ## [0.0.49] - 2026-01-24
 
 ### Added

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.55] - 2026-01-24
+
+### Fixed
+- **Plan file sync timing**: Moved from UserPromptSubmit to PreToolUse. The user message (containing the slug) isn't written to transcript until after UserPromptSubmit fires, so the hook couldn't find the new slug after `/clear`.
+
 ## [0.0.54] - 2026-01-24
 
 ### Changed

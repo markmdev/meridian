@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-Plan File Sync Hook - UserPromptSubmit
+Plan File Sync Hook - PreToolUse
 
 Tracks the current plan file by reading slug from transcript.
 If slug changes (after /clear), copies old plan content to new file.
+
+Uses PreToolUse instead of UserPromptSubmit because the user message
+(containing the slug) isn't written to transcript until AFTER
+UserPromptSubmit fires.
 """
 
 import json
@@ -84,7 +88,7 @@ def main():
             # Inject context to inform Claude
             output = {
                 "hookSpecificOutput": {
-                    "hookEventName": "UserPromptSubmit",
+                    "hookEventName": "PreToolUse",
                     "additionalContext": f"[SYSTEM]: Plan file synced from previous session. Your plan is at: {current_plan_path}"
                 }
             }

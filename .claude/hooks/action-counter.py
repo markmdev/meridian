@@ -78,8 +78,20 @@ def main() -> int:
         # Track plan mode transitions from tool usage
         plan_mode_file = base_dir / PLAN_MODE_STATE
         plan_mode_file.parent.mkdir(parents=True, exist_ok=True)
+
         if tool_name == "EnterPlanMode":
             plan_mode_file.write_text("plan")
+            # Inject reminder to use planning skill
+            output = {
+                "hookSpecificOutput": {
+                    "hookEventName": "PostToolUse",
+                    "additionalContext": (
+                        "[SYSTEM]: Plan mode activated. Invoke the `/planning` skill before proceeding. "
+                        "Send /planning in the chat."
+                    )
+                }
+            }
+            print(json.dumps(output))
         elif tool_name == "ExitPlanMode":
             plan_mode_file.write_text("other")
 

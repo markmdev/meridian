@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.52] - 2026-01-24
+
+### Added
+- **Planning skill reminder on EnterPlanMode**: When agent uses `EnterPlanMode` tool, context is injected reminding to invoke `/planning` skill.
+
 ## [0.0.51] - 2026-01-24
 
 ### Changed

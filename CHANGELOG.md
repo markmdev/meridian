@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.62] - 2026-01-25
+
+### Changed
+- **Parallel code review workflow in stop hook**: Stop hook now instructs to run code-reviewer in background, group issues by file, and spawn implement agents in parallel (1 file = 1 agent). Matches the guidance in agent-operating-manual.
+
 ## [0.0.61] - 2026-01-25
 
 ### Fixed

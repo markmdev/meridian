@@ -11,7 +11,7 @@ import sys
 
 def main():
     hook_input = json.loads(sys.stdin.read())
-    tool_name = hook_input.get("toolName", "")
+    tool_name = hook_input.get("tool_name", "")
 
     if tool_name == "TaskOutput":
         output = {

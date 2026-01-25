@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.59] - 2026-01-25
+
+### Added
+- **TaskOutput blocked**: Hook prevents using TaskOutput tool. Background agents notify on completion automatically — no need to poll.
+
 ## [0.0.58] - 2026-01-25
 
 ### Added

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.61] - 2026-01-25
+
+### Fixed
+- **Active plan paths always in injected-files**: State file paths for `active-plan` and `active-subplan` are now always included in `injected-files`, even if no plan exists at session start. Subagents can now see plans approved mid-session.
+
 ## [0.0.60] - 2026-01-25
 
 ### Changed

@@ -1177,14 +1177,14 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
         if pebble_enabled:
             parts.append(
-                "**Spawn** Code Reviewer agent — include `Parent task: <task-id>` in the prompt (the specific task you were working on, NOT the epic). "
+                "**Spawn** Code Reviewer agent in background — include `Parent task: <task-id>` in the prompt (the specific task you were working on, NOT the epic). "
                 "Find with `pb list --parent <epic-id>` if needed.\n"
-                "**After reviewer**: If issues created → fix → re-run. Repeat until no issues.\n"
+                "**When issues return**: Group by file → spawn **implement** agents in parallel (1 file = 1 agent, all issues for that file in the spec) → re-run code-reviewer in background → repeat until no issues.\n"
             )
         else:
             parts.append(
-                "**Spawn** Code Reviewer agent (no prompt needed — it reads from `.meridian/.state/injected-files`).\n"
-                "**After reviewer**: Read `.meridian/code-reviews/`. If issues → fix → re-run. Repeat until clean.\n"
+                "**Spawn** Code Reviewer agent in background (no prompt needed — it reads from `.meridian/.state/injected-files`).\n"
+                "**When issues return**: Group by file → spawn **implement** agents in parallel (1 file = 1 agent, all issues for that file in the spec) → re-run code-reviewer in background → repeat until clean.\n"
             )
 
     # Pebble reminder if enabled (before session context - higher priority)

@@ -137,6 +137,15 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/plan-review.py"
           }
         ]
+      },
+      {
+        "matcher": "TaskOutput",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block-task-output.py"
+          }
+        ]
       }
     ],
     "PermissionRequest": [

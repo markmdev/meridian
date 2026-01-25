@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.60] - 2026-01-25
+
+### Changed
+- **Plan review findings must be addressed**: Even when plan-reviewer returns score 9+, the agent must address ALL findings before exiting plan mode. Present each finding to the user, either update the plan or get user confirmation to skip (mark as `[USER_DECLINED]`). No need to re-run reviewer if score was already 9+.
+- **New "Plan Review Findings" section in agent-operating-manual**: Documents the workflow for handling plan-reviewer findings regardless of score.
+
 ## [0.0.59] - 2026-01-25
 
 ### Added

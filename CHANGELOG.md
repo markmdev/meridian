@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.64] - 2026-01-25
+
+### Changed
+- **Reading injected-files is now mandatory for agents**: Added "NEVER skip reading context" as the FIRST critical rule in all 5 agents (implement, code-reviewer, plan-reviewer, test-writer, refactor). Previously it was just a workflow step that agents could skip.
+
 ## [0.0.63] - 2026-01-25
 
 ### Fixed

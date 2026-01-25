@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.58] - 2026-01-25
+
+### Added
+- **Parallel plan execution**: Plans now include an "Execution Table" mapping each step to an agent (implement/refactor/test-writer/main) and parallel group. Main agent delegates to specialized agents and spawns parallel groups simultaneously.
+- **Parallel code review fixes**: Code review section updated — run code-reviewer in background, group issues by file, spawn implement agents in parallel (1 file = 1 agent).
+- **injected-files for agents**: implement, refactor, and test-writer agents now read `.meridian/.state/injected-files` to get the same project context as the main agent.
+
+### Changed
+- **CodeRabbit parallel workflow**: Updated coderabbit-task.md with parallel fix pattern — group comments by file, spawn implement agents in parallel.
+
+### Removed
+- **cd boilerplate**: Removed `cd "$CLAUDE_PROJECT_DIR"` from 6 agents (code-reviewer, implement, diff-summarizer, refactor, test-writer, plan-reviewer). Agents are always spawned from project root.
+
 ## [0.0.57] - 2026-01-24
 
 ### Changed

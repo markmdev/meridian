@@ -24,10 +24,6 @@ You are a PR Description Writer. You analyze branch changes and create clear, us
 
 ### 1. Setup
 
-```bash
-cd "$CLAUDE_PROJECT_DIR"
-```
-
 Identify the base branch:
 ```bash
 git remote show origin | grep "HEAD branch" || echo "main"

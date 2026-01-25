@@ -35,9 +35,7 @@ Move a function, class, or constant to a different file, updating all imports.
 
 ### 1. Setup
 
-```bash
-cd "$CLAUDE_PROJECT_DIR"
-```
+Read `.meridian/.state/injected-files` and ALL files listed there. This gives you the same project context as the main agent.
 
 Identify project type:
 - Check tsconfig.json, package.json, pyproject.toml

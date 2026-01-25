@@ -340,6 +340,37 @@ Example:
 
 Review checkpoints catch issues early when context is fresh, rather than reviewing everything at the end.
 
+## Execution Table
+
+Every plan ends with an Execution table mapping steps to agents and parallel groups.
+
+```markdown
+## Execution
+
+| Step | Agent | Parallel Group |
+|------|-------|----------------|
+| 1.1 | implement | A |
+| 1.2 | implement | A |
+| 2.1 | implement | B |
+| 2.2 | refactor | B |
+| 2.3 | test-writer | - |
+
+Steps in same parallel group run simultaneously.
+```
+
+**Agent selection:**
+- `implement` — New files, new functions, feature implementation
+- `refactor` — Renames, moves, extractions across files
+- `test-writer` — Test file generation
+- `main` — Coordination steps, verification, complex multi-file changes
+
+**Parallel groups:**
+- Steps in the same group have no file conflicts or dependencies
+- Use letters (A, B, C) or numbers for groups
+- `-` means sequential (depends on prior steps)
+
+**Specs must be implementation-ready.** Each step should contain enough detail that the assigned agent can execute without asking questions.
+
 ## Finding Gaps
 
 Checklists create false confidence. To find real gaps:

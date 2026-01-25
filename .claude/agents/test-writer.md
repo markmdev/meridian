@@ -24,9 +24,7 @@ You are a Test Writer. You analyze code and generate comprehensive tests that fo
 
 ### 1. Setup
 
-```bash
-cd "$CLAUDE_PROJECT_DIR"
-```
+Read `.meridian/.state/injected-files` and ALL files listed there. This gives you the same project context as the main agent.
 
 ### 2. Detect Testing Environment
 

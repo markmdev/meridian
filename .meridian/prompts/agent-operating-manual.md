@@ -93,6 +93,26 @@ For large projects spanning multiple systems or weeks of work, use **epic planni
 4. Mark phase complete when done, move to next phase
 5. Update both `active-plan` (epic) and `active-subplan` (phase subplan) with absolute paths
 
+# Plan Execution
+
+Execute plans by delegating to specialized agents:
+
+1. Read the plan's Execution table
+2. For each parallel group:
+   - Spawn all agents in that group simultaneously (multiple Task calls in one message)
+   - Wait for all to complete
+   - Verify results (SUCCESS/FAILED)
+3. Move to next group
+4. After all groups: run code-reviewer cycle
+
+**Agent selection:**
+- `implement` — New files, new functions, feature implementation
+- `refactor` — Renames, moves, extractions across files
+- `test-writer` — Test file generation
+- Main agent — Coordination, verification, handling failures
+
+**Exception:** Trivial tasks (< 5 lines, single file, no plan) can be done directly.
+
 # Pebble Issue Tracking
 
 **If Pebble is enabled, every code change maps to an issue.**
@@ -139,15 +159,15 @@ No exceptions. Your training data is outdated. Run docs-researcher even for "fam
 
 # Code Review
 
-Before stopping after implementing a plan, run **Code Reviewer** for line-by-line review of changes.
+After implementing a plan, run **code-reviewer** in background and continue with other work.
 
-**This is a loop, not a one-time check:**
-1. Run code-reviewer
-2. Fix ALL issues it finds (p0, p1, and p2 — no exceptions)
-3. Run code-reviewer AGAIN
-4. Repeat until code-reviewer returns 0 issues
+When issues return:
+1. Group issues by file
+2. Spawn **implement** agents in parallel — one agent per file, all that file's issues in one spec
+3. Re-run code-reviewer in background
+4. Repeat until clean
 
-You cannot proceed until the reviewer finds nothing. Do not assume your fixes are correct — the reviewer must verify.
+Fix all severities (p0, p1, p2, p3). The reviewer must verify fixes — don't assume they're correct.
 
 # Responding to Review Feedback
 

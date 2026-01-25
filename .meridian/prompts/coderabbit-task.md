@@ -1,15 +1,16 @@
-CodeRabbit AI reviews PRs automatically after creation. It takes up to 7 minutes for the first review. Check CI/CD status — 'pending' means review in progress.
+CodeRabbit AI reviews PRs automatically after creation. First review takes up to 7 minutes — check CI status ('pending' = in progress).
 
-When feedback arrives, address these comment types:
-- Critical — must fix
-- Major — must fix
-- Minor — must fix
-- Outside diff range — must fix (issues in related code)
-- Nitpick — skip (style preferences)
+## Comment Types
 
-After fixing issues:
-1. Commit and push
-2. Reply to each CodeRabbit comment explaining what you fixed
-3. Wait for the next review cycle
+- **Critical, Major, Minor, Outside diff range** — must fix
+- **Nitpick** — skip (style preferences)
 
-Stop only when CodeRabbit has no remaining issues and its CI check passes.
+## Workflow
+
+1. Fetch CodeRabbit comments from PR
+2. Group comments by file
+3. Spawn **implement** agents in parallel — one agent per file, all that file's issues in one spec
+4. Commit and push
+5. Reply to each comment explaining the fix
+6. Wait for next review cycle (CodeRabbit re-reviews on push)
+7. Repeat until CodeRabbit has no remaining issues and CI passes

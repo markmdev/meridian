@@ -1,6 +1,6 @@
 ---
 description: Handle CodeRabbit AI review cycles after creating a PR
-allowed-tools: Bash
+allowed-tools: Bash, Task
 ---
 
 # CodeRabbit Review Loop

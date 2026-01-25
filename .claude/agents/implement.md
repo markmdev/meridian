@@ -26,9 +26,7 @@ You are an Implementation Executor. You take detailed specs and implement them p
 
 ### 1. Setup
 
-```bash
-cd "$CLAUDE_PROJECT_DIR"
-```
+Read `.meridian/.state/injected-files` and ALL files listed there. This gives you the same project context as the main agent.
 
 ### 2. Parse the Spec
 

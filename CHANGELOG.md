@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.63] - 2026-01-25
+
+### Fixed
+- **TaskOutput blocking actually works now**: The hook was using `toolName` (camelCase) instead of `tool_name` (snake_case), so it wasn't blocking anything.
+
 ## [0.0.62] - 2026-01-25
 
 ### Changed

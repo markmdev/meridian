@@ -183,6 +183,23 @@ When addressing feedback from CodeRabbit, human reviewers, or any PR comments:
 
 **The principle:** Review feedback is a gift. Valid concerns get fixed, not deferred. Invalid concerns get explained, not ignored.
 
+# Plan Review Findings
+
+When plan-reviewer returns findings:
+
+**Address ALL findings, regardless of score.** A score of 9+ means the plan is implementable, not that findings can be ignored.
+
+**Workflow:**
+1. Group findings by severity (critical → high → moderate → low)
+2. Present to user with severity and recommendation
+3. For each finding:
+   - If user wants to address: update the plan
+   - If user declines: mark in plan as `[USER_DECLINED: <finding> - Reason: <reason>]`
+4. Re-run reviewer only if score was below 9 (need to verify improvements)
+5. If score was 9+: exit plan mode after addressing all findings (no re-run needed)
+
+**The principle:** Findings are information, not just gate-keeping criteria. Even low-severity findings represent real concerns worth discussing.
+
 # Definition of Done
 
 - Code compiles; typecheck/lint/test/build pass

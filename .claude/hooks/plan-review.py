@@ -81,7 +81,13 @@ def main():
                 "2. For findings the user wants to address: update the plan\n"
                 "3. For findings the user declines: mark in plan as `[USER_DECLINED: <finding> - Reason: <reason>]`\n"
                 "4. Call plan-reviewer again with the updated plan\n"
-                f"5. Repeat until score reaches {REQUIRED_SCORE}+\n"
+                f"5. Repeat until score reaches {REQUIRED_SCORE}+\n\n"
+                f"**IMPORTANT**: Even if score is {REQUIRED_SCORE}+, you MUST address ALL findings before exiting:\n"
+                "1. Present each finding to the user (grouped by severity)\n"
+                "2. For each finding, either:\n"
+                "   - Update the plan to address it, OR\n"
+                "   - Get user confirmation to skip (mark as `[USER_DECLINED: <finding> - Reason: <reason>]`)\n"
+                f"3. You do NOT need to re-run the reviewer after addressing findings if score was already {REQUIRED_SCORE}+\n"
             )
         }
     }

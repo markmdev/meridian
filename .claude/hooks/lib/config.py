@@ -1171,20 +1171,22 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     if code_review:
         review_context = f"(**{edits_since_review} file edits** since last code review)" if edits_since_review > 0 else "(ran this session)"
         parts.append(
-            f"**CODE REVIEW** {review_context}: After finishing a plan, epic, or large multi-file task, run Code Reviewer.\n\n"
-            f"First `cd {claude_project_dir}`, then:\n"
+            f"**CODE REVIEW** {review_context}: After finishing a plan, epic, or large multi-file task, run both reviewers in parallel.\n\n"
+            f"First `cd {claude_project_dir}`, then spawn in parallel:\n"
+            "- **code-reviewer** — finds bugs, logic errors, data flow issues\n"
+            "- **code-health-reviewer** — finds dead code, pattern drift, over-engineering, refactoring needs\n\n"
         )
 
         if pebble_enabled:
             parts.append(
-                "**Spawn** Code Reviewer agent in background — include `Parent task: <task-id>` in the prompt (the specific task you were working on, NOT the epic). "
+                "Include `Parent task: <task-id>` in both prompts (the specific task you were working on, NOT the epic). "
                 "Find with `pb list --parent <epic-id>` if needed.\n"
-                "**When issues return**: Group by file → spawn **implement** agents in parallel (1 file = 1 agent, all issues for that file in the spec) → re-run code-reviewer in background → repeat until no issues.\n"
+                "**When issues return**: Group by file → spawn **implement** agents in parallel (1 file = 1 agent, all issues for that file in the spec) → re-run both reviewers in background → repeat until no issues.\n"
             )
         else:
             parts.append(
-                "**Spawn** Code Reviewer agent in background (no prompt needed — it reads from `.meridian/.state/injected-files`).\n"
-                "**When issues return**: Group by file → spawn **implement** agents in parallel (1 file = 1 agent, all issues for that file in the spec) → re-run code-reviewer in background → repeat until clean.\n"
+                "Both agents read from `.meridian/.state/injected-files` — no additional prompt needed.\n"
+                "**When issues return**: Group by file → spawn **implement** agents in parallel (1 file = 1 agent, all issues for that file in the spec) → re-run both reviewers in background → repeat until clean.\n"
             )
 
     # Pebble reminder if enabled (before session context - higher priority)
@@ -1276,7 +1278,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     # Footer
     parts.append(
         "If you have nothing to update and were not working on a plan, your response to this hook must be exactly the same as the message that was blocked. "
-        "If you did update something or ran code-reviewer, resend the same message you sent before you were interrupted by this hook. "
+        "If you did update something or ran reviewers, resend the same message you sent before you were interrupted by this hook. "
         "Before marking a task as complete, review the 'Definition of Done' section in "
         f"`{claude_project_dir}/.meridian/prompts/agent-operating-manual.md`."
     )

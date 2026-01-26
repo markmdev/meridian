@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.65] - 2026-01-26
+
+### Added
+- **code-health-reviewer agent**: New agent that finds dead code, bloat, duplication, pattern drift, and over-engineering. Use after large tasks, end of feature work, or when code has gone through many iterations. Sets its own quality standard (doesn't learn from potentially degraded existing code). Explores codebase to find reusable utilities. Scopes to recent commits + one level out.
+- **Dual reviewer workflow**: Stop hook and agent-operating-manual now instruct to run both code-reviewer (bugs, logic) and code-health-reviewer (maintainability) in parallel after completing work.
+
 ## [0.0.64] - 2026-01-25
 
 ### Changed

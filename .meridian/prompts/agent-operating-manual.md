@@ -159,15 +159,17 @@ No exceptions. Your training data is outdated. Run docs-researcher even for "fam
 
 # Code Review
 
-After implementing a plan, run **code-reviewer** in background and continue with other work.
+After implementing a plan, run **both reviewers in parallel** (in background, continue with other work):
+- **code-reviewer** — finds bugs, logic errors, data flow issues
+- **code-health-reviewer** — finds dead code, pattern drift, over-engineering, refactoring needs
 
 When issues return:
 1. Group issues by file
 2. Spawn **implement** agents in parallel — one agent per file, all that file's issues in one spec
-3. Re-run code-reviewer in background
+3. Re-run both reviewers in background
 4. Repeat until clean
 
-Fix all severities (p0, p1, p2, p3). The reviewer must verify fixes — don't assume they're correct.
+Fix all severities (p0, p1, p2, p3). The reviewers must verify fixes — don't assume they're correct.
 
 # Responding to Review Feedback
 
@@ -261,6 +263,7 @@ These agents are available but not enforced. Use them proactively when appropria
 | **refactor** | Rename, extract, or move symbols across codebase. Handles imports automatically. |
 | **implement** | Execute detailed specs autonomously. Spawn multiple in parallel for independent tasks. |
 | **diff-summarizer** | Generate PR description. Run before `gh pr create`. |
+| **code-health-reviewer** | After large tasks, end of feature work, or when code has gone through many iterations. Finds dead code, bloat, duplication, pattern drift, over-engineering. |
 
 **Explore vs direct tools**: Use Glob/Grep/Read when you know where to look. Use Explore for discovery.
 

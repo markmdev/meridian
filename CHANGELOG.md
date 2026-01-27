@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.73] - 2026-01-26
+
+### Fixed
+- **Install script now copies bin/ directory**: The `meridian-wrapper` script is now properly distributed via `install.sh`.
+
 ## [0.0.72] - 2026-01-26
 
 ### Added

@@ -338,6 +338,7 @@ fi
 log "Installing files..."
 copy_dir "$SOURCE_DIR/.claude" "$TARGET_DIR/.claude" ".claude/"
 copy_dir "$SOURCE_DIR/.meridian" "$TARGET_DIR/.meridian" ".meridian/"
+copy_dir "$SOURCE_DIR/bin" "$TARGET_DIR/bin" "bin/"
 
 # Copy .mcp.json
 if [[ -f "$SOURCE_DIR/.mcp.json" ]]; then
@@ -506,6 +507,7 @@ fi
 # Make scripts executable
 log "Setting permissions..."
 find "$TARGET_DIR/.claude" -type f \( -name "*.py" -o -name "*.sh" \) -exec chmod +x {} \; 2>/dev/null || true
+find "$TARGET_DIR/bin" -type f -exec chmod +x {} \; 2>/dev/null || true
 
 # Success
 echo ""

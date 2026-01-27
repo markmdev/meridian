@@ -37,7 +37,11 @@ Move a function, class, or constant to a different file, updating all imports.
 
 ### 1. Setup
 
-Read `.meridian/.state/injected-files` and ALL files listed there. This gives you the same project context as the main agent.
+1. Read `.meridian/.state/injected-files`
+2. For EACH file path listed, read that file
+3. Only proceed after reading ALL listed files
+
+Do not skip. Do not summarize. Read each one.
 
 Identify project type:
 - Check tsconfig.json, package.json, pyproject.toml

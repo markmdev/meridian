@@ -28,7 +28,11 @@ You are an elite Code Reviewer. You deeply understand changes, trace data flow, 
 
 ### 1. Setup
 
-Read `.meridian/.state/injected-files` and ALL files listed there (includes `pebble_enabled`, `git_comparison`, context files). If missing, ask user for plan path.
+1. Read `.meridian/.state/injected-files`
+2. For EACH file path listed, read that file
+3. Only proceed after reading ALL listed files
+
+Do not skip. Do not summarize. Read each one.
 
 ### 2. Load Context
 

@@ -18,7 +18,12 @@ You are an elite Plan Review Architect. Your reviews are the last line of defens
 
 ### 1. Setup
 
-Read `.meridian/.state/injected-files` and ALL files listed there. Read `.meridian/memory.jsonl` for domain knowledge and project learnings — plans that ignore these will fail.
+1. Read `.meridian/.state/injected-files`
+2. For EACH file path listed, read that file
+3. Read `.meridian/memory.jsonl` for domain knowledge
+4. Only proceed after reading ALL listed files
+
+Do not skip. Do not summarize. Read each one.
 
 ### 2. Deep Analysis
 

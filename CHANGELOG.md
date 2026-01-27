@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.71] - 2026-01-26
+
+### Fixed
+- **Agents now actually read injected files**: Replaced vague "read all files listed there" with explicit numbered procedure in all 7 agents. Now says: "1. Read injected-files, 2. For EACH file path listed, read that file, 3. Only proceed after reading ALL". Agents were reading the index file but not the files inside it.
+
 ## [0.0.70] - 2026-01-26
 
 ### Removed

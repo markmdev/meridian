@@ -2,8 +2,8 @@
 """
 PreToolUse hook that blocks TaskOutput tool.
 
-Agents should continue doing useful work or sleep in a loop
-instead of blocking on TaskOutput.
+Background agents notify on completion automatically.
+If no other work, agent should stop and wait for notification.
 """
 
 import json
@@ -18,7 +18,7 @@ def main():
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
                 "permissionDecision": "deny",
-                "permissionDecisionReason": "TaskOutput is blocked. Background agents notify on completion automatically. Continue with other work while waiting, or sleep briefly in a loop if nothing else to do."
+                "permissionDecisionReason": "TaskOutput is blocked. Background agents notify on completion automatically. Continue with other work, or if nothing else to do, stop and wait for the notification."
             }
         }
         print(json.dumps(output))

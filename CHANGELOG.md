@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.74] - 2026-01-26
+
+### Changed
+- **TaskOutput block message**: Instead of telling agent to "sleep briefly in a loop", now instructs to stop and wait for notification. Background agents notify on completion automatically.
+
 ## [0.0.73] - 2026-01-26
 
 ### Fixed

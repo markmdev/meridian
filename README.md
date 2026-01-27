@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.71` (2026-01-26) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.72` (2026-01-26) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -197,6 +197,23 @@ find .claude -type f -name '*.py' -print0 | xargs -0 chmod +x
 ```
 
 Open your project in Claude Code. Hooks activate automatically, MCP servers connect.
+
+### Running with Auto-Restart
+
+For automatic session restart when context fills up (instead of manual `/clear`):
+
+1. Enable auto-compact-off mode in `.meridian/config.yaml`:
+   ```yaml
+   auto_compact_off: true
+   ```
+
+2. Run Claude through the wrapper:
+   ```bash
+   ./bin/meridian-wrapper
+   # Or add to PATH and use: meridian-wrapper
+   ```
+
+When context approaches the threshold, the agent saves context and the wrapper automatically restarts with "continue" as the initial prompt. No manual intervention needed.
 
 ---
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.72] - 2026-01-26
+
+### Added
+- **Auto-restart wrapper** (`bin/meridian-wrapper`): Bash script that runs Claude in a loop. When `auto_compact_off: true` and context fills up, agent writes to `.meridian/.state/restart-signal` and stops. Wrapper detects the signal and restarts Claude with the prompt from the signal file (default: "continue"). Eliminates manual `/clear` step.
+
+### Changed
+- **Pre-compaction hook for auto-restart**: When `auto_compact_off: true`, hook now instructs agent to write restart signal file and stop, instead of telling user to run `/clear`.
+
 ## [0.0.71] - 2026-01-26
 
 ### Fixed

@@ -237,9 +237,10 @@ def main():
     # Check if auto_compact_off is enabled
     if config.get('auto_compact_off', False):
         reason += (
-            "**STOP NOW.** After saving context, stop immediately and tell the user:\n"
-            "\"Context saved. Please run /clear to start a new session.\"\n\n"
-            "Do NOT continue working. The session will be manually cleared."
+            "**STOP NOW.** After saving context:\n"
+            "1. Use the Write tool to write `continue` to `.meridian/.state/restart-signal`\n"
+            "2. Stop immediately (do not ask user anything, just stop)\n\n"
+            "The meridian-wrapper will automatically restart the session with your prompt."
         )
     else:
         reason += "After updating, you may continue your work."

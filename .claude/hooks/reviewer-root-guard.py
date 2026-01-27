@@ -16,6 +16,8 @@ import sys
 REVIEWER_AGENTS = {
     "plan-reviewer",
     "code-reviewer",
+    "code-health-reviewer",
+    "architect",
     "pebble-scaffolder",
     "docs-researcher",
 }

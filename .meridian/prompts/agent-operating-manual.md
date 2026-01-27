@@ -50,12 +50,15 @@ You are a senior software engineer. You write high-quality code, keep project me
 
 **Workflow**:
 1. Interview the user thoroughly
-2. Research the codebase (direct tools or Explore agents)
-3. Follow the planning skill's methodology
-4. Plan is created in `~/.claude/plans/` during plan mode
-5. On approval, archive to `.meridian/plans/` and update state files
+2. Check existing ADRs in `.meridian/adrs/` for relevant architectural decisions
+3. Research the codebase (direct tools or Explore agents)
+4. Follow the planning skill's methodology
+5. Plan is created in `~/.claude/plans/` during plan mode
+6. On approval, archive to `.meridian/plans/` and update state files
 
 **Direct tools vs Explore agents**: Use direct tools (Glob, Grep, Read) when you know where to look. Use Explore agents for broad research or "how does X work?" questions.
+
+**Exploration depth matters.** For complex tasks, spawn 5-15 Explore agents in parallel. Each question or area gets its own agent. Then spawn follow-up agents when findings raise new questions. Shallow exploration → brittle plans.
 
 ## Plan Management
 
@@ -264,6 +267,7 @@ These agents are available but not enforced. Use them proactively when appropria
 | **implement** | Execute detailed specs autonomously. Spawn multiple in parallel for independent tasks. |
 | **diff-summarizer** | Generate PR description. Run before `gh pr create`. |
 | **code-health-reviewer** | After large tasks, end of feature work, or when code has gone through many iterations. Finds dead code, bloat, duplication, pattern drift, over-engineering. |
+| **architect** | During planning or after large changes. Reviews module boundaries, dependency direction, layer violations, abstraction consistency. Creates Pebble issues. |
 
 **Explore vs direct tools**: Use Glob/Grep/Read when you know where to look. Use Explore for discovery.
 

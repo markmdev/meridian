@@ -895,6 +895,19 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         if addon_path.exists():
             files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path))
 
+    # 5. Architecture Decision Records (if directory exists)
+    adrs_dir = base_dir / ".meridian" / "adrs"
+    if adrs_dir.exists() and adrs_dir.is_dir():
+        # Always inject INDEX.md first
+        adr_index = adrs_dir / "INDEX.md"
+        if adr_index.exists():
+            files_to_inject.append((".meridian/adrs/INDEX.md", adr_index))
+        # Inject all ADR files (excluding TEMPLATE.md)
+        for adr_file in sorted(adrs_dir.glob("*.md")):
+            if adr_file.name not in ("INDEX.md", "TEMPLATE.md"):
+                rel_path = f".meridian/adrs/{adr_file.name}"
+                files_to_inject.append((rel_path, adr_file))
+
     # Inject each file with XML tags (deduplicate by resolved path)
     injected_paths = set()
     for rel_path, full_path in files_to_inject:

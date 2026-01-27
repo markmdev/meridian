@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.66] - 2026-01-26
+
+### Added
+- **architect agent**: Reviews codebase architecture for structural issues — module boundary violations, dependency direction, layer violations, abstraction inconsistency, API drift, circular dependencies. Creates Pebble issues with recommendations. Use during planning or after large changes.
+- **ADR system**: Architecture Decision Records in `.meridian/adrs/`. Captures architectural decisions with context, rationale, and consequences. Injected at session start alongside memory. Main agent writes ADRs after decisions are made (not the architect — architect advises, team decides).
+
+### Changed
+- **Planning workflow**: Added step to check existing ADRs before researching codebase.
+- **Context injection**: ADRs directory now injected at session start (INDEX.md + all ADR files except TEMPLATE.md).
+- **reviewer-root-guard**: Added `architect` and `code-health-reviewer` to the list of agents that must be spawned from project root.
+- **Exploration encouragement**: Strengthened language in planning skill and agent-operating-manual to encourage spawning many Explore agents (5-15 for complex tasks, 10-20 for major refactors). Includes concrete examples and frames shallow exploration as causing brittle plans.
+- **Planning skill condensed**: Reduced from 409 to 163 lines (60% reduction). Removed templates the model already knows, redundant checklists, verbose examples. Preserved load-bearing content: verbatim requirements, core loop, exploration numbers, handoff test, no-TBD rule, execution table.
+
 ## [0.0.65] - 2026-01-26
 
 ### Added

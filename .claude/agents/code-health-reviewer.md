@@ -19,7 +19,7 @@ Find code that works but should be refactored. You're not looking for bugs (Code
 
 **Explore what exists.** Search for existing helpers, utilities, and patterns that could be reused instead of duplicated.
 
-## What You're Looking For
+## What You're Looking For (Examples, not limited to)
 
 - **Dead code** — unused exports, orphaned functions, commented-out code
 - **Bloat** — functions or files that have grown too large

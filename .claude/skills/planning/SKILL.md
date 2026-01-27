@@ -2,18 +2,16 @@
 name: planning
 description: Create implementation plans through deep exploration and understanding. Use for new features, refactoring, architecture changes, or any non-trivial work.
 ---
-<planning_skill>
-# Planning Skill
 
-**Plans are documentation of understanding, not templates to fill out.**
+# Planning
 
-A good plan proves you understand the problem deeply. A bad plan follows a structure without understanding. There is no "standard" plan size or format — the plan should match the complexity of what you're building.
+Good plans prove you understand the problem. Bad plans follow templates without understanding. Size matches complexity — a rename might be 20 lines, a complex feature might be 500.
 
-## Verbatim Requirements (WRITE FIRST)
+**The handoff test:** Could someone implement this plan without asking you questions? If not, find what's missing.
 
-Before anything else, capture the user's exact words at the top of the plan file.
+## Verbatim Requirements
 
-**DO NOT paraphrase. DO NOT compress. DO NOT summarize.**
+Capture the user's exact words at the top of every plan. No paraphrasing, no compression, no summarization.
 
 ```markdown
 ## Verbatim Requirements
@@ -24,380 +22,141 @@ Before anything else, capture the user's exact words at the top of the plan file
 ### Clarifications
 **Q:** [Your question]
 **A:** [User's ENTIRE answer, verbatim]
-
-### Additional Context
-> [EVERY follow-up message from the user]
 ```
 
-Capture ALL exchanges. You don't know which details matter until implementation.
+You don't know which details matter until implementation. Capture everything.
 
-## PRD vs Implementation Plan
+## The Core Loop
 
-Plans have two parts:
-
-1. **PRD sections** — What to build and why (Vision, Problem, User Stories, Feature Spec, MVP Scope)
-2. **Implementation sections** — How to build it (Files, Steps, Verification)
-
-**When to include PRD sections:**
-- New project from scratch
-- New feature with unclear scope (user stories not obvious)
-- Multi-phase work spanning weeks
-- User explicitly requests "requirements" or "PRD"
-
-**When to skip PRD sections:**
-- Bug fixes
-- Small, well-defined features
-- Refactoring
-- Changes where scope is already clear
-
-**If PRD criteria detected:**
-Ask: "This looks like it needs requirements definition. Should I include PRD sections (Vision, Problem, User Stories, Feature Spec) in the plan?"
-
-### PRD Sections Structure
-
-```markdown
-## Vision
-
-What this is and why it matters. 1-2 paragraphs.
-
-## Problem Statement
-
-**User:** Who is this for?
-
-**Pain points:**
-1. ...
-2. ...
-
-**Current workflow:** How they handle this today.
-
-## User Stories
-
-### [Category]
-- **As a [user]**, I want [goal] so I can [benefit].
-
-## Feature Specification
-
-### 1. [Feature Area]
-
-Detailed breakdown:
-- Data fields and sources
-- Display format
-- Actions available
-- Edge cases
-
-(Use tables where helpful)
-
-## MVP Scope
-
-**Must have (v0.1):**
-- [ ] Feature 1
-- [ ] Feature 2
-
-**Nice to have (v0.2+):**
-- [ ] Future feature 1
-
-## Open Questions
-
-1. Unknowns to resolve before implementation
-```
-
-### PRD Quality Check
-
-- [ ] Vision is clear and compelling
-- [ ] Problem statement names specific user and pain points
-- [ ] User stories cover all user types and workflows
-- [ ] Feature spec is detailed enough to estimate work
-- [ ] MVP scope has clear boundaries
-- [ ] Open questions are genuine unknowns (not things to research now)
-- [ ] No implementation details in PRD sections (that comes after)
-
-## The Core Loop: Explore Until You Understand
-
-Planning is not a sequence of phases. It's a loop:
+Planning is a loop, not a sequence:
 
 ```
-ASK → EXPLORE → LEARN → HAVE MORE QUESTIONS? → REPEAT
+ASK → EXPLORE → LEARN → MORE QUESTIONS? → REPEAT
 ```
 
-**Keep looping until you can explain:**
-- What data exists and what shape it takes
-- How data flows through the system
-- What the current behavior is (precisely)
-- What needs to change and why
-- What could go wrong
+Keep looping until you can explain: what data exists, how it flows, what needs to change, and what could go wrong. If you can't explain these clearly, explore more.
 
-If you can't explain these clearly, you haven't explored enough.
+## Interviewing
 
-## Interviewing the User
+Interview iteratively: 2-4 questions → answers → deeper follow-ups → repeat. Don't ask everything upfront.
 
-Interview iteratively: 2-4 questions → answers → deeper follow-ups → repeat.
+**Depth varies:** Simple bug → 3-5 questions. Complex feature → 20-40+ questions across multiple rounds.
 
-**Don't ask everything upfront.** Ask, learn, then ask smarter questions based on what you learned.
-
-**Depth varies:** Simple bug? 3-5 questions. Complex feature? 20-40+ questions across multiple rounds.
-
-**Cover:**
-- What exactly should happen (inputs, outputs, behavior)
-- What's out of scope
-- Edge cases and error scenarios
-- Constraints (performance, compatibility, security)
-- Why this matters (context helps you make better decisions)
+**Cover:** What should happen (inputs, outputs, behavior), what's out of scope, edge cases, constraints, and why this matters.
 
 **Push back** if something seems wrong. You're the technical expert.
 
 ## Exploring the Codebase
 
-**Spawn as many Explore agents as you need.**
+**More exploration = better plans.** The number one cause of plan failure is insufficient exploration.
 
-If you have 5 distinct questions, spawn 5 agents. If you have 15, spawn 15. Don't artificially limit yourself to 2-3 agents when the codebase is large and your questions span different areas.
+**Spawn many Explore agents — 5, 10, 15, whatever the codebase demands.** Each question or area gets its own agent. Don't batch unrelated questions hoping for efficiency.
 
-**Run follow-ups.** When agents return findings that raise new questions — and they will — spawn more agents to investigate those questions. Exploration is iterative, not one-shot.
+| Task | Agents |
+|------|--------|
+| Small bugfix | 1-2 |
+| Feature touching 3 modules | 5-8 |
+| Major refactor or new system | 10-20 |
+| "I'm not sure where to start" | 5 broad, then more based on findings |
 
-**What to explore:**
-- How does the current system work? (trace actual code paths)
-- What data structures exist? (schemas, types, shapes)
-- How do similar features work? (find patterns to follow)
-- What depends on what? (imports, calls, data flow)
-- What are the constraints? (validation, permissions, limits)
+**Run follow-ups aggressively.** Every finding that raises questions spawns more exploration. Expect 2-3 rounds before you're ready to plan.
 
-**Explore until you stop having questions**, not until you've "done enough exploring."
+**Explore until you stop having questions**, not until you've "done enough."
 
-## What Plans Must Contain
+## Plan Content
 
-Plans document your understanding. The categories below are starting points — real plans answer every question that would come up during implementation.
+Plans document your understanding. Include:
 
-**The handoff test:** If you gave this plan to another developer, what would they ask? Answer those questions now.
+**Data:** Tables/collections involved, fields that matter, what the data looks like (examples help), transformations.
 
-**Data specifics:**
-- What tables/collections/files are involved
-- What fields matter and what they contain
-- What the actual data looks like (examples help)
-- What transformations happen
+**Flow:** How data moves through the system, what calls what in what order, where state changes, what triggers what, entry point context.
 
-**Flow specifics:**
-- How data moves through the system
-- What functions/endpoints are called in what order
-- Where state changes happen
-- What triggers what
-- What context each entry point has (and where it comes from)
+**Decisions:** Why this approach, what tradeoffs, what assumptions, what could break.
 
-**Decision specifics:**
-- Why this approach over alternatives
-- What tradeoffs you're making
-- What assumptions you're relying on
-- What could break this
+**Changes:** Every file to create/modify/delete, what each change accomplishes, how changes connect, what order they must happen, existing patterns to reuse.
 
-**Change specifics:**
-- Every file to create, modify, or delete
-- What each change accomplishes
-- How changes connect to each other
-- What order changes must happen in
-- What existing patterns and code to reuse
+**Acceptance criteria:** What must be true when each step is "done." Specific ("returns object with `status` field"), not vague ("works correctly").
 
-**Acceptance criteria per step:**
-- What must be true when this step is "done"
-- Verifiable conditions (compiles, exported, returns expected shape)
-- Not vague ("works correctly") — specific ("returns object with `status` field")
+**Test cases:** For behavioral changes, include example inputs → expected outputs.
 
-**Test cases (for behavioral changes):**
-- Example inputs → expected outputs
-- Edge cases the plan author has in mind
-- Format: "Empty input array → returns empty array, not error"
+## Rules
 
-## What Plans Should NOT Be
+**No TBD.** If the plan says "figure out during implementation," you haven't planned — you've procrastinated. Investigate now.
 
-**Not a template.** There's no "7 phases" or "standard structure." A plan for a simple rename might be 20 lines. A plan for a complex feature might be 2000 lines. Size matches complexity.
+**No literal code.** Code snippets become brittle. Describe structure instead: "Function that fetches user, validates permissions, returns filtered data." Reference patterns: "Follow the pattern in validateUser."
 
-**Not vague.** "Update the data layer" is not a plan step. "Add `reconciled_at` timestamp to `transactions` table, update `TransactionService.reconcile()` to set it, add index for queries" is.
+**External APIs:** Check `.meridian/api-docs/INDEX.md` first. Not listed? Run `docs-researcher`. Your training data is outdated.
 
-**Not deferred.** If the plan says "TBD" or "figure out during implementation," you haven't planned — you've procrastinated. Investigate NOW.
+**No repetition.** Define schemas once, reference by name. Don't repeat the same structure three times.
 
-**Not literal code.** Code snippets become brittle when variable names differ. Instead:
-- Describe structure: "Function that fetches user, validates permissions, returns filtered data"
-- Reference patterns: "Follow the pattern in existing validateUser function"
-- Use placeholders if showing structure: `/* adapt to actual variable names */`
+## PRD Sections
 
-## Anti-Patterns
+Include PRD sections (Vision, Problem Statement, User Stories, Feature Spec, MVP Scope) when:
+- New project from scratch
+- Feature with unclear scope
+- Multi-phase work spanning weeks
+- User explicitly requests requirements
 
-**Repetition:** Don't define the same schema 3 times. Define once, reference by name.
+Skip for bug fixes, small features, refactoring, or when scope is already clear.
 
-**Obvious details:** "Add export keyword" doesn't need a step — agents know syntax.
+## Epic Planning
 
-**Incremental changelog:** Don't list every micro-step. Group into meaningful units.
+For large tasks spanning multiple systems or weeks:
 
-## External APIs
+**Signals:** "Build X from scratch", multiple subsystems, user says "big project", exploration reveals massive scope.
 
-Before using any external library/API, check `.meridian/api-docs/INDEX.md`.
+**When detected, ask:** "This looks like a multi-phase project. Should I create an epic plan with subplans per phase?"
 
-- Listed? Read the doc.
-- Not listed? Run `docs-researcher` first.
+**Epic structure:**
+- Phases are epics, not implementation steps
+- Each phase gets a subplan (created just-in-time when starting that phase)
+- Subplans go through plan-reviewer before implementing
+- Epic plan contains all research findings; subplans focus on implementation detail
 
-Your training data is outdated. Always verify.
+## Integration
 
-## Integration (Multi-Module Work)
-
-If your plan creates new modules or touches multiple systems, explicitly document:
-
+If your plan creates modules or touches multiple systems, document:
 - How modules connect (imports, calls, data passing)
-- Entry points (how does the app load/call this?)
-- Configuration (what needs to be set up)
+- Entry points (how does the app call this?)
+- Configuration needed
 
 Plans fail when code exists but isn't wired up.
 
-## Epic-Level Planning
-
-For large tasks spanning multiple systems or weeks of work:
-
-**Detection signals:**
-- "Build X from scratch"
-- Multiple distinct subsystems (auth, billing, API, UI)
-- User says "this is a big project"
-- Initial exploration reveals massive scope
-
-**When detected, propose epic planning:**
-"This looks like a multi-phase project. Should I create an epic plan with separate subplans for each phase?"
-
-**Epic planning workflow:**
-1. Interview and explore as usual — capture verbatim requirements and all findings
-2. Create PRDs and specs (optional) for major areas — requirements, data models, API contracts
-3. Create epic plan with phases and the required workflow section (see below)
-
-**Epic plans contain everything:**
-- Verbatim requirements (same as any plan)
-- All research findings and discoveries
-- Phase breakdown with dependencies
-- The workflow instructions that the implementing agent must follow
-
-Subplans are for detailed implementation focus on a single phase. They don't replace the discovery work in the epic plan — they build on it.
-
-**Epic plan structure:**
-- Phases are epics, not implementation steps
-- Reference specs (`.meridian/specs/`) and subplans (`.meridian/subplans/`) by path
-- Track phase status: Not started | In progress | Complete
-
-**Required: Include this workflow section at the end of every epic plan:**
-
-```markdown
-## Epic Workflow (REQUIRED)
-
-For EACH phase, you MUST follow this workflow. This is not optional.
-
-1. Mark phase status: `In progress`
-2. Enter plan mode
-3. Create a subplan for this phase
-4. Run plan-reviewer on the subplan
-5. Get user approval
-6. Move approved subplan to `.meridian/subplans/`
-7. Implement the subplan
-8. Run code-reviewer on the implementation
-9. Mark phase status: `Complete`
-
-Do NOT skip the subplan step, even if this epic plan contains detailed specs for the phase. Subplans incorporate learnings from prior phases and get validated against current codebase state.
-```
-
-**Specs (optional):**
-- Store in `.meridian/specs/`
-- Requirements that span multiple phases
-- Data models, API contracts, acceptance criteria
-
-**Subplans (required per phase):**
-- Created just-in-time when starting each phase
-- Moved to `.meridian/subplans/` after approval
-- Focused on implementation details for that phase
-
 ## Testing
 
-Ask the user what testing depth they want:
-- **Light** — happy path only
-- **Standard** — happy path + key edge cases
-- **Thorough** — comprehensive coverage
-- **Skip** — no tests
-
-Include in the plan what gets tested and how.
-
-## Documentation
-
-If it changes behavior users see:
-- Update CLAUDE.md for the module
-- Update human docs (README, API docs, etc.)
+Ask the user: light (happy path), standard (+ key edge cases), thorough (comprehensive), or skip.
 
 ## Verification
 
-Every plan should end with a verification section:
+Every plan ends with verification:
 
-**Per-step checks:** Quick commands to verify each step works
-**Review checkpoints:** For large plans (5+ phases), include intermediate code reviews
-**End-to-end:** Command to verify the full implementation
-
-Example:
-```
+```markdown
 ## Verification
-- Step 1: `npm run typecheck` passes
-- After Phase 3: Run code-reviewer on auth module changes
-- Step 5: `curl localhost:3001/api/users/1` returns user object with `role` field
-- End-to-end: Create user, assign role, verify permissions work
+
+**Per-step:** `npm run typecheck` passes after step 1
+**Checkpoint:** Run code-reviewer after auth changes (step 3)
+**End-to-end:** Create user, assign role, verify permissions work
 ```
 
-Review checkpoints catch issues early when context is fresh, rather than reviewing everything at the end.
+For large plans (5+ phases), include intermediate review checkpoints.
 
 ## Execution Table
 
-Every plan ends with an Execution table mapping steps to agents and parallel groups.
+Every plan ends with an execution table:
 
 ```markdown
 ## Execution
 
-| Step | Agent | Parallel Group |
-|------|-------|----------------|
+| Step | Agent | Parallel |
+|------|-------|----------|
 | 1.1 | implement | A |
 | 1.2 | implement | A |
-| 2.1 | implement | B |
-| 2.2 | refactor | B |
-| 2.3 | test-writer | - |
-
-Steps in same parallel group run simultaneously.
+| 2.1 | refactor | B |
+| 2.2 | test-writer | - |
 ```
 
-**Agent selection:**
-- `implement` — New files, new functions, feature implementation
-- `refactor` — Renames, moves, extractions across files
-- `test-writer` — Test file generation
-- `main` — Coordination steps, verification, complex multi-file changes
+**Agents:** `implement` (new code), `refactor` (moves/renames), `test-writer` (tests), `main` (coordination)
 
-**Parallel groups:**
-- Steps in the same group have no file conflicts or dependencies
-- Use letters (A, B, C) or numbers for groups
-- `-` means sequential (depends on prior steps)
+**Parallel:** Steps in same group run simultaneously. `-` means sequential.
 
-**Specs must be implementation-ready.** Each step should contain enough detail that the assigned agent can execute without asking questions.
-
-## Finding Gaps
-
-Checklists create false confidence. To find real gaps:
-
-**Simulate execution** — Walk through the code mentally. "Request comes in, then what? I call X. X needs Y. Where does Y come from?" When you hit uncertainty, that's a gap. Investigate it.
-
-**The handoff test** — Could someone implement this plan without asking you questions? If not, find what's missing.
-
-## Quality Check
-
-The real test: **someone could implement this plan without asking clarifying questions.**
-
-The checklist below is a starting point. If you're uncertain whether the plan is complete, simulate implementing it step by step.
-
-- [ ] Verbatim requirements captured (original request + all Q&A)
-- [ ] User confirmed understanding of requirements
-- [ ] Explored until questions stopped (not just "explored some")
-- [ ] Data specifics documented (tables, fields, shapes, examples)
-- [ ] Flow specifics documented (what calls what, in what order)
-- [ ] Every file path verified or confirmed as new
-- [ ] External APIs documented in api-docs
-- [ ] No "TBD" or "investigate later" anywhere
-- [ ] Plan size matches actual complexity (not a template)
-- [ ] Acceptance criteria defined for each step
-- [ ] Test cases included for behavioral changes
-- [ ] Verification section with concrete commands
-- [ ] Review checkpoints for large plans (5+ phases)
-- [ ] No literal code snippets (structural descriptions instead)
-- [ ] No repeated definitions (define once, reference)
-</planning_skill>
+Each step must contain enough detail for the agent to execute without questions.

@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.69` (2026-01-26) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.70` (2026-01-26) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -563,8 +563,9 @@ your-project/
 │       ├── pebble-scaffolder.md
 │       ├── test-writer.md
 │       ├── refactor.md
-│       ├── diff-summarizer.md
-│       └── implement.md
+│       ├── implement.md
+│       ├── architect.md
+│       └── code-health-reviewer.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected

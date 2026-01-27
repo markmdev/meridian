@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.70] - 2026-01-26
+
+### Removed
+- **diff-summarizer agent**: Removed — not useful in practice.
+
 ## [0.0.69] - 2026-01-26
 
 ### Added

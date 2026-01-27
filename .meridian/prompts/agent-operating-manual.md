@@ -277,7 +277,6 @@ These agents are available but not enforced. Use them proactively when appropria
 | **test-writer** | After implementing features. Pass the file path, get comprehensive tests. |
 | **refactor** | Rename, extract, or move symbols across codebase. Handles imports automatically. |
 | **implement** | Execute detailed specs autonomously. Spawn multiple in parallel for independent tasks. |
-| **diff-summarizer** | Generate PR description. Run before `gh pr create`. |
 | **code-health-reviewer** | After large tasks, end of feature work, or when code has gone through many iterations. Finds dead code, bloat, duplication, pattern drift, over-engineering. |
 | **architect** | During planning or after large changes. Reviews module boundaries, dependency direction, layer violations, abstraction consistency. Creates Pebble issues. |
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.68] - 2026-01-26
+
+### Changed
+- **Architect dual mode**: Architect can now review proposed plans (not just existing code). Plan review mode evaluates architectural soundness before implementation.
+- **Condensed review agent prompts**: Both `architect` and `code-health-reviewer` now use declarative "use your judgment" style instead of verbose checklists. Trusts the model's expertise.
+- **Architect during planning**: Added guidance in agent-operating-manual to run architect for plans with architectural implications (new modules, boundary changes, major refactors).
+
 ## [0.0.67] - 2026-01-26
 
 ### Changed

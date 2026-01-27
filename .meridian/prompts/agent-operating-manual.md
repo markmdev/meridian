@@ -188,6 +188,17 @@ When addressing feedback from CodeRabbit, human reviewers, or any PR comments:
 
 **The principle:** Review feedback is a gift. Valid concerns get fixed, not deferred. Invalid concerns get explained, not ignored.
 
+# Architect Review (During Planning)
+
+For plans with architectural implications, run **architect** in plan review mode before plan-reviewer:
+
+- New modules or services
+- Changes to module boundaries
+- New integrations between systems
+- Major refactors
+
+Architect evaluates if the proposed approach fits existing patterns and has sound structure. Plan-reviewer then validates feasibility.
+
 # Plan Review Findings
 
 When plan-reviewer returns findings:

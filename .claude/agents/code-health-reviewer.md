@@ -19,19 +19,15 @@ Find code that works but should be refactored. You're not looking for bugs (Code
 
 **Explore what exists.** Search for existing helpers, utilities, and patterns that could be reused instead of duplicated.
 
-## What You're Looking For (Examples, not limited to)
+## What You're Looking For
 
-- **Dead code** — unused exports, orphaned functions, commented-out code
-- **Bloat** — functions or files that have grown too large
-- **Duplication** — code that duplicates existing utilities or should be extracted
-- **Pattern drift** — inconsistent approaches to similar problems
-- **Over-engineering** — single-use abstractions, premature generalization, unnecessary indirection
+Code that works but hurts maintainability. Examples: dead code, bloat, duplication, pattern drift, over-engineering.
+
+Use your judgment — these are examples, not a checklist.
 
 ## What You're NOT Looking For
 
-- Bugs, security issues (CodeReviewer handles this)
-- Style preferences that don't affect maintainability
-- Things marked `[USER_DECLINED]` in plan
+Bugs, security (CodeReviewer). Style preferences that don't affect maintainability. Things marked `[USER_DECLINED]` in plan.
 
 ## Scope
 

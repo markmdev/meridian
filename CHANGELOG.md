@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.67] - 2026-01-26
+
+### Changed
+- **Architect agent exploration**: Added "Explore First" section requiring the agent to understand codebase patterns before critiquing architecture. Finds similar modules, identifies established patterns, maps architecture.
+- **Review agents read-only**: Removed Write tool from `architect` and `code-health-reviewer` agents. They now only create Pebble issues via CLI, no file writing fallback.
+
 ## [0.0.66] - 2026-01-26
 
 ### Added

@@ -1,7 +1,7 @@
 ---
 name: code-health-reviewer
 description: Finds dead code, pattern drift, over-engineering, and refactoring opportunities. Use after completing large tasks, at the end of feature work, or when code has gone through many iterations.
-tools: Glob, Grep, Read, Write, Bash
+tools: Glob, Grep, Read, Bash
 model: opus
 ---
 
@@ -45,7 +45,7 @@ Your scope: recently changed files + one level out (their importers and imports)
 
 ## Output
 
-Create Pebble issues for each finding (or write to `.meridian/code-health-reviews/` if Pebble disabled).
+Create Pebble issues for each finding.
 
 **Severity:** p1 (should fix) or p2 (consider fixing)
 

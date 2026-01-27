@@ -79,6 +79,36 @@ Plans document your understanding. Include:
 
 **Test cases:** For behavioral changes, include example inputs → expected outputs.
 
+## ASCII Diagrams
+
+For visual concepts, draw ASCII diagrams. They're clearer than descriptions.
+
+**UI changes:** Draw the interface with sample data and edge cases.
+```
+┌─────────────────────────────────┐
+│ User Profile                    │
+├─────────────────────────────────┤
+│ Name: John Doe                  │
+│ Role: [Admin ▼]                 │
+│                                 │
+│ [Save]  [Cancel]                │
+└─────────────────────────────────┘
+
+Edge case (long name):
+┌─────────────────────────────────┐
+│ Name: Bartholomew Fitzgerald... │
+└─────────────────────────────────┘
+```
+
+**Data flow:** Show how data moves through the system.
+```
+Request → AuthMiddleware → Controller → Service → Database
+                ↓                          ↓
+           401 if no token           Transform → Response
+```
+
+**Architecture:** Show module relationships when relevant.
+
 ## Rules
 
 **No TBD.** If the plan says "figure out during implementation," you haven't planned — you've procrastinated. Investigate now.

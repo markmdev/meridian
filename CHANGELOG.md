@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.69] - 2026-01-26
+
+### Added
+- **ASCII diagrams in plans**: Planning skill now requires ASCII diagrams for UI mocks (with edge cases), data flow, and architecture. Clearer than prose descriptions.
+- **ASCII diagrams in communication**: Agent-operating-manual now encourages using ASCII diagrams when explaining visual concepts to users.
+
 ## [0.0.68] - 2026-01-26
 
 ### Changed

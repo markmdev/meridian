@@ -2,7 +2,7 @@
 name: test-writer
 description: Use when you need tests for a file or function. Detects testing framework, learns patterns from existing tests, generates tests following project conventions. Covers happy path, edge cases, and error cases. Runs tests after generation and fixes failures.
 tools: Glob, Grep, Read, Write, Edit, Bash
-model: sonnet
+model: opus
 color: purple
 ---
 

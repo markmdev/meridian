@@ -2,7 +2,7 @@
 name: implement
 description: Use when you have a detailed, unambiguous implementation spec (e.g., "add export for function X in file Y"). Executes the spec, runs typecheck/tests, reports results. Spawn multiple in parallel for independent tasks. Does NOT ask questions — reports ambiguity and stops.
 tools: Glob, Grep, Read, Write, Edit, Bash
-model: sonnet
+model: opus
 color: orange
 ---
 

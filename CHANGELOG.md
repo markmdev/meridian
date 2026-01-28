@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.75] - 2026-01-26
+
+### Changed
+- **implement and test-writer agents now use Opus**: Changed from Sonnet to Opus for better quality implementation and test generation.
+
 ## [0.0.74] - 2026-01-26
 
 ### Changed

@@ -1,23 +1,12 @@
 #!/usr/bin/env bash
 # Wrapper that runs claude and handles auto-restart signals
-# Usage: meridian-wrapper [claude args...]
+# Usage: .meridian/bin/meridian-wrapper [claude args...]
 
 set -euo pipefail
 
-# Find project root (where .meridian exists)
-find_project_root() {
-    local dir="$PWD"
-    while [[ "$dir" != "/" ]]; do
-        if [[ -d "$dir/.meridian" ]]; then
-            echo "$dir"
-            return 0
-        fi
-        dir="$(dirname "$dir")"
-    done
-    echo "$PWD"  # Fallback to current dir
-}
-
-PROJECT_ROOT="$(find_project_root)"
+# Get project root from script location (script is at .meridian/bin/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SIGNAL_FILE="$PROJECT_ROOT/.meridian/.state/restart-signal"
 
 # Clean any stale signal file on startup

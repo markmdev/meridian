@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.75` (2026-01-26) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.76` (2026-01-26) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -209,8 +209,7 @@ For automatic session restart when context fills up (instead of manual `/clear`)
 
 2. Run Claude through the wrapper:
    ```bash
-   ./bin/meridian-wrapper
-   # Or add to PATH and use: meridian-wrapper
+   ./.meridian/bin/meridian-wrapper
    ```
 
 When context approaches the threshold, the agent saves context and the wrapper automatically restarts with "continue" as the initial prompt. No manual intervention needed.

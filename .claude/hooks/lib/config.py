@@ -787,7 +787,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     # Recent commits (git log)
     try:
         result = subprocess.run(
-            ["git", "log", "--oneline", "-5"],
+            ["git", "log", "--oneline", "-20"],
             capture_output=True,
             text=True,
             timeout=10,
@@ -795,6 +795,42 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         )
         if result.returncode == 0 and result.stdout.strip():
             parts.append("## Recent Commits")
+            parts.append("```")
+            parts.append(result.stdout.strip())
+            parts.append("```")
+            parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    # Recent PRs (open)
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "list", "--state", "open", "--limit", "5"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts.append("## Open PRs")
+            parts.append("```")
+            parts.append(result.stdout.strip())
+            parts.append("```")
+            parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    # Recent PRs (merged)
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "list", "--state", "merged", "--limit", "5"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(base_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts.append("## Recently Merged PRs")
             parts.append("```")
             parts.append(result.stdout.strip())
             parts.append("```")

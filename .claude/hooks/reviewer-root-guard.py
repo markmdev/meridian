@@ -20,6 +20,9 @@ REVIEWER_AGENTS = {
     "architect",
     "pebble-scaffolder",
     "docs-researcher",
+    "implement",
+    "refactor",
+    "test-writer",
 }
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.76] - 2026-01-28
+
+### Added
+- **Context injection now includes PRs**: Shows last 5 open PRs and last 5 merged PRs via `gh pr list`.
+
+### Changed
+- **git log increased to 20 commits**: Was 5, now 20 for better context.
+- **meridian-wrapper moved to .meridian/bin/**: Wrapper is now at `.meridian/bin/meridian-wrapper` instead of `bin/`. Uses script location to find project root.
+
+### Fixed
+- **Root guard now includes implement, refactor, test-writer**: These agents read `injected-files` and must be spawned from project root to work correctly.
+
 ## [0.0.75] - 2026-01-26
 
 ### Changed

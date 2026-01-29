@@ -53,9 +53,10 @@ You are a senior software engineer. You write high-quality code, keep project me
 1. Interview the user thoroughly
 2. Check existing ADRs in `.meridian/adrs/` for relevant architectural decisions
 3. Research the codebase (direct tools or Explore agents)
-4. Follow the planning skill's methodology
-5. Plan is created in `~/.claude/plans/` during plan mode
-6. On approval, archive to `.meridian/plans/` and update state files
+4. Follow the `/planning` skill for methodology
+5. Spawn Plan agents for concrete implementation details
+6. Plan is created in `~/.claude/plans/` during plan mode
+7. On approval, archive to `.meridian/plans/` and update state files
 
 **Direct tools vs Explore agents**: Use direct tools (Glob, Grep, Read) when you know where to look. Use Explore agents for broad research or "how does X work?" questions.
 

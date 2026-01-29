@@ -81,13 +81,13 @@ def main() -> int:
 
         if tool_name == "EnterPlanMode":
             plan_mode_file.write_text("plan")
-            # Inject reminder to use planning skill
+            # Inject reminder about planning resources
             output = {
                 "hookSpecificOutput": {
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
-                        "[SYSTEM]: Plan mode activated. Invoke the `/planning` skill before proceeding. "
-                        "Send /planning in the chat."
+                        "[SYSTEM]: Plan mode activated. Use `/planning` skill for methodology. "
+                        "Spawn Plan agents for concrete implementation details."
                     )
                 }
             }

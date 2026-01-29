@@ -44,7 +44,7 @@ def main():
             pebble_enabled = config.get('pebble_enabled', False)
 
             print("<system-message>")
-            print("Plan mode activated. Invoke the `/planning` skill before proceeding. Send /planning in the chat.")
+            print("Plan mode activated. Use `/planning` skill for methodology. Spawn Plan agents for concrete implementation details.")
             if pebble_enabled:
                 print("Pebble is enabled — proactively use it to track this work.")
             print("</system-message>")

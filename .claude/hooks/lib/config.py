@@ -14,10 +14,6 @@ REQUIRED_CONTEXT_CONFIG = ".meridian/required-context-files.yaml"
 SESSION_CONTEXT_FILE = ".meridian/session-context.md"
 WORKTREE_CONTEXT_FILE = ".meridian/worktree-context.md"
 
-# Onboarding profile paths
-USER_PROFILE_PATH = "~/.claude/meridian/user-profile.yaml"  # Global, not per-project
-PROJECT_PROFILE_PATH = ".meridian/project-profile.yaml"  # Per-project
-
 # System state files (ephemeral, cleaned up on session start)
 STATE_DIR = ".meridian/.state"
 PENDING_READS_DIR = f"{STATE_DIR}/pending-context-reads"
@@ -124,7 +120,6 @@ def get_project_config(base_dir: Path) -> dict:
         'code_review_enabled': True,
         'docs_researcher_write_required': True,
         'pebble_scaffolder_enabled': True,
-        'plan_agent_redirect_enabled': True,
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -213,11 +208,6 @@ def get_project_config(base_dir: Path) -> dict:
         ps_enabled = get_config_value(content, 'pebble_scaffolder_enabled')
         if ps_enabled:
             config['pebble_scaffolder_enabled'] = ps_enabled.lower() != 'false'
-
-        # Plan agent redirect to planning skill
-        pa_redirect = get_config_value(content, 'plan_agent_redirect_enabled')
-        if pa_redirect:
-            config['plan_agent_redirect_enabled'] = pa_redirect.lower() != 'false'
 
     except IOError:
         pass
@@ -851,16 +841,6 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             if full_path.exists():
                 files_to_inject.append((doc_path, full_path))
 
-    # 0.5. User profile (global preferences - if exists)
-    user_profile_path = get_user_profile_path()
-    if user_profile_path.exists():
-        files_to_inject.append(("[global] ~/.claude/meridian/user-profile.yaml", user_profile_path))
-
-    # 0.6. Project profile (project context - if exists)
-    project_profile_path = get_project_profile_path(base_dir)
-    if project_profile_path.exists():
-        files_to_inject.append((".meridian/project-profile.yaml", project_profile_path))
-
     # 1. Memory (past decisions)
     memory_path = base_dir / ".meridian" / "memory.jsonl"
     if memory_path.exists():
@@ -1030,49 +1010,6 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     trim_session_context(base_dir, max_lines)
 
     return "\n".join(parts)
-
-
-# =============================================================================
-# ONBOARDING PROFILE HELPERS
-# =============================================================================
-
-
-def get_user_profile_path() -> Path:
-    """Get the full path to the user profile file."""
-    return Path(USER_PROFILE_PATH).expanduser()
-
-
-def get_project_profile_path(base_dir: Path) -> Path:
-    """Get the full path to the project profile file."""
-    return base_dir / PROJECT_PROFILE_PATH
-
-
-def user_profile_exists() -> bool:
-    """Check if the global user profile exists."""
-    return get_user_profile_path().exists()
-
-
-def project_profile_exists(base_dir: Path) -> bool:
-    """Check if the project profile exists."""
-    return get_project_profile_path(base_dir).exists()
-
-
-def get_onboarding_status(base_dir: Path) -> dict:
-    """Get onboarding status for both user and project.
-
-    Returns:
-        dict with keys:
-        - user_onboarded: bool
-        - project_onboarded: bool
-        - user_profile_path: str
-        - project_profile_path: str
-    """
-    return {
-        'user_onboarded': user_profile_exists(),
-        'project_onboarded': project_profile_exists(base_dir),
-        'user_profile_path': str(get_user_profile_path()),
-        'project_profile_path': str(get_project_profile_path(base_dir)),
-    }
 
 
 # =============================================================================

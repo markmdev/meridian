@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.78] - 2026-01-28
+
+### Removed
+- **Onboarding system**: Removed `/onboard-user` and `/onboard-project` skills, profile injection, and related prompts. Simplified the system.
+- **Plan agent blocking**: Plan agents are now allowed and encouraged during planning. Removed `block-plan-agent.py` hook and `plan_agent_redirect_enabled` config option.
+
+### Changed
+- **Plan mode messages**: Now encourage using Plan agents for concrete implementation details alongside the `/planning` skill.
+
 ## [0.0.77] - 2026-01-28
 
 ### Changed

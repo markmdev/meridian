@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.77] - 2026-01-28
+
+### Changed
+- **pebble-scaffolder now uses Opus**: Changed from Sonnet to Opus for better quality issue creation.
+- **code-health-reviewer has Quality Bar**: Added threshold to prevent diminishing returns on repeated passes. Only creates issues with concrete maintainability impact.
+
 ## [0.0.76] - 2026-01-28
 
 ### Added

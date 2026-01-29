@@ -35,6 +35,19 @@ Use your judgment — these are examples, not a checklist.
 
 Bugs, security (CodeReviewer). Style preferences that don't affect maintainability. Things marked `[USER_DECLINED]` in plan.
 
+## Quality Bar
+
+Only create issues that:
+- Have concrete impact on maintainability (not "could be cleaner")
+- Would help the NEXT developer (not theoretical purity)
+- Are worth the time to fix (effort vs benefit)
+
+Do NOT create issues for:
+- Minor improvements with negligible benefit
+- "Best practice" that doesn't apply here
+- Stylistic preferences
+- Things that work fine and are readable
+
 ## Scope
 
 Check recent commits to find what changed:

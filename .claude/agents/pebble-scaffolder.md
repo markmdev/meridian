@@ -2,7 +2,7 @@
 name: pebble-scaffolder
 description: Documents planned work in Pebble before implementation. Creates appropriate structure (epic, task, or bug fix) based on scope.
 tools: Read, Bash(pb *)
-model: sonnet
+model: opus
 color: blue
 ---
 

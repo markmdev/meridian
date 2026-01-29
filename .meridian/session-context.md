@@ -20,6 +20,14 @@ Append timestamped entries (format: `YYYY-MM-DD HH:MM`) with:
 
 **Do NOT include**: Routine progress updates, obvious information, or content better suited for task-specific docs.
 
+## Current Focus
+
+> **UPDATE this section** (don't append) when your major work focus changes. This tells future sessions what you're working on at a macro level.
+
+**Working on:** [High-level objective — epic, feature, or project level]
+**Phase:** [Current phase/stage within that work, if applicable]
+**Context:** [Brief why/what — 1-2 sentences max]
+
 ---
 
 <!-- SESSION ENTRIES START - Add new entries at the BOTTOM -->

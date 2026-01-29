@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.0.80] - 2026-01-29
+
+### Added
+- **Current Focus section in session-context**: New persistent section at the top of session-context.md that maintains high-level work context ("Working on: Auth system", "Phase: OAuth integration"). Gets UPDATED (not appended) when major work shifts. Prevents agents from losing macro-level context after several sessions.
+
+### Changed
+- **Stop hook prompts about Current Focus**: Now reminds agent to update the Current Focus section when major work changes.
+- **Pre-compaction hook prompts about Current Focus**: Same guidance added to pre-compaction context saving.
+
+## [0.0.79] - 2026-01-29
+
+### Changed
+- **Git log now shows user's commits only**: Filters to `--author={user_email}` so you see your commits, not everyone's.
+- **Git log shows all branches**: Added `--all` flag to show commits across all branches.
+- **Git log shows branch decoration**: Branch names shown at branch tips (e.g., `(main)`, `(feature-branch)`).
+- **Git log shows relative timestamps**: Each commit shows "2 hours ago", "3 days ago", etc.
+
 ## [0.0.78] - 2026-01-28
 
 ### Removed

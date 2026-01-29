@@ -774,10 +774,24 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
-    # Recent commits (git log)
+    # Recent commits (user's only, all branches, with branch decoration and relative time)
     try:
+        # Get current user's email for filtering
+        user_email_result = subprocess.run(
+            ["git", "config", "user.email"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd=str(base_dir)
+        )
+        user_email = user_email_result.stdout.strip() if user_email_result.returncode == 0 else None
+
+        cmd = ["git", "log", "--format=%h%d %s (%cr)", "-20", "--all"]
+        if user_email:
+            cmd.append(f"--author={user_email}")
+
         result = subprocess.run(
-            ["git", "log", "--oneline", "-20"],
+            cmd,
             capture_output=True,
             text=True,
             timeout=10,
@@ -1192,7 +1206,8 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         "**SESSION CONTEXT**: Update or append to "
         f"`{claude_project_dir}/.meridian/session-context.md`.\n"
         f"First, read recent: `tail -70 \"{claude_project_dir}/.meridian/session-context.md\"`\n"
-        "If recent entry covers same task/phase, UPDATE it. Only append for new work.\n"
+        "**Current Focus section**: If your major work changed (different feature/epic), UPDATE this section with what you're working on at a high level.\n"
+        "**Session entries**: If recent entry covers same task/phase, UPDATE it. Only append for new work.\n"
         "Write: current state + next action + non-obvious decisions (full paths). "
         "Skip: task tables, obvious reasoning, incremental updates.\n"
     )

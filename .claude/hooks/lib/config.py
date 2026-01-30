@@ -483,11 +483,7 @@ def clear_plan_action_counter(base_dir: Path) -> None:
 # SESSION CONTEXT HELPERS
 # =============================================================================
 def trim_session_context(base_dir: Path, max_lines: int) -> None:
-    """Trim session context file to max_lines, preserving header.
-
-    The header (everything up to and including the "---" separator line)
-    is preserved. Lines after the separator are trimmed from the top
-    (oldest first) to keep the file under max_lines total.
+    """Trim session context file to max_lines, keeping newest entries.
 
     Args:
         base_dir: Project root directory
@@ -507,40 +503,15 @@ def trim_session_context(base_dir: Path, max_lines: int) -> None:
         if len(lines) <= max_lines:
             return
 
-        # Find header separator (SESSION ENTRIES START comment)
-        separator_idx = -1
-        for i, line in enumerate(lines):
-            if 'SESSION ENTRIES START' in line:
-                separator_idx = i
-                break
-
-        if separator_idx == -1:
-            # No separator found, just trim from top
-            trimmed = lines[-max_lines:]
-        else:
-            # Preserve header (including separator)
-            header = lines[:separator_idx + 1]
-            body = lines[separator_idx + 1:]
-
-            # Calculate how many body lines we can keep
-            available_for_body = max_lines - len(header)
-            if available_for_body <= 0:
-                # Header alone exceeds max, just keep header
-                trimmed = header
-            else:
-                # Keep newest body lines (from end)
-                trimmed = header + body[-available_for_body:]
-
+        # Keep newest lines (from end)
+        trimmed = lines[-max_lines:]
         context_file.write_text('\n'.join(trimmed))
     except Exception:
         pass
 
 
 def trim_worktree_context(worktree_context_path: Path, max_lines: int) -> None:
-    """Trim worktree context file to max_lines, preserving header.
-
-    Similar to trim_session_context, but operates on the shared worktree context
-    file in the main worktree. Uses 'WORKTREE ENTRIES START' as separator.
+    """Trim worktree context file to max_lines, keeping newest entries.
 
     Args:
         worktree_context_path: Path to worktree-context.md in main worktree
@@ -559,30 +530,8 @@ def trim_worktree_context(worktree_context_path: Path, max_lines: int) -> None:
         if len(lines) <= max_lines:
             return
 
-        # Find header separator (WORKTREE ENTRIES START comment)
-        separator_idx = -1
-        for i, line in enumerate(lines):
-            if 'WORKTREE ENTRIES START' in line:
-                separator_idx = i
-                break
-
-        if separator_idx == -1:
-            # No separator found, just trim from top
-            trimmed = lines[-max_lines:]
-        else:
-            # Preserve header (including separator)
-            header = lines[:separator_idx + 1]
-            body = lines[separator_idx + 1:]
-
-            # Calculate how many body lines we can keep
-            available_for_body = max_lines - len(header)
-            if available_for_body <= 0:
-                # Header alone exceeds max, just keep header
-                trimmed = header
-            else:
-                # Keep newest body lines (from end)
-                trimmed = header + body[-available_for_body:]
-
+        # Keep newest lines (from end)
+        trimmed = lines[-max_lines:]
         worktree_context_path.write_text('\n'.join(trimmed))
     except Exception:
         pass

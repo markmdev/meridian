@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.81] - 2026-01-30
+
+### Added
+- **SOUL.md for agent identity**: New `.meridian/SOUL.md` defines who the agent is — a craftsman with opinions, not a chatbot waiting to be told what to do. Covers core truths, working style, communication principles, and what agents can do without asking. Inspired by OpenClaw's workspace bootstrap approach.
+
+### Changed
+- **Simplified hook prompts**: Hooks are now triggers, not re-training sessions. Pre-compaction and stop prompts reduced from ~150 lines to ~35 lines each. The agent knows HOW from SOUL.md — hooks just remind WHEN.
+- **Stripped agent-operating-manual**: Removed identity/personality content now in SOUL.md. Manual focuses purely on Meridian procedures: planning workflows, Pebble tracking, code review cycles.
+- **Removed context file headers**: session-context.md and worktree-context.md are now just entries — no instructional headers. Agent knows how to use them from SOUL.md.
+
+### Removed
+- **ADR template**: Agent knows how to write ADRs without a template file.
+
 ## [0.0.80] - 2026-01-29
 
 ### Added

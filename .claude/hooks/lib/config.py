@@ -220,6 +220,7 @@ def get_required_files(base_dir: Path) -> list[str]:
     config_path = base_dir / REQUIRED_CONTEXT_CONFIG
     if not config_path.exists():
         return [
+            ".meridian/SOUL.md",
             ".meridian/prompts/agent-operating-manual.md",
             ".meridian/CODE_GUIDE.md",
             ".meridian/memory.jsonl",
@@ -855,6 +856,11 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             if full_path.exists():
                 files_to_inject.append((doc_path, full_path))
 
+    # 0.5. SOUL.md (core identity and principles - injected early to set the tone)
+    soul_path = base_dir / ".meridian" / "SOUL.md"
+    if soul_path.exists():
+        files_to_inject.append((".meridian/SOUL.md", soul_path))
+
     # 1. Memory (past decisions)
     memory_path = base_dir / ".meridian" / "memory.jsonl"
     if memory_path.exists():
@@ -1009,10 +1015,11 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append("This information is CRITICAL for working correctly on this project.")
     parts.append("")
     parts.append("Before doing anything else:")
-    parts.append("1. Confirm you have read and understood the memory entries")
-    parts.append("2. Confirm you understand any in-progress tasks and their current state")
-    parts.append("3. Confirm you will follow the CODE_GUIDE conventions")
-    parts.append("4. Confirm you will operate according to the agent-operating-manual")
+    parts.append("1. Embody SOUL.md — this defines who you are and how you work")
+    parts.append("2. Confirm you have read and understood the memory entries")
+    parts.append("3. Confirm you understand any in-progress tasks and their current state")
+    parts.append("4. Confirm you will follow the CODE_GUIDE conventions")
+    parts.append("5. Confirm you will operate according to the agent-operating-manual")
     parts.append("")
     parts.append("Acknowledge this context by briefly stating what you understand about")
     parts.append("the current project state.")

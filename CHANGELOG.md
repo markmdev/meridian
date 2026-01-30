@@ -9,6 +9,7 @@
 - **Simplified hook prompts**: Hooks are now triggers, not re-training sessions. Pre-compaction and stop prompts reduced from ~150 lines to ~35 lines each. The agent knows HOW from SOUL.md — hooks just remind WHEN.
 - **Stripped agent-operating-manual**: Removed identity/personality content now in SOUL.md. Manual focuses purely on Meridian procedures: planning workflows, Pebble tracking, code review cycles.
 - **Removed context file headers**: session-context.md and worktree-context.md are now just entries — no instructional headers. Agent knows how to use them from SOUL.md.
+- **ADR injection reduced**: Only injects ADR index, not all individual ADRs. Agent reads specific ADRs when needed during planning.
 
 ### Removed
 - **ADR template**: Agent knows how to write ADRs without a template file.

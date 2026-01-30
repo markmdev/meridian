@@ -88,15 +88,10 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         if addon_path.exists():
             files.append(str(addon_path))
 
-    # 5c. Architecture Decision Records
-    adrs_dir = base_dir / ".meridian" / "adrs"
-    if adrs_dir.exists() and adrs_dir.is_dir():
-        adr_index = adrs_dir / "INDEX.md"
-        if adr_index.exists():
-            files.append(str(adr_index))
-        for adr_file in sorted(adrs_dir.glob("*.md")):
-            if adr_file.name not in ("INDEX.md", "TEMPLATE.md"):
-                files.append(str(adr_file))
+    # 5c. Architecture Decision Records index (agent reads individual ADRs when needed)
+    adr_index = base_dir / ".meridian" / "adrs" / "INDEX.md"
+    if adr_index.exists():
+        files.append(str(adr_index))
 
     # 6. PEBBLE_GUIDE (if enabled)
     if project_config.get('pebble_enabled', False):

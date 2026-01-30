@@ -89,7 +89,7 @@ def main():
     output = {
         "decision": "block",
         "reason": reason,
-        "systemMessage": "[Meridian] Before stopping, Claude is updating session context, backlog, and memory, verifying tests/lint/build, and running code review if needed."
+        "systemMessage": "[Meridian] Running pre-stop checklist."
     }
 
     print(json.dumps(output))

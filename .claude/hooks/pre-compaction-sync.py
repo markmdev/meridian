@@ -19,10 +19,7 @@ from config import (
     flag_exists,
     create_flag,
     PRE_COMPACTION_FLAG,
-    WORKTREE_CONTEXT_FILE,
     PLAN_MODE_STATE,
-    get_main_worktree_path,
-    get_worktree_name,
 )
 
 LOG_FILE = ".meridian/.pre-compaction-sync.log"
@@ -144,80 +141,32 @@ def main():
     # Over threshold: create flag and block
     create_flag(base_dir, PRE_COMPACTION_FLAG)
 
-    # Build reason message
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    reason = (
-        f"**CONTEXT PRESERVATION REQUIRED** (Token usage: {total_tokens:,} / {threshold:,}) — Current time: {now}\n\n"
-        "The conversation is approaching compaction. Before continuing, you MUST save your current work "
-        "to preserve context for the agent that will continue after compaction.\n\n"
-    )
-
     # Check if in plan mode
     plan_mode_file = base_dir / PLAN_MODE_STATE
     in_plan_mode = plan_mode_file.exists() and plan_mode_file.read_text().strip() == "plan"
 
-    # Add PLAN STATE section FIRST (highest priority) - only when in plan mode
+    # Build minimal prompt - trust SOUL.md for the details
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    parts = [
+        f"**CONTEXT PRESERVATION** (Tokens: {total_tokens:,} / {threshold:,}) — {now}\n",
+        "Conversation approaching compaction. Save your work now.\n",
+    ]
+
+    # Plan mode: capture verbatim requirements
     if in_plan_mode:
-        reason += (
-            "**PLAN STATE** (HIGHEST PRIORITY — DO THIS FIRST):\n"
-            "Update the plan file's **Verbatim Requirements** section at the TOP:\n"
-            "- Capture the user's ENTIRE original request (word for word)\n"
-            "- Capture ALL AskUserQuestion exchanges (questions AND answers, verbatim)\n"
-            "- Capture all follow-up context from the user\n"
-            "- DO NOT paraphrase. DO NOT compress. DO NOT summarize.\n"
-            "- Everything the user said matters — paraphrasing loses nuance.\n\n"
+        parts.append(
+            "**Plan mode**: Update plan's Verbatim Requirements section with user's "
+            "exact words and all AskUserQuestion exchanges.\n"
         )
 
-    # Add Pebble instructions if enabled
+    # Core checklist - agent knows HOW from SOUL.md
+    parts.append("**Checklist:**")
+    parts.append("- Update `session-context.md` with current state and next steps")
+    parts.append("- Update `worktree-context.md` if cross-worktree relevant")
     if config.get('pebble_enabled', False):
-        reason += (
-            "**PEBBLE (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
-            "- **Already-fixed bugs**: If you discovered AND fixed a bug this session, create the issue NOW "
-            "(issue → already fixed → comment what you did → close). The fix happened, but the record didn't.\n"
-            "- Create issues for: bugs found, broken code, technical debt encountered, problems that need attention.\n"
-            "- Close any issues you completed (with a comment).\n"
-            "See `.meridian/PEBBLE_GUIDE.md` for commands.\n\n"
-        )
+        parts.append("- Create Pebble issues for any untracked work")
 
-    reason += (
-        "**SESSION CONTEXT**: Update or append to:\n"
-        f"`{claude_project_dir}/.meridian/session-context.md`\n\n"
-        f"First, read recent entries: `tail -70 \"{claude_project_dir}/.meridian/session-context.md\"`\n\n"
-        "**Current Focus section**: If your major work changed (different feature/epic), UPDATE this section with what you're working on at a high level.\n\n"
-        "**Session entries — Update vs Append:**\n"
-        "- If recent entry covers the SAME task/phase, UPDATE it (don't create another)\n"
-        "- Only APPEND when starting genuinely new work\n\n"
-        "**What to write:**\n"
-        "- Current state + next action (not a changelog)\n"
-        "- Non-obvious decisions: contradicts intuition, user preference, tradeoff, or pivot\n"
-        "- Full absolute paths (e.g., `/path/to/project/src/file.py:42`)\n\n"
-        "**What to skip:**\n"
-        "- Task tables (use Pebble)\n"
-        "- Self-evident reasoning (\"created helper because reuse\")\n"
-        "- Incremental progress (consolidate into one entry)\n\n"
-        "**Good:** \"Phase 8 complete. User requested inline warnings instead of toasts. Starting Phase 9 task olympus-wur6ex.\"\n"
-        "**Bad:** Multiple entries for same phase, task status tables, obvious reasoning.\n\n"
-    )
-
-    # Worktree context section (always required)
-    main_worktree = get_main_worktree_path(base_dir)
-    worktree_root = main_worktree if main_worktree else base_dir
-    worktree_name = get_worktree_name(base_dir) if main_worktree else None
-    worktree_context_path = worktree_root / WORKTREE_CONTEXT_FILE
-    if worktree_name:
-        format_header = f"`## [{worktree_name}] YYYY-MM-DD HH:MM - Title`"
-    else:
-        format_header = "`## YYYY-MM-DD HH:MM - Title`"
-    reason += (
-        f"**WORKTREE CONTEXT**: Append a summary to:\n"
-        f"`{worktree_context_path}`\n"
-        f"First, check recent entries: `tail -50 \"{worktree_context_path}\"`\n"
-        f"Format: {format_header}\n"
-        "Start with what task/epic you were working on, then 2-3 sentences: "
-        "what was done, any issues found, current state.\n\n"
-    )
-
-    # Add commit nudge if uncommitted changes
+    # Check for uncommitted changes
     try:
         result = subprocess.run(
             ["git", "status", "--porcelain"],
@@ -228,23 +177,21 @@ def main():
         )
         if result.returncode == 0 and result.stdout.strip():
             changed_files = len([l for l in result.stdout.strip().split('\n') if l])
-            reason += (
-                f"**COMMIT**: {changed_files} file{'s' if changed_files != 1 else ''} uncommitted. "
-                "Consider committing now for smaller, logical commits.\n\n"
-            )
+            parts.append(f"- Commit {changed_files} uncommitted file{'s' if changed_files != 1 else ''}")
     except Exception:
         pass
 
-    # Check if auto_compact_off is enabled
+    parts.append("")
+
+    # Handle auto_compact_off mode
     if config.get('auto_compact_off', False):
-        reason += (
-            "**STOP NOW.** After saving context:\n"
-            "1. Use the Write tool to write `continue` to `.meridian/.state/restart-signal`\n"
-            "2. Stop immediately (do not ask user anything, just stop)\n\n"
-            "The meridian-wrapper will automatically restart the session with your prompt."
+        parts.append(
+            "**Then stop**: Write `continue` to `.meridian/.state/restart-signal` and stop immediately."
         )
     else:
-        reason += "After updating, you may continue your work."
+        parts.append("Then continue your work.")
+
+    reason = "\n".join(parts)
 
     output = {
         "hookSpecificOutput": {

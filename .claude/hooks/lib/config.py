@@ -1144,10 +1144,10 @@ def clear_loop_state(base_dir: Path) -> bool:
 
 def build_stop_prompt(base_dir: Path, config: dict) -> str:
     """
-    Build the stop hook prompt with all sections.
+    Build a minimal stop hook prompt.
 
-    This is shared between the normal stop hook and the loop stop hook
-    to ensure consistency.
+    Trusts SOUL.md and agent-operating-manual.md for details.
+    This is just a checklist trigger, not re-training.
 
     Args:
         base_dir: Project root directory
@@ -1158,115 +1158,29 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     """
     from datetime import datetime
     pebble_enabled = config.get('pebble_enabled', False)
-    claude_project_dir = str(base_dir)
-
-    # Get edit counters for context
-    edits_since_review = get_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
+    code_review_enabled = config.get('code_review_enabled', True)
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    parts = [f"[SYSTEM]: Before stopping, complete these checks: (Current time: {now})\n"]
+    parts = [f"**Before stopping** ({now}):\n"]
 
-    # Skip-if-unchanged principle
-    parts.append(
-        "**SKIP IF UNCHANGED**: If you already ran a check (reviewers, tests, lint, build) this session "
-        "and made no significant code changes since, skip re-running it — just state it passed earlier. "
-        "Only re-run checks after significant code changes.\n"
-    )
+    # Core checklist - agent knows HOW from SOUL.md and operating manual
+    parts.append("**Checklist:**")
 
-    # Code review section (lowest priority - at top)
-    code_review = config.get('code_review_enabled', True)
+    if code_review_enabled:
+        edits_since_review = get_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
+        if edits_since_review > 0:
+            parts.append(f"- Code review needed ({edits_since_review} edits since last review)")
 
-    if code_review:
-        review_context = f"(**{edits_since_review} file edits** since last code review)" if edits_since_review > 0 else "(ran this session)"
-        parts.append(
-            f"**CODE REVIEW** {review_context}: After finishing a plan, epic, or large multi-file task, run both reviewers in parallel.\n\n"
-            f"First `cd {claude_project_dir}`, then spawn in parallel:\n"
-            "- **code-reviewer** — finds bugs, logic errors, data flow issues\n"
-            "- **code-health-reviewer** — finds dead code, pattern drift, over-engineering, refactoring needs\n\n"
-        )
+    parts.append("- Update `session-context.md` with current state")
+    parts.append("- Update `worktree-context.md` if relevant")
 
-        if pebble_enabled:
-            parts.append(
-                "Include `Parent task: <task-id>` in both prompts (the specific task you were working on, NOT the epic). "
-                "Find with `pb list --parent <epic-id>` if needed.\n"
-                "**When issues return**: Group by file → spawn **implement** agents in parallel (1 file = 1 agent, all issues for that file in the spec) → re-run both reviewers in background → repeat until no issues.\n"
-            )
-        else:
-            parts.append(
-                "Both agents read from `.meridian/.state/injected-files` — no additional prompt needed.\n"
-                "**When issues return**: Group by file → spawn **implement** agents in parallel (1 file = 1 agent, all issues for that file in the spec) → re-run both reviewers in background → repeat until clean.\n"
-            )
-
-    # Pebble reminder if enabled (before session context - higher priority)
     if pebble_enabled:
-        parts.append(
-            "**PEBBLE (AUDIT TRAIL)**: Every code change needs an issue — this is your audit trail.\n"
-            "- **Already-fixed bugs**: If you discovered AND fixed a bug this session, create the issue NOW (issue → already fixed → comment what you did → close). The fix happened, but the record didn't.\n"
-            "- **Close** issues you fully completed (with a comment summarizing what was done).\n"
-            "- **Create** issues for: bugs found, broken code, missing error handling, problems that need attention.\n"
-            "- **Update** existing issues if status changed, scope evolved, or you have new context.\n"
-            "- **Comment** on issues you worked on but didn't finish, explaining current state.\n"
-        )
+        parts.append("- Close/update Pebble issues for completed work")
 
-    # Session context section
-    parts.append(
-        "**SESSION CONTEXT**: Update or append to "
-        f"`{claude_project_dir}/.meridian/session-context.md`.\n"
-        f"First, read recent: `tail -70 \"{claude_project_dir}/.meridian/session-context.md\"`\n"
-        "**Current Focus section**: If your major work changed (different feature/epic), UPDATE this section with what you're working on at a high level.\n"
-        "**Session entries**: If recent entry covers same task/phase, UPDATE it. Only append for new work.\n"
-        "Write: current state + next action + non-obvious decisions (full paths). "
-        "Skip: task tables, obvious reasoning, incremental updates.\n"
-    )
+    parts.append("- Run tests/lint/build if you made code changes")
+    parts.append("- Consider memory if you learned something reusable")
 
-    # Worktree context section (always required)
-    main_worktree = get_main_worktree_path(base_dir)
-    worktree_root = main_worktree if main_worktree else base_dir
-    worktree_name = get_worktree_name(base_dir) if main_worktree else None
-    worktree_context_path = worktree_root / WORKTREE_CONTEXT_FILE
-    if worktree_name:
-        format_header = f"`## [{worktree_name}] YYYY-MM-DD HH:MM - Title`"
-    else:
-        format_header = "`## YYYY-MM-DD HH:MM - Title`"
-    parts.append(
-        f"**WORKTREE CONTEXT**: Append a summary to "
-        f"`{worktree_context_path}`. "
-        f"First, check recent entries: `tail -50 \"{worktree_context_path}\"`\n"
-        f"Format: {format_header}\n"
-        "Start with what task/epic you were working on, then 2-3 sentences: "
-        "what was done, any issues found, current state.\n"
-    )
-
-    # Memory section
-    parts.append(
-        "**MEMORY**: Consider if you learned something that future agents need to know.\n"
-        "The test: \"If I don't record this, will a future agent make the same mistake — or is the fix already in the code?\"\n"
-        "- **Add**: Architectural patterns, data model gotchas, external API limitations, cross-agent coordination patterns.\n"
-        "- **Skip**: One-time bug fixes (code handles it), SDK quirks (code works around them), agent behavior rules (use agent-operating-manual.md), module-specific details (use CLAUDE.md).\n"
-        "If you have something worth preserving, invoke the `/memory-curator` skill to add it properly.\n"
-    )
-
-    # CLAUDE.md section
-    parts.append(
-        "**CLAUDE.md**: If you created a new module/service directory or made significant architectural changes, "
-        "consider creating or updating the CLAUDE.md file in that directory.\n"
-        "- Include: setup/test commands, what the module does, how it works, why it's designed this way, gotchas.\n"
-        "- Invoke `/claudemd-writer` skill for guidance on writing effective CLAUDE.md files.\n"
-    )
-
-    # Human actions section
-    parts.append(
-        "**HUMAN ACTIONS**: If work requires human actions (external accounts, env vars, integrations), "
-        "create doc in `.meridian/human-actions-docs/` with actionable steps.\n"
-    )
-
-    # Tests/lint/build section (highest priority - near bottom)
-    parts.append(
-        "**TESTS/LINT/BUILD**: If work is finished, ensure codebase is clean. Run tests, lint, build. "
-        "Fix failures and rerun until passing.\n"
-    )
-
-    # Commit nudge - check for uncommitted changes
+    # Check for uncommitted changes
     try:
         result = subprocess.run(
             ["git", "status", "--porcelain"],
@@ -1277,19 +1191,11 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         )
         if result.returncode == 0 and result.stdout.strip():
             changed_files = len([l for l in result.stdout.strip().split('\n') if l])
-            parts.append(
-                f"**COMMIT**: {changed_files} file{'s' if changed_files != 1 else ''} changed, uncommitted. "
-                "Consider committing now for smaller, logical commits rather than one big commit at the end.\n"
-            )
+            parts.append(f"- Commit {changed_files} uncommitted file{'s' if changed_files != 1 else ''}")
     except Exception:
         pass
 
-    # Footer
-    parts.append(
-        "If you have nothing to update and were not working on a plan, your response to this hook must be exactly the same as the message that was blocked. "
-        "If you did update something or ran reviewers, resend the same message you sent before you were interrupted by this hook. "
-        "Before marking a task as complete, review the 'Definition of Done' section in "
-        f"`{claude_project_dir}/.meridian/prompts/agent-operating-manual.md`."
-    )
+    parts.append("")
+    parts.append("Skip items you already did this session. Then continue with your stop.")
 
     return "\n".join(parts)

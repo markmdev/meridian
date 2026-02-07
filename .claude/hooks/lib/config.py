@@ -21,10 +21,8 @@ PRE_COMPACTION_FLAG = f"{STATE_DIR}/pre-compaction-synced"
 PLAN_REVIEW_FLAG = f"{STATE_DIR}/plan-review-blocked"
 CONTEXT_ACK_FLAG = f"{STATE_DIR}/context-acknowledgment-pending"
 ACTION_COUNTER_FILE = f"{STATE_DIR}/action-counter"
-REMINDER_COUNTER_FILE = f"{STATE_DIR}/reminder-counter"
 PLAN_ACTION_COUNTER_FILE = f"{STATE_DIR}/plan-action-counter"
 DOCS_RESEARCHER_FLAG = f"{STATE_DIR}/docs-researcher-active"
-EDITS_SINCE_REVIEW_FILE = f"{STATE_DIR}/edits-since-review"
 PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
 ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
 ACTIVE_SUBPLAN_FILE = f"{STATE_DIR}/active-subplan"
@@ -223,7 +221,6 @@ def get_required_files(base_dir: Path) -> list[str]:
             ".meridian/SOUL.md",
             ".meridian/prompts/agent-operating-manual.md",
             ".meridian/CODE_GUIDE.md",
-            ".meridian/memory.jsonl",
         ]
 
     content = config_path.read_text()
@@ -250,7 +247,7 @@ def get_additional_review_files(base_dir: Path, absolute: bool = False) -> list[
         base_dir: Base directory of the project
         absolute: If True, return absolute paths; otherwise relative paths
     """
-    files = [".meridian/CODE_GUIDE.md", ".meridian/memory.jsonl", ".meridian/session-context.md"]
+    files = [".meridian/CODE_GUIDE.md", ".meridian/session-context.md"]
     project_config = get_project_config(base_dir)
 
     if project_config['project_type'] == 'hackathon':
@@ -293,46 +290,6 @@ def create_flag(base_dir: Path, flag_path: str) -> None:
 def flag_exists(base_dir: Path, flag_path: str) -> bool:
     """Check if a flag file exists."""
     return (base_dir / flag_path).exists()
-
-
-# =============================================================================
-# EDIT COUNTER HELPERS
-# =============================================================================
-def increment_edits_since(base_dir: Path, counter_file: str) -> None:
-    """Increment an edit counter."""
-    path = base_dir / counter_file
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        current = 0
-        if path.exists():
-            try:
-                current = int(path.read_text().strip())
-            except (ValueError, IOError):
-                pass
-        path.write_text(str(current + 1))
-    except IOError:
-        pass
-
-
-def reset_edits_since(base_dir: Path, counter_file: str) -> None:
-    """Reset an edit counter to 0."""
-    path = base_dir / counter_file
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("0")
-    except IOError:
-        pass
-
-
-def get_edits_since(base_dir: Path, counter_file: str) -> int:
-    """Get current edit counter value."""
-    path = base_dir / counter_file
-    try:
-        if path.exists():
-            return int(path.read_text().strip())
-    except (ValueError, IOError):
-        pass
-    return 0
 
 
 # =============================================================================
@@ -810,12 +767,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if soul_path.exists():
         files_to_inject.append((".meridian/SOUL.md", soul_path))
 
-    # 1. Memory (past decisions)
-    memory_path = base_dir / ".meridian" / "memory.jsonl"
-    if memory_path.exists():
-        files_to_inject.append((".meridian/memory.jsonl", memory_path))
-
-    # 2. Session context (rolling cross-session context)
+    # 1. Session context (rolling cross-session context)
     session_context_path = base_dir / SESSION_CONTEXT_FILE
     if session_context_path.exists():
         files_to_inject.append((SESSION_CONTEXT_FILE, session_context_path))
@@ -957,10 +909,9 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append("")
     parts.append("Before doing anything else:")
     parts.append("1. Embody SOUL.md — this defines who you are and how you work")
-    parts.append("2. Confirm you have read and understood the memory entries")
-    parts.append("3. Confirm you understand any in-progress tasks and their current state")
-    parts.append("4. Confirm you will follow the CODE_GUIDE conventions")
-    parts.append("5. Confirm you will operate according to the agent-operating-manual")
+    parts.append("2. Confirm you understand any in-progress tasks and their current state")
+    parts.append("3. Confirm you will follow the CODE_GUIDE conventions")
+    parts.append("4. Confirm you will operate according to the agent-operating-manual")
     parts.append("")
     parts.append("Acknowledge this context by briefly stating what you understand about")
     parts.append("the current project state.")
@@ -1108,9 +1059,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     parts.append("**Checklist:**")
 
     if code_review_enabled:
-        edits_since_review = get_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
-        if edits_since_review > 0:
-            parts.append(f"- Code review needed ({edits_since_review} edits since last review)")
+        parts.append("- Run code review if you made significant code changes")
 
     parts.append("- Update `session-context.md` with current state")
     parts.append("- Update `worktree-context.md` if relevant")
@@ -1119,7 +1068,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         parts.append("- Close/update Pebble issues for completed work")
 
     parts.append("- Run tests/lint/build if you made code changes")
-    parts.append("- Consider memory if you learned something reusable")
+    parts.append("- Consider updating CLAUDE.md if you made architectural changes")
 
     # Check for uncommitted changes
     try:

@@ -4,7 +4,6 @@
 # Always injected (in this order)
 core:
   - .meridian/SOUL.md
-  - .meridian/memory.jsonl
   - .meridian/CODE_GUIDE.md
   - .meridian/prompts/agent-operating-manual.md
 

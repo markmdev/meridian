@@ -24,10 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from config import (
     ACTION_COUNTER_FILE,
     PLAN_MODE_STATE,
-    EDITS_SINCE_REVIEW_FILE,
     increment_plan_action_counter,
-    increment_edits_since,
-    reset_edits_since,
 )
 
 
@@ -66,13 +63,6 @@ def main() -> int:
     hook_event = input_data.get("hook_event_name", "")
     tool_name = input_data.get("tool_name", "")
 
-    # PreToolUse: Reset review counter when code-reviewer is spawned
-    if hook_event == "PreToolUse" and tool_name == "Task":
-        tool_input = input_data.get("tool_input", {})
-        subagent_type = tool_input.get("subagent_type", "").lower()
-        if subagent_type == "code-reviewer":
-            reset_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
-
     # PostToolUse: Increment counters and track plan mode
     if hook_event == "PostToolUse":
         # Track plan mode transitions from tool usage
@@ -104,10 +94,6 @@ def main() -> int:
             mode = plan_mode_file.read_text().strip()
             if mode == "plan":
                 increment_plan_action_counter(base_dir)
-
-        # Track Edit/Write for review counter
-        if tool_name in ("Edit", "Write"):
-            increment_edits_since(base_dir, EDITS_SINCE_REVIEW_FILE)
 
     # UserPromptSubmit: Just increment main counter
     if hook_event == "UserPromptSubmit":

@@ -3,55 +3,10 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Iterable
-
-MERIDIAN_DIR = ".meridian"
-MEMORY_FILE = f"{MERIDIAN_DIR}/memory.jsonl"
-
-SKILL_WHITELIST = {"memory-curator", "planning", "claudemd-writer"}
-BASH_SUBSTRINGS = {"add_memory_entry.py", "setup-work-until.sh"}
-
-ALLOWED_ACTIONS = {
-    "Write": {"files": [MEMORY_FILE], "dirs": []},
-    "Edit": {"files": [MEMORY_FILE], "dirs": []},
-    "Read": {"files": [MEMORY_FILE], "dirs": []},
-    "Grep": {"files": [MEMORY_FILE], "dirs": []},
-    "Glob": {"files": [MEMORY_FILE], "dirs": []},
-}
 
 
-def normalize_path(path: str, base_dir: Path) -> Path:
-    candidate = Path(path)
-    if not candidate.is_absolute():
-        candidate = base_dir / candidate
-    try:
-        return candidate.resolve(strict=False)
-    except Exception:
-        return candidate.absolute()
-
-
-def is_path_allowed(target: str, allowed_files: Iterable[str], allowed_dirs: Iterable[str], base_dir: Path) -> bool:
-    if not target:
-        return False
-
-    target_path = normalize_path(target, base_dir)
-
-    for rel in allowed_files:
-        if target_path == normalize_path(rel, base_dir):
-            return True
-
-    for rel in allowed_dirs:
-        allowed_dir = normalize_path(rel, base_dir)
-        try:
-            if target_path == allowed_dir or target_path.is_relative_to(allowed_dir):
-                return True
-        except AttributeError:
-            allowed_str = str(allowed_dir)
-            target_str = str(target_path)
-            if target_str == allowed_str or target_str.startswith(f"{allowed_str}{os.sep}"):
-                return True
-
-    return False
+SKILL_WHITELIST = {"planning", "claudemd-writer"}
+BASH_SUBSTRINGS = {"setup-work-until.sh"}
 
 
 def gather_paths(tool_input: dict) -> list[str]:
@@ -65,32 +20,6 @@ def gather_paths(tool_input: dict) -> list[str]:
     return targets
 
 
-def is_glob_allowed(tool_input: dict, base_dir: Path) -> bool:
-    pattern = tool_input.get("glob_pattern", "")
-    target_directory = tool_input.get("target_directory")
-
-    memory_abs = normalize_path(MEMORY_FILE, base_dir)
-
-    if target_directory:
-        dir_path = normalize_path(target_directory, base_dir)
-        combination = dir_path / Path(pattern)
-        try:
-            if combination.resolve(strict=False) == memory_abs:
-                return True
-        except Exception:
-            pass
-
-    if MEMORY_FILE in pattern or Path(pattern).name == Path(MEMORY_FILE).name:
-        return True
-
-    if isinstance(tool_input.get("paths"), list):
-        for candidate in tool_input["paths"]:
-            if is_path_allowed(str(candidate), ALLOWED_ACTIONS["Glob"]["files"], [], base_dir):
-                return True
-
-    return False
-
-
 def is_plans_path(path: str) -> bool:
     """Check if path contains .claude/plans/ anywhere."""
     return ".claude/plans/" in path or ".claude/plans" in path
@@ -102,23 +31,11 @@ def should_allow(data: dict, project_dir: Path) -> bool:
     if not tool_name:
         return False
 
-    base_dir = project_dir
-
     # Auto-approve Write/Edit to any .claude/plans/ path
     if tool_name in {"Write", "Edit"}:
         paths = gather_paths(tool_input)
         if paths and all(is_plans_path(p) for p in paths):
             return True
-
-    if tool_name in {"Write", "Edit", "Read", "Grep"}:
-        allowed = ALLOWED_ACTIONS[tool_name]
-        paths = gather_paths(tool_input)
-        if not paths:
-            return False
-        return all(is_path_allowed(p, allowed["files"], allowed["dirs"], base_dir) for p in paths)
-
-    if tool_name == "Glob":
-        return is_glob_allowed(tool_input, base_dir)
 
     if tool_name == "Skill":
         return tool_input.get("skill") in SKILL_WHITELIST

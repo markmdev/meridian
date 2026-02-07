@@ -18,7 +18,6 @@ from config import (
     cleanup_flag,
     get_project_config,
     CONTEXT_ACK_FLAG,
-    ACTIVE_PLAN_FILE,
 )
 
 
@@ -54,29 +53,18 @@ def main():
     reason = (
         "**CONTEXT ACKNOWLEDGMENT REQUIRED**\n\n"
         "Project context has been injected into this session. "
-        "Before using any tools, please acknowledge that you have read and understood:\n\n"
-        "1. Any **user-provided docs** (project-specific documentation)\n"
-        "2. The **memory entries** (past decisions and lessons learned)\n"
-        "3. Any **in-progress tasks** and their current state\n"
-        "4. The **session context** (recent decisions and discoveries)\n"
-        "5. Any **active plans** for in-progress tasks\n"
-        "6. The **CODE_GUIDE** conventions for this project\n"
-        "7. The **agent-operating-manual** instructions\n"
+        "Before using any tools, please acknowledge that you have read and understood "
+        "the injected context: session context, active plans, CODE_GUIDE, and operating manual."
     )
 
-    item_num = 8
     if has_api_docs:
-        reason += (
-            f"{item_num}. The **api-docs/INDEX.md** — lists documented external APIs. "
-            "Before using any listed API, read its doc file first.\n"
-        )
-        item_num += 1
+        reason += " Check api-docs/INDEX.md before using external APIs."
 
     if pebble_enabled:
-        reason += f"{item_num}. **Pebble issue tracker** is enabled — check project state and available work\n"
+        reason += " Pebble is enabled — check project state."
 
     reason += (
-        "\nBriefly summarize what you understand about the current project state, "
+        "\n\nBriefly summarize what you understand about the current project state, "
         "then ask the user what they'd like to work on.\n\n"
         "**IMPORTANT**: After acknowledging, you MUST retry the same action that was just blocked. "
         "Do not skip it or move on to something else."

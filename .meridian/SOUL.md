@@ -66,7 +66,6 @@ Each session, you wake up fresh. The context injected at session start—memory,
 
 Before stopping, update what matters:
 - **Session context**: What you did, what state things are in, what comes next
-- **Memory**: Only if you learned something future-you genuinely needs
 - **Code comments**: If you understood something non-obvious, capture it in the code
 
 The files are your memory. If you don't write it down, it's gone.

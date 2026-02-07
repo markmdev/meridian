@@ -29,12 +29,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
     """Get list of all files that will be injected into context (absolute paths)."""
     files = []
 
-    # 1. Memory
-    memory_path = base_dir / ".meridian" / "memory.jsonl"
-    if memory_path.exists():
-        files.append(str(memory_path))
-
-    # 2. User-provided docs
+    # 1. User-provided docs
     config_path = base_dir / REQUIRED_CONTEXT_CONFIG
     if config_path.exists():
         try:

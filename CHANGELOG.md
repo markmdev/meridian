@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.0.82] - 2026-02-07
+
+### Changed
+- **Opus 4.6 simplification pass**: Stripped ~1,850 lines of enforcement harnesses that compensated for earlier model limitations. Opus 4.6 is smarter — trust it more, enforce less.
+- **Planning skill** (193→83 lines): Kept interview loop, deep exploration, no-TBD rule, verification. Removed Execution Table, agent count table, ASCII diagram templates, PRD criteria.
+- **Agent-operating-manual** (253→84 lines): Removed obvious engineering guidance (CI failures, dependency management, verification judgment). Kept plan management, Pebble, External Tools rule, DoD, Hard Rules.
+- **CODE_GUIDE.md** (138→56 lines): Removed Naming, Comments, Constants, Security, Functions sections. Kept Type Safety, Error Handling, Code Org, Breaking Changes, Logging, Testing, Frontend/Backend.
+- **Agent prompts trimmed**: explore (129→42), refactor (183→36), test-writer (171→36), implement (151→54). Code-reviewer stays as-is (forcing functions are valuable).
+- **Post-compact guard simplified**: Lighter acknowledgment prompt, concise instead of numbered list.
+- **Permission auto-approver rewritten**: Removed dead memory-related code paths that would have crashed at runtime.
+- **README.md cleaned**: Removed ~20 stale references to deleted features.
+- **install.sh cleaned**: Removed memory.jsonl from preserved state files.
+
+### Removed
+- **Memory system**: Deleted `memory.jsonl`, `memory-curator` skill (SKILL.md + 3 scripts). Removed all references from hooks, agents, config, and docs. Session context is sufficient for cross-session continuity.
+- **Periodic reminder hook**: Deleted `periodic-reminder.py`. Removed from all 4 settings.json event matchers, config.yaml, and session-cleanup.py.
+- **Edits-since-review counter**: Removed tracking from action-counter.py, stop prompt, and config.py helpers.
+
 ## [0.0.81] - 2026-01-30
 
 ### Added

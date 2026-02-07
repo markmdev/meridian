@@ -57,7 +57,6 @@ Examples:
   curl -fsSL URL/install.sh | bash  # Install from web
 
 State files preserved on update:
-  - .meridian/memory.jsonl
   - .meridian/session-context.md
   - .meridian/worktree-context.md
   - .meridian/config.yaml (merged with new defaults)
@@ -158,7 +157,6 @@ fi
 
 # State files/dirs to preserve (never delete or overwrite)
 STATE_PATTERNS=(
-  ".meridian/memory.jsonl"
   ".meridian/session-context.md"
   ".meridian/worktree-context.md"
   ".meridian/config.yaml"
@@ -172,7 +170,6 @@ STATE_PATTERNS=(
 is_state_file() {
   local file="$1"
   case "$file" in
-    .meridian/memory.jsonl) return 0 ;;
     .meridian/session-context.md) return 0 ;;
     .meridian/worktree-context.md) return 0 ;;
     .meridian/config.yaml) return 0 ;;
@@ -526,7 +523,6 @@ fi
 
 if [[ "$MODE" == "update" ]]; then
   echo "Updated files are ready. State preserved:"
-  echo "  - memory.jsonl"
   echo "  - session-context.md"
   echo "  - worktree-context.md"
   echo "  - config.yaml (merged)"

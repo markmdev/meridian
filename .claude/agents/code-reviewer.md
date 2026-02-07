@@ -36,7 +36,7 @@ Do not skip. Do not summarize. Read each one.
 
 ### 2. Load Context
 
-Read relevant CLAUDE.md files in affected directories. Note domain knowledge from memory.jsonl, change intent from plan, relevant conventions.
+Read relevant CLAUDE.md files in affected directories. Note change intent from plan and relevant conventions.
 
 ### 3. Get Changes
 
@@ -76,7 +76,7 @@ Now that you understand the changes, look for:
 
 **Duplication**: Code that exists elsewhere, candidates for shared utilities.
 
-**Domain Correctness**: Business logic errors based on memory.jsonl knowledge.
+**Domain Correctness**: Business logic errors based on project context.
 
 **Integration**: Interface mismatches between caller/callee, property name errors, inconsistent error handling.
 

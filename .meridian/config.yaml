@@ -62,12 +62,6 @@ pebble_enabled: false
 # on quick/simple tasks. Set to 0 to always run stop hook.
 stop_hook_min_actions: 40
 
-# Periodic reminder interval: Inject a short reminder about key behaviors
-# every N actions (tool calls + user messages). Helps maintain focus during
-# long sessions. Resets on session start (startup, compaction, clear).
-# Set to 0 to disable.
-reminder_interval: 20
-
 # Pebble scaffolder: Auto-invoke pebble-scaffolder after plan approval.
 # When false, you can use Pebble without automatic issue scaffolding.
 pebble_scaffolder_enabled: true

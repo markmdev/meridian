@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.81` (2026-01-30) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.82` (2026-02-07) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -33,8 +33,7 @@ Meridian uses Claude Code's hooks system to enforce behaviors automatically:
 
 | Capability | How it works |
 |------------|--------------|
-| **Context survives compaction** | Hooks re-inject memory, task state, guidelines, and your docs after every compaction |
-| **Persistent memory** | Lessons learned, architectural decisions, and mistakes are saved to `memory.jsonl` — Claude reads them every session |
+| **Context survives compaction** | Hooks re-inject task state, guidelines, and your docs after every compaction |
 | **Session continuity** | Rolling `session-context.md` tracks decisions, discoveries, and context across sessions — Claude picks up where it left off |
 | **Pre-compaction warning** | Monitors token usage and prompts Claude to save context before compaction happens |
 | **Detailed plans that work** | Planning skill guides Claude through thorough discovery, design, and integration planning |
@@ -75,7 +74,6 @@ flowchart TB
 
     subgraph Skills["Skills (Structured Workflows)"]
         S1[planning]
-        S2[memory-curator]
     end
 
     subgraph Agents["Agents (Quality Gates)"]
@@ -85,10 +83,9 @@ flowchart TB
     end
 
     subgraph Files[".meridian/ (Persistent State)"]
-        F1[memory.jsonl]
-        F2[session-context.md]
-        F3[api-docs/]
-        F4[CODE_GUIDE.md]
+        F1[session-context.md]
+        F2[api-docs/]
+        F3[CODE_GUIDE.md]
     end
 
     User -->|talks to| Claude
@@ -115,7 +112,7 @@ sequenceDiagram
     Note over Dev,Files: Session Start
     Dev->>CC: Opens project
     CC->>Hook: SessionStart triggers
-    Hook->>Files: Reads memory, tasks, guides
+    Hook->>Files: Reads tasks, guides, context
     Hook->>CC: Injects context
     Hook->>CC: Blocks until acknowledged
 
@@ -125,7 +122,7 @@ sequenceDiagram
     Skill->>CC: Guides through methodology
     CC->>Hook: Tries to exit plan mode
     Hook->>Agent: Spawns plan-reviewer
-    Agent->>Files: Reads CODE_GUIDE, memory
+    Agent->>Files: Reads CODE_GUIDE, context
     Agent->>CC: Returns score + findings
     alt Score < 9
         CC->>CC: Iterates on plan
@@ -150,8 +147,7 @@ sequenceDiagram
     Agent->>Files: Reviews changes
     Agent->>CC: Returns issues (if any)
     CC->>Files: Updates task status
-    CC->>Skill: Uses memory-curator
-    Skill->>Files: Appends to memory.jsonl
+    CC->>Files: Updates session-context.md
     Hook->>CC: Allows stop
 ```
 
@@ -176,7 +172,7 @@ curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh |
 
 ```bash
 # Same command — installer detects existing installation and updates
-# Your memory.jsonl, session-context.md, and config are preserved
+# Your session-context.md and config are preserved
 curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
 ```
 
@@ -221,7 +217,6 @@ When context approaches the threshold, the agent saves context and the wrapper a
 | | `CLAUDE.md` | Meridian |
 |-|-------------|----------|
 | **Large context** | Claude forgets prompt details as context grows | Hooks reinforce key behaviors throughout the session |
-| **Memory** | None | `memory.jsonl` persists lessons across sessions |
 | **Task continuity** | None — each session starts fresh | Context files track progress, decisions, next steps |
 | **Quality gates** | None | Plan review + code review before proceeding |
 | **Library docs** | Claude's training data (potentially outdated) | MCP servers provide current documentation |
@@ -244,12 +239,10 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `session-reload.py` | SessionStart (compact) | Re-injects context after compaction |
 | `post-compact-guard.py` | PreToolUse | Blocks first tool until agent acknowledges context |
 | `pre-compaction-sync.py` | PreToolUse | Warns when approaching token limit, prompts context save |
-| `block-plan-agent.py` | PreToolUse (Task) | Redirects deprecated Plan agent to planning skill |
 | `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
 | `action-counter.py` | PostToolUse | Tracks actions for stop hook threshold |
-| `periodic-reminder.py` | PostToolUse, UserPromptSubmit, SessionStart | Injects behavior reminders every N actions |
 | `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create Pebble issues (if enabled) |
-| `pre-stop-update.py` | Stop | Requires memory updates and code review |
+| `pre-stop-update.py` | Stop | Requires context updates and code review |
 | `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
 | `meridian-path-guard.py` | PermissionRequest | Blocks .meridian/.claude writes outside project root |
 | `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
@@ -276,31 +269,6 @@ Guides Claude through comprehensive planning so plans don't break during impleme
 
 Plans describe **what and why**, not how. The plan-reviewer agent validates plans against the actual codebase before implementation begins.
 
-### Memory Curator Skill
-
-Manages `memory.jsonl` via scripts (never edit manually). Uses strict criteria:
-
-**The critical test:** "If I delete this entry, will the agent make the same mistake again — or is the fix already in the code?"
-
-- **Add**: Architectural patterns, data model gotchas, API limitations, cross-agent patterns
-- **Don't add**: One-time bug fixes (code is fixed), SDK quirks (code handles it), agent behavior rules (belong in operating manual)
-
-```bash
-# Add entry
-python3 .claude/skills/memory-curator/scripts/add_memory_entry.py \
-  --summary "Lesson learned about X" \
-  --tags architecture,pattern \
-  --links "TASK-042 src/service.ts"
-
-# Edit entry
-python3 .claude/skills/memory-curator/scripts/edit_memory_entry.py \
-  --id mem-0042 --summary "Updated summary"
-
-# Delete entry
-python3 .claude/skills/memory-curator/scripts/delete_memory_entry.py \
-  --id mem-0042
-```
-
 ### Prompt Writing Skill
 
 General-purpose guidance for writing effective prompts for any AI system:
@@ -319,27 +287,6 @@ Guidance for writing effective CLAUDE.md files:
 - Commands first, then key patterns
 - What/How/Why structure
 
-### Onboarding Skills
-
-Two interview-based skills that capture context through conversation:
-
-**`/onboard-user`** — Learns your preferences (global, applies to all projects):
-- Communication style (technical depth, verbosity)
-- Autonomy level (ask vs. decide independently)
-- Quality standards (testing depth, documentation preferences)
-- Working patterns (session length, how you prefer corrections)
-- Saves to `~/.claude/meridian/user-profile.yaml`
-
-**`/onboard-project`** — Learns about this project:
-- What it does, who it's for, what stage it's at
-- Criticality and failure impact
-- Security requirements and compliance
-- Team size and review process
-- Current priorities and deadlines
-- Saves to `.meridian/project-profile.yaml`
-
-Interviews are comprehensive but adaptive — irrelevant questions are skipped based on previous answers. Agent offers onboarding when profiles are missing.
-
 </details>
 
 <details>
@@ -350,7 +297,6 @@ Agents are specialized subagents that validate work. All reviewers use an **issu
 ### Plan Reviewer
 
 Validates plans before implementation:
-- Reads `memory.jsonl` for domain knowledge before analysis
 - Verifies file paths and API assumptions against codebase
 - Checks for missing steps, dependencies, integration plan, documentation steps
 - Uses Context7 and DeepWiki to verify library claims
@@ -360,7 +306,7 @@ Validates plans before implementation:
 ### Code Reviewer (CodeRabbit-style)
 
 Deep code review with full context analysis:
-1. Loads context (memory.jsonl, plan, CLAUDE.md)
+1. Loads context (plan, CLAUDE.md, session context)
 2. Creates detailed walkthrough of each change (forcing function)
 3. Generates sequence diagrams for complex flows (forcing function)
 4. Finds real issues — logic bugs, data flow problems, pattern inconsistencies
@@ -504,7 +450,7 @@ stop_hook_min_actions: 10  # Skip stop hook if < N actions since last user input
 ```yaml
 # Always injected
 core:
-  - .meridian/memory.jsonl
+  - .meridian/SOUL.md
   - .meridian/CODE_GUIDE.md
   - .meridian/prompts/agent-operating-manual.md
 
@@ -520,7 +466,7 @@ project_type_addons:
   production: .meridian/CODE_GUIDE_ADDON_PRODUCTION.md
 ```
 
-**`user_provided_docs`**: Add any project-specific documentation here. These files are injected at the very top of context (before memory and core files), so Claude always has access to your architecture decisions, API contracts, or any other docs you want it to reference.
+**`user_provided_docs`**: Add any project-specific documentation here. These files are injected at the very top of context (before core files), so Claude always has access to your architecture decisions, API contracts, or any other docs you want it to reference.
 
 ### CODE_GUIDE System
 
@@ -549,9 +495,7 @@ your-project/
 │   │   ├── plan-review.py
 │   │   ├── plan-approval-reminder.py
 │   │   ├── pre-stop-update.py
-│   │   ├── block-plan-agent.py
 │   │   ├── action-counter.py  # Tracks actions for stop hook
-│   │   ├── periodic-reminder.py  # Injects reminders every N messages
 │   │   ├── permission-auto-approver.py
 │   │   ├── meridian-path-guard.py
 │   │   ├── plan-mode-tracker.py
@@ -561,14 +505,6 @@ your-project/
 │   │   └── coderabbit-review.md # CodeRabbit review cycle handler
 │   ├── skills/
 │   │   ├── planning/SKILL.md
-│   │   ├── memory-curator/
-│   │   │   ├── SKILL.md
-│   │   │   └── scripts/
-│   │   │       ├── add_memory_entry.py
-│   │   │       ├── edit_memory_entry.py
-│   │   │       └── delete_memory_entry.py
-│   │   ├── onboard-user/SKILL.md      # User preferences interview
-│   │   ├── onboard-project/SKILL.md   # Project context interview
 │   │   ├── prompt-writing/SKILL.md
 │   │   └── claudemd-writer/SKILL.md
 │   └── agents/
@@ -590,14 +526,12 @@ your-project/
 │   ├── CODE_GUIDE.md                 # Baseline standards
 │   ├── CODE_GUIDE_ADDON_HACKATHON.md # Relaxed rules for prototypes
 │   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
-│   ├── memory.jsonl                  # Persistent lessons/decisions
 │   ├── api-docs/                     # External API documentation
 │   │   └── INDEX.md                  # Index of documented APIs
 │   ├── .state/                       # Ephemeral hook state (gitignored)
 │   ├── .scratch/                     # Thinking files (gitignored)
 │   └── prompts/
-│       ├── agent-operating-manual.md # Agent behavior instructions
-│       └── thinking-guide.md         # Thinking process prompt
+│       └── agent-operating-manual.md # Agent behavior instructions
 └── your-code/
 ```
 
@@ -636,7 +570,7 @@ The `/work-until` command creates an iterative loop where Claude keeps working o
 ### Key Points
 
 - **Session context preserves history**: Between iterations, Claude writes to `session-context.md`, so it knows what was tried
-- **Normal stop checks still run**: Memory, session context, tests/lint/build — all enforced each iteration
+- **Normal stop checks still run**: Session context, tests/lint/build — all enforced each iteration
 - **Completion phrase must be TRUE**: Claude cannot lie to escape the loop
 - **Monitor progress**: `cat .meridian/.state/loop-state` shows current iteration
 

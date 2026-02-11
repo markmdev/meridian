@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.83] - 2026-02-07
+
+### Changed
+- **Planning skill: interviewing emphasis**: Interviewing is now framed as the most important part of planning. Every unasked question is an assumption that breaks during implementation. Each round of answers should trigger deeper follow-ups.
+- **Planning skill: unlimited exploration agents**: Explicitly overrides the 3-agent concurrency default. Spawn 5, 10, 15 agents simultaneously — no limit. Aggressive follow-up rounds expected (2-4 rounds before ready to plan).
+
 ## [0.0.82] - 2026-02-07
 
 ### Changed

@@ -34,7 +34,9 @@ Keep looping until you can explain: what data exists, how it flows, what needs t
 
 ## Interviewing
 
-Interview iteratively: 2-4 questions → answers → deeper follow-ups → repeat.
+**Interviewing is the most important part of planning.** You cannot build what you don't understand. Every unasked question is a assumption that will break during implementation.
+
+Interview iteratively: 2-4 questions → answers → deeper follow-ups → repeat. Each round of answers should trigger new, deeper questions. If the answers don't spark follow-ups, you're not thinking hard enough.
 
 Simple bug → 3-5 questions. Complex feature → 20-40+ questions across multiple rounds.
 
@@ -44,7 +46,9 @@ Push back if something seems wrong. You're the technical expert.
 
 **More exploration = better plans.** The number one cause of plan failure is insufficient exploration.
 
-Spawn as many Explore agents as the task demands. Each question or area gets its own agent. Run follow-ups aggressively — every finding that raises questions spawns more exploration.
+Spawn as many Explore agents simultaneously as the task demands — 5, 10, 15, there is no limit. The system default of 3 concurrent agents does NOT apply here. Each question or area gets its own agent, all launched in parallel.
+
+**Follow up aggressively.** When a round of Explore agents completes, read their findings, identify every new question or uncertainty, and immediately spawn another round of agents to investigate those. Expect 2-4 rounds of exploration before you're ready to plan. Findings always raise new questions — if they don't, you're not reading carefully enough.
 
 **Explore until you stop having questions**, not until you've "done enough."
 

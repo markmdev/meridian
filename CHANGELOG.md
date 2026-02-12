@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.84] - 2026-02-11
+
+### Added
+- **Workspace system**: Replaces `session-context.md` with a living knowledge base. Agent maintains `.meridian/WORKSPACE.md` as a root file linking to sub-pages in `.meridian/workspace/`. Based on the "15-minute rule" — anything not written down is gone in 15 minutes.
+
+### Changed
+- **Work-until loop state injected at session start**: Active loop is now surfaced in context injection so the agent knows it's in a loop after compaction or `/clear`.
+- **Stop hook mentions both reviewers**: Checklist now says to run `code-reviewer` and `code-health-reviewer` in parallel.
+- **SOUL.md**: Continuity section rewritten around workspace and the 15-minute rule.
+- **Agent-operating-manual**: Session Context section replaced with Workspace section. Encourages proactive note-taking, page creation, and graph-style linking.
+- **Stop hook**: Prompts to update workspace instead of session-context.
+- **Pre-compaction hook**: Prompts to update workspace instead of session-context.
+- **Context injection**: Injects `WORKSPACE.md` instead of `session-context.md`.
+- **install.sh**: Preserves `WORKSPACE.md` and `workspace/` on update. Migrates `session-context.md` to `WORKSPACE.md` for upgrades from older versions.
+- **config.yaml**: `session_context_max_lines` renamed to `workspace_max_lines` (default: 500).
+
+### Removed
+- **session-context.md**: Replaced by workspace system. All references removed from hooks, agents, commands, config, and docs.
+- **worktree-context.md**: Removed worktree context system. Deleted file, `WORKTREE_CONTEXT_FILE` constant, `get_worktree_context_path()`, `trim_worktree_context()`, `worktree_context_max_lines` config option, and all references from hooks, install.sh, and README.
+
 ## [0.0.83] - 2026-02-07
 
 ### Changed

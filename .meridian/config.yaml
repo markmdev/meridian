@@ -41,15 +41,11 @@ auto_compact_off: false
 #   - node_modules
 #   - vendor
 
-# Session context: Rolling context file for cross-session continuity.
-# Agent saves important information here; oldest lines trimmed when over limit.
+# Workspace: Agent's living knowledge base (WORKSPACE.md root file).
+# The root file is trimmed when over this limit.
 # Set to 0 to disable trimming (unlimited size).
-session_context_max_lines: 170
+workspace_max_lines: 500
 
-# Worktree context: Shared context across git worktrees.
-# Contains high-level summaries of work from all worktrees.
-# Oldest lines trimmed when over limit. Set to 0 to disable.
-worktree_context_max_lines: 150
 
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.

@@ -54,7 +54,7 @@ def main():
         "**CONTEXT ACKNOWLEDGMENT REQUIRED**\n\n"
         "Project context has been injected into this session. "
         "Before using any tools, please acknowledge that you have read and understood "
-        "the injected context: session context, active plans, CODE_GUIDE, and operating manual."
+        "the injected context: workspace, active plans, CODE_GUIDE, and operating manual."
     )
 
     if has_api_docs:

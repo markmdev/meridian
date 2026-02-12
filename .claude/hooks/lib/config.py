@@ -11,8 +11,7 @@ from pathlib import Path
 # =============================================================================
 MERIDIAN_CONFIG = ".meridian/config.yaml"
 REQUIRED_CONTEXT_CONFIG = ".meridian/required-context-files.yaml"
-SESSION_CONTEXT_FILE = ".meridian/session-context.md"
-WORKTREE_CONTEXT_FILE = ".meridian/worktree-context.md"
+WORKSPACE_FILE = ".meridian/WORKSPACE.md"
 
 # System state files (ephemeral, cleaned up on session start)
 STATE_DIR = ".meridian/.state"
@@ -110,8 +109,7 @@ def get_project_config(base_dir: Path) -> dict:
         'pre_compaction_sync_enabled': True,
         'pre_compaction_sync_threshold': 150000,
         'auto_compact_off': False,
-        'session_context_max_lines': 1000,
-        'worktree_context_max_lines': 200,
+        'workspace_max_lines': 1000,
         'pebble_enabled': False,
         'stop_hook_min_actions': 10,
         'plan_review_min_actions': 20,
@@ -155,19 +153,11 @@ def get_project_config(base_dir: Path) -> dict:
         if aco:
             config['auto_compact_off'] = aco.lower() == 'true'
 
-        # Session context max lines
-        max_lines = get_config_value(content, 'session_context_max_lines')
+        # Workspace max lines
+        max_lines = get_config_value(content, 'workspace_max_lines')
         if max_lines:
             try:
-                config['session_context_max_lines'] = int(max_lines)
-            except ValueError:
-                pass
-
-        # Worktree context max lines
-        wt_max_lines = get_config_value(content, 'worktree_context_max_lines')
-        if wt_max_lines:
-            try:
-                config['worktree_context_max_lines'] = int(wt_max_lines)
+                config['workspace_max_lines'] = int(max_lines)
             except ValueError:
                 pass
 
@@ -247,7 +237,7 @@ def get_additional_review_files(base_dir: Path, absolute: bool = False) -> list[
         base_dir: Base directory of the project
         absolute: If True, return absolute paths; otherwise relative paths
     """
-    files = [".meridian/CODE_GUIDE.md", ".meridian/session-context.md"]
+    files = [".meridian/CODE_GUIDE.md", ".meridian/WORKSPACE.md"]
     project_config = get_project_config(base_dir)
 
     if project_config['project_type'] == 'hackathon':
@@ -373,23 +363,6 @@ def get_worktree_name(base_dir: Path) -> str:
     return base_dir.resolve().name
 
 
-def get_worktree_context_path(base_dir: Path) -> Path | None:
-    """Get path to worktree-context.md in the main worktree.
-
-    This file stores high-level context shared across all worktrees.
-
-    Args:
-        base_dir: Any directory in the git repository
-
-    Returns:
-        Path to worktree-context.md in main worktree, or None if not found
-    """
-    main = get_main_worktree_path(base_dir)
-    if main is None:
-        return None
-    return main / WORKTREE_CONTEXT_FILE
-
-
 # =============================================================================
 # ACTION COUNTER HELPERS
 # =============================================================================
@@ -437,10 +410,10 @@ def clear_plan_action_counter(base_dir: Path) -> None:
 
 
 # =============================================================================
-# SESSION CONTEXT HELPERS
+# WORKSPACE HELPERS
 # =============================================================================
-def trim_session_context(base_dir: Path, max_lines: int) -> None:
-    """Trim session context file to max_lines, keeping newest entries.
+def trim_workspace(base_dir: Path, max_lines: int) -> None:
+    """Trim workspace root file to max_lines, keeping newest entries.
 
     Args:
         base_dir: Project root directory
@@ -449,12 +422,12 @@ def trim_session_context(base_dir: Path, max_lines: int) -> None:
     if max_lines <= 0:
         return
 
-    context_file = base_dir / SESSION_CONTEXT_FILE
-    if not context_file.exists():
+    workspace_file = base_dir / WORKSPACE_FILE
+    if not workspace_file.exists():
         return
 
     try:
-        content = context_file.read_text()
+        content = workspace_file.read_text()
         lines = content.split('\n')
 
         if len(lines) <= max_lines:
@@ -462,34 +435,7 @@ def trim_session_context(base_dir: Path, max_lines: int) -> None:
 
         # Keep newest lines (from end)
         trimmed = lines[-max_lines:]
-        context_file.write_text('\n'.join(trimmed))
-    except Exception:
-        pass
-
-
-def trim_worktree_context(worktree_context_path: Path, max_lines: int) -> None:
-    """Trim worktree context file to max_lines, keeping newest entries.
-
-    Args:
-        worktree_context_path: Path to worktree-context.md in main worktree
-        max_lines: Maximum lines to keep (0 = no trimming)
-    """
-    if max_lines <= 0:
-        return
-
-    if not worktree_context_path or not worktree_context_path.exists():
-        return
-
-    try:
-        content = worktree_context_path.read_text()
-        lines = content.split('\n')
-
-        if len(lines) <= max_lines:
-            return
-
-        # Keep newest lines (from end)
-        trimmed = lines[-max_lines:]
-        worktree_context_path.write_text('\n'.join(trimmed))
+        workspace_file.write_text('\n'.join(trimmed))
     except Exception:
         pass
 
@@ -767,26 +713,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if soul_path.exists():
         files_to_inject.append((".meridian/SOUL.md", soul_path))
 
-    # 1. Session context (rolling cross-session context)
-    session_context_path = base_dir / SESSION_CONTEXT_FILE
-    if session_context_path.exists():
-        files_to_inject.append((SESSION_CONTEXT_FILE, session_context_path))
+    # 1. Workspace (agent's living knowledge base)
+    workspace_path = base_dir / WORKSPACE_FILE
+    if workspace_path.exists():
+        files_to_inject.append((WORKSPACE_FILE, workspace_path))
 
-    # 2.5. Worktree context (shared across all worktrees, read from main worktree)
-    worktree_context_path = get_worktree_context_path(base_dir)
-    if worktree_context_path and worktree_context_path.exists():
-        # Trim worktree context before injecting
-        wt_config = get_project_config(base_dir)
-        wt_max_lines = wt_config.get('worktree_context_max_lines', 200)
-        trim_worktree_context(worktree_context_path, wt_max_lines)
-
-        # Use path relative to main worktree for display
-        main_worktree = get_main_worktree_path(base_dir)
-        if main_worktree:
-            rel_path = str(worktree_context_path.relative_to(main_worktree))
-            files_to_inject.append((f"[main-worktree]/{rel_path}", worktree_context_path))
-
-    # 3. Active plan file (if set)
+    # 2. Active plan file (if set)
     active_plan_file = base_dir / ACTIVE_PLAN_FILE
     if active_plan_file.exists():
         try:
@@ -903,6 +835,21 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append(f'<file path=".meridian/prompts/agent-operating-manual.md" error="Could not read file" />')
             parts.append("")
 
+    # 9. Active work-until loop (if any)
+    loop_state_path = base_dir / f"{STATE_DIR}/loop-state"
+    if loop_state_path.exists():
+        try:
+            loop_content = loop_state_path.read_text().strip()
+            if 'active: true' in loop_content:
+                parts.append('<work-until-loop>')
+                parts.append("**A work-until loop is active.** You are in an iterative work loop.")
+                parts.append("Read `.meridian/.state/loop-state` for your task and current iteration.")
+                parts.append("See `.meridian/prompts/work-until-loop.md` for how the loop works.")
+                parts.append('</work-until-loop>')
+                parts.append("")
+        except IOError:
+            pass
+
     # Footer with acknowledgment request
     parts.append("You have received the complete project context above.")
     parts.append("This information is CRITICAL for working correctly on this project.")
@@ -918,9 +865,9 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append("")
     parts.append("</injected-project-context>")
 
-    # Trim session context file if over limit
-    max_lines = project_config.get('session_context_max_lines', 1000)
-    trim_session_context(base_dir, max_lines)
+    # Trim workspace root file if over limit
+    max_lines = project_config.get('workspace_max_lines', 1000)
+    trim_workspace(base_dir, max_lines)
 
     return "\n".join(parts)
 
@@ -1059,10 +1006,9 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     parts.append("**Checklist:**")
 
     if code_review_enabled:
-        parts.append("- Run code review if you made significant code changes")
+        parts.append("- Run **code-reviewer** and **code-health-reviewer** in parallel if you made significant code changes")
 
-    parts.append("- Update `session-context.md` with current state")
-    parts.append("- Update `worktree-context.md` if relevant")
+    parts.append("- Update your workspace (`.meridian/WORKSPACE.md`) with current state")
 
     if pebble_enabled:
         parts.append("- Close/update Pebble issues for completed work")

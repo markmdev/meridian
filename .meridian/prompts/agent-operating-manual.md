@@ -46,9 +46,17 @@ Issues are audit records. Even a 30-second bug fix: create issue → fix → com
 
 See PEBBLE_GUIDE.md for full documentation.
 
-# Session Context
+# Workspace
 
-- **Session context** (`.meridian/session-context.md`): Append timestamped entries for key decisions, discoveries, and context worth preserving.
+**The 15-minute rule:** Anything not written down is gone in 15 minutes. Context compaction, session restarts, and `/clear` all wipe your working memory. Your workspace is your external brain.
+
+`.meridian/WORKSPACE.md` is the **root**. It's injected at every session start. Everything reachable from here survives. Everything else is forgotten.
+
+**Proactively maintain your workspace throughout the session** — not just at the end. Write things down as you go: mid-task, between tasks, whenever you learn or decide something. Don't accumulate knowledge in your head and hope you'll remember to save it later. You won't.
+
+- **Create pages freely.** When a topic grows, create a `.md` file in `.meridian/workspace/` and link it from the root. Organize however makes sense for the project.
+- **Link everything.** Every page must be reachable from the root. Orphaned files are invisible — you'll never read what you can't find.
+- **Update, don't just append.** When information changes, update the existing content. This is a knowledge base, not a log.
 
 # External Tools (STRICT RULE)
 
@@ -74,7 +82,7 @@ Fix all issues, re-run until clean. The reviewers must verify fixes.
 - Tests added for new behavior
 - Docs updated where relevant
 - No secrets/PII in code or logs
-- Session context updated with important decisions
+- Workspace updated with important decisions
 
 # Hard Rules
 

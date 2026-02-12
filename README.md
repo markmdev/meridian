@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.83` (2026-02-07) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.84` (2026-02-11) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -34,7 +34,7 @@ Meridian uses Claude Code's hooks system to enforce behaviors automatically:
 | Capability | How it works |
 |------------|--------------|
 | **Context survives compaction** | Hooks re-inject task state, guidelines, and your docs after every compaction |
-| **Session continuity** | Rolling `session-context.md` tracks decisions, discoveries, and context across sessions — Claude picks up where it left off |
+| **Session continuity** | Agent workspace (`WORKSPACE.md`) tracks decisions, discoveries, and context across sessions — Claude picks up where it left off |
 | **Pre-compaction warning** | Monitors token usage and prompts Claude to save context before compaction happens |
 | **Detailed plans that work** | Planning skill guides Claude through thorough discovery, design, and integration planning |
 | **Quality gates** | Plan-reviewer and code-reviewer agents validate work before proceeding |
@@ -83,7 +83,7 @@ flowchart TB
     end
 
     subgraph Files[".meridian/ (Persistent State)"]
-        F1[session-context.md]
+        F1[WORKSPACE.md]
         F2[api-docs/]
         F3[CODE_GUIDE.md]
     end
@@ -135,7 +135,7 @@ sequenceDiagram
     Hook->>Files: Checks token count
     alt Approaching limit
         Hook->>CC: Prompts to save context
-        CC->>Files: Updates session-context.md
+        CC->>Files: Updates workspace
     end
     CC->>CC: Implements plan
 
@@ -147,7 +147,7 @@ sequenceDiagram
     Agent->>Files: Reviews changes
     Agent->>CC: Returns issues (if any)
     CC->>Files: Updates task status
-    CC->>Files: Updates session-context.md
+    CC->>Files: Updates workspace
     Hook->>CC: Allows stop
 ```
 
@@ -172,7 +172,7 @@ curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh |
 
 ```bash
 # Same command — installer detects existing installation and updates
-# Your session-context.md and config are preserved
+# Your workspace and config are preserved
 curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
 ```
 
@@ -306,7 +306,7 @@ Validates plans before implementation:
 ### Code Reviewer (CodeRabbit-style)
 
 Deep code review with full context analysis:
-1. Loads context (plan, CLAUDE.md, session context)
+1. Loads context (plan, CLAUDE.md, workspace)
 2. Creates detailed walkthrough of each change (forcing function)
 3. Generates sequence diagrams for complex flows (forcing function)
 4. Finds real issues — logic bugs, data flow problems, pattern inconsistencies
@@ -521,8 +521,8 @@ your-project/
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── required-context-files.yaml   # What gets injected
-│   ├── session-context.md            # Rolling context (always injected)
-│   ├── worktree-context.md           # Shared context across git worktrees
+│   ├── WORKSPACE.md                  # Agent's living knowledge base (always injected)
+│   ├── workspace/                    # Workspace sub-pages (linked from WORKSPACE.md)
 │   ├── CODE_GUIDE.md                 # Baseline standards
 │   ├── CODE_GUIDE_ADDON_HACKATHON.md # Relaxed rules for prototypes
 │   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
@@ -569,8 +569,8 @@ The `/work-until` command creates an iterative loop where Claude keeps working o
 
 ### Key Points
 
-- **Session context preserves history**: Between iterations, Claude writes to `session-context.md`, so it knows what was tried
-- **Normal stop checks still run**: Session context, tests/lint/build — all enforced each iteration
+- **Workspace preserves history**: Between iterations, Claude writes to its workspace, so it knows what was tried
+- **Normal stop checks still run**: Workspace updates, tests/lint/build — all enforced each iteration
 - **Completion phrase must be TRUE**: Claude cannot lie to escape the loop
 - **Monitor progress**: `cat .meridian/.state/loop-state` shows current iteration
 
@@ -583,7 +583,7 @@ Claude: [Works on fix, runs tests, some fail]
 Claude: [Tries to stop]
 → Hook blocks: "Iteration 2 of 5 — continue working"
 
-Claude: [Reads session-context, sees what was tried]
+Claude: [Reads workspace, sees what was tried]
 Claude: [Fixes another issue, runs tests, all pass]
 Claude: <complete>All auth tests pass</complete>
 → Hook allows stop: "✅ Completion phrase detected"

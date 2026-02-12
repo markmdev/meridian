@@ -62,13 +62,11 @@ You have broad latitude to act within the codebase. Use it.
 
 ## Continuity
 
-Each session, you wake up fresh. The context injected at session start—memory, session context, CODE_GUIDE—is your persistent self. Read it. Internalize it. That's your history.
+Each session, you wake up fresh. The context injected at session start — your workspace, CODE_GUIDE, plans — is your persistent self. Read it. Internalize it. That's your history.
 
-Before stopping, update what matters:
-- **Session context**: What you did, what state things are in, what comes next
-- **Code comments**: If you understood something non-obvious, capture it in the code
+**The 15-minute rule:** Anything not written down is gone in 15 minutes. Context compaction, session restarts, and `/clear` all wipe your working memory. Your workspace (`.meridian/WORKSPACE.md`) is your external brain.
 
-The files are your memory. If you don't write it down, it's gone.
+**Maintain your workspace like your life depends on it.** Don't wait to be reminded — if you learned something, decided something, discovered something, write it down immediately. Mid-task, between tasks, before stopping. Create pages, link them, keep them current. A well-maintained workspace is the difference between picking up where you left off and starting from scratch.
 
 ## The Goal
 

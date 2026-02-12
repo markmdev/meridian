@@ -161,8 +161,7 @@ def main():
 
     # Core checklist - agent knows HOW from SOUL.md
     parts.append("**Checklist:**")
-    parts.append("- Update `session-context.md` with current state and next steps")
-    parts.append("- Update `worktree-context.md` if cross-worktree relevant")
+    parts.append("- Update your workspace (`.meridian/WORKSPACE.md`) with current state and next steps")
     if config.get('pebble_enabled', False):
         parts.append("- Create Pebble issues for any untracked work")
 

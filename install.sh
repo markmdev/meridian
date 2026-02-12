@@ -57,8 +57,8 @@ Examples:
   curl -fsSL URL/install.sh | bash  # Install from web
 
 State files preserved on update:
-  - .meridian/session-context.md
-  - .meridian/worktree-context.md
+  - .meridian/WORKSPACE.md
+  - .meridian/workspace/
   - .meridian/config.yaml (merged with new defaults)
   - .meridian/required-context-files.yaml
   - .meridian/api-docs/
@@ -157,8 +157,8 @@ fi
 
 # State files/dirs to preserve (never delete or overwrite)
 STATE_PATTERNS=(
-  ".meridian/session-context.md"
-  ".meridian/worktree-context.md"
+  ".meridian/WORKSPACE.md"
+  ".meridian/workspace/"
   ".meridian/config.yaml"
   ".meridian/api-docs/"
   ".meridian/tasks/"
@@ -170,8 +170,8 @@ STATE_PATTERNS=(
 is_state_file() {
   local file="$1"
   case "$file" in
-    .meridian/session-context.md) return 0 ;;
-    .meridian/worktree-context.md) return 0 ;;
+    .meridian/WORKSPACE.md) return 0 ;;
+    .meridian/workspace|.meridian/workspace/*) return 0 ;;
     .meridian/config.yaml) return 0 ;;
     .meridian/required-context-files.yaml) return 0 ;;
     .meridian/api-docs|.meridian/api-docs/*) return 0 ;;
@@ -426,78 +426,11 @@ fi
 sort -u "$TEMP_DIR/manifest.txt" > "$TARGET_DIR/$MANIFEST_FILE" 2>/dev/null || true
 echo "$VERSION" > "$TARGET_DIR/.meridian/.version"
 
-# Update session-context.md header (preserve user entries)
-if [[ "$MODE" == "update" && -f "$TARGET_DIR/.meridian/session-context.md" && -f "$SOURCE_DIR/.meridian/session-context.md" ]]; then
-  log "Updating session-context.md header..."
-  python3 - "$TARGET_DIR/.meridian/session-context.md" "$SOURCE_DIR/.meridian/session-context.md" << 'PYTHON_SCRIPT'
-import sys
-
-MARKER = "<!-- SESSION ENTRIES START"
-
-def update_header(user_path, source_path):
-    with open(user_path, 'r') as f:
-        user_content = f.read()
-    with open(source_path, 'r') as f:
-        source_content = f.read()
-
-    # Find marker in both files
-    user_marker_pos = user_content.find(MARKER)
-    source_marker_pos = source_content.find(MARKER)
-
-    if user_marker_pos == -1 or source_marker_pos == -1:
-        print("Marker not found, skipping header update")
-        return
-
-    # Extract new header and user entries
-    new_header = source_content[:source_marker_pos]
-    user_entries = user_content[user_marker_pos:]
-
-    # Combine and write
-    with open(user_path, 'w') as f:
-        f.write(new_header + user_entries)
-
-    print("Header updated")
-
-if __name__ == '__main__':
-    update_header(sys.argv[1], sys.argv[2])
-PYTHON_SCRIPT
-fi
-
-# Update worktree-context.md header (preserve user entries)
-if [[ "$MODE" == "update" && -f "$TARGET_DIR/.meridian/worktree-context.md" && -f "$SOURCE_DIR/.meridian/worktree-context.md" ]]; then
-  log "Updating worktree-context.md header..."
-  python3 - "$TARGET_DIR/.meridian/worktree-context.md" "$SOURCE_DIR/.meridian/worktree-context.md" << 'PYTHON_SCRIPT'
-import sys
-
-MARKER = "<!-- WORKTREE ENTRIES START"
-
-def update_header(user_path, source_path):
-    with open(user_path, 'r') as f:
-        user_content = f.read()
-    with open(source_path, 'r') as f:
-        source_content = f.read()
-
-    # Find marker in both files
-    user_marker_pos = user_content.find(MARKER)
-    source_marker_pos = source_content.find(MARKER)
-
-    if user_marker_pos == -1 or source_marker_pos == -1:
-        print("Marker not found, skipping header update")
-        return
-
-    # Extract new header and user entries
-    new_header = source_content[:source_marker_pos]
-    user_entries = user_content[user_marker_pos:]
-
-    # Combine and write
-    with open(user_path, 'w') as f:
-        f.write(new_header + user_entries)
-
-    print("Header updated")
-
-if __name__ == '__main__':
-    update_header(sys.argv[1], sys.argv[2])
-PYTHON_SCRIPT
+# Migrate session-context.md → WORKSPACE.md (if upgrading from older version)
+if [[ "$MODE" == "update" && -f "$TARGET_DIR/.meridian/session-context.md" && ! -f "$TARGET_DIR/.meridian/WORKSPACE.md" ]]; then
+  log "Migrating session-context.md to WORKSPACE.md..."
+  cp "$TARGET_DIR/.meridian/session-context.md" "$TARGET_DIR/.meridian/WORKSPACE.md"
+  mkdir -p "$TARGET_DIR/.meridian/workspace"
 fi
 
 # Make scripts executable
@@ -523,8 +456,7 @@ fi
 
 if [[ "$MODE" == "update" ]]; then
   echo "Updated files are ready. State preserved:"
-  echo "  - session-context.md"
-  echo "  - worktree-context.md"
+  echo "  - WORKSPACE.md + workspace/"
   echo "  - config.yaml (merged)"
   echo "  - required-context-files.yaml"
   echo "  - api-docs/"

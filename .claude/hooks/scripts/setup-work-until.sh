@@ -32,8 +32,8 @@ DESCRIPTION:
   1. You output <complete>PHRASE</complete> (phrase must be TRUE), OR
   2. Max iterations reached (if set)
 
-  Between iterations, the normal stop hook checks run (memory, session context,
-  tests, etc.) so work is properly tracked.
+  Between iterations, the normal stop hook checks run (workspace, tests, etc.)
+  so work is properly tracked.
 
 EXAMPLES:
   /work-until Fix all failing tests --completion-phrase "All tests pass"

@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from config import (
     get_project_config,
     parse_yaml_list,
-    SESSION_CONTEXT_FILE,
+    WORKSPACE_FILE,
     REQUIRED_CONTEXT_CONFIG,
     ACTIVE_PLAN_FILE,
     ACTIVE_SUBPLAN_FILE,
@@ -42,10 +42,10 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         except IOError:
             pass
 
-    # 3. Session context
-    session_context_path = base_dir / SESSION_CONTEXT_FILE
-    if session_context_path.exists():
-        files.append(str(session_context_path))
+    # 3. Workspace
+    workspace_path = base_dir / WORKSPACE_FILE
+    if workspace_path.exists():
+        files.append(str(workspace_path))
 
     # 4. Active plan
     active_plan_file = base_dir / ACTIVE_PLAN_FILE

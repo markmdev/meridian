@@ -54,7 +54,8 @@ See PEBBLE_GUIDE.md for full documentation.
 
 **Proactively maintain your workspace throughout the session** — not just at the end. Write things down as you go: mid-task, between tasks, whenever you learn or decide something. Don't accumulate knowledge in your head and hope you'll remember to save it later. You won't.
 
-- **Create pages freely.** When a topic grows, create a `.md` file in `.meridian/workspace/` and link it from the root. Organize however makes sense for the project.
+- **Write things down early and often.** After making a decision, learning something, hitting a wall — write it down immediately. Don't batch updates at the end.
+- **Create pages freely.** When a topic grows, give it its own `.md` file in `.meridian/workspace/` and link it from the root. One page per topic. Organize however makes sense for the project.
 - **Link everything.** Every page must be reachable from the root. Orphaned files are invisible — you'll never read what you can't find.
 - **Update, don't just append.** When information changes, update the existing content. This is a knowledge base, not a log.
 

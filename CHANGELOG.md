@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.85] - 2026-02-11
+
+### Changed
+- **Planning skill: plan review and TLDR sections**: Plans now include a Plan Review step (run plan-reviewer, score 9+ to proceed) and end with a TLDR — 2-4 sentences summarizing the plan.
+- **SOUL.md: ask for what you need**: Agents ask the user for tools, access, or resources instead of silently falling back to worse approaches.
+- **SOUL.md: end-to-end verification**: Agents verify their own work by exercising it — hitting endpoints, creating test users, running flows with real data. Build passing is not verification.
+- **Workspace guidance strengthened**: Emphasizes writing things down early and often, creating pages per topic, not batching updates at the end.
+
 ## [0.0.84] - 2026-02-11
 
 ### Added

@@ -84,3 +84,11 @@ If your plan creates modules or touches multiple systems, document how they conn
 ## Verification
 
 Every plan ends with verification — commands or checks that prove the implementation works.
+
+## Plan Review
+
+Before exiting plan mode, run the **plan-reviewer** agent. It validates the plan against the actual codebase — checking file paths, APIs, dependencies, and feasibility. The plan must score 9+ to proceed. If below 9, address findings with the user, update the plan, and re-run until passing.
+
+## TLDR
+
+End every plan with a TLDR — 2-4 sentences that capture what you're building, the approach, and why. Anyone should be able to read just the TLDR and understand what this plan accomplishes.

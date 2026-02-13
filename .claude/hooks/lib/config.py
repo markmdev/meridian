@@ -410,6 +410,52 @@ def clear_plan_action_counter(base_dir: Path) -> None:
 
 
 # =============================================================================
+# FILE TREE HELPERS
+# =============================================================================
+
+_IGNORED_DIRS = {
+    "node_modules", ".git", "__pycache__", ".next", "dist", "build",
+    ".venv", "venv", "coverage", ".cache", ".turbo", "target", "vendor",
+    "bin", ".gradle", ".idea", "obj", ".eggs", ".pytest_cache",
+    ".mypy_cache", ".ruff_cache", ".nuxt", ".output", ".svelte-kit",
+    ".parcel-cache", ".vite",
+}
+
+
+def _build_file_tree(base_dir: Path) -> str:
+    """Build a TOON-style compact file tree. Directories as nested keys, files inline."""
+    lines = []
+
+    def _walk(dir_path: Path, indent: int):
+        try:
+            entries = sorted(dir_path.iterdir(), key=lambda e: (not e.is_dir(), e.name.lower()))
+        except PermissionError:
+            return
+
+        dirs = []
+        files = []
+        for entry in entries:
+            if entry.is_dir():
+                if entry.name in _IGNORED_DIRS:
+                    continue
+                dirs.append(entry)
+            else:
+                if entry.name == '.DS_Store':
+                    continue
+                files.append(entry.name)
+
+        prefix = "  " * indent
+        if files:
+            lines.append(f"{prefix}[{len(files)}]: {','.join(files)}")
+        for d in dirs:
+            lines.append(f"{prefix}{d.name}/")
+            _walk(d, indent + 1)
+
+    _walk(base_dir, 0)
+    return '\n'.join(lines)
+
+
+# =============================================================================
 # WORKSPACE HELPERS
 # =============================================================================
 def trim_workspace(base_dir: Path, max_lines: int) -> None:
@@ -609,6 +655,18 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append(f"**Current datetime:** {now}")
     parts.append("")
 
+    # Project file tree (TOON-style: compact, token-efficient)
+    try:
+        tree_output = _build_file_tree(base_dir)
+        if tree_output:
+            parts.append("## Project Structure")
+            parts.append("```")
+            parts.append(tree_output)
+            parts.append("```")
+            parts.append("")
+    except Exception:
+        pass
+
     # Uncommitted changes (git diff --stat)
     try:
         result = subprocess.run(
@@ -708,17 +766,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             if full_path.exists():
                 files_to_inject.append((doc_path, full_path))
 
-    # 0.5. SOUL.md (core identity and principles - injected early to set the tone)
-    soul_path = base_dir / ".meridian" / "SOUL.md"
-    if soul_path.exists():
-        files_to_inject.append((".meridian/SOUL.md", soul_path))
-
-    # 1. Workspace (agent's living knowledge base)
-    workspace_path = base_dir / WORKSPACE_FILE
-    if workspace_path.exists():
-        files_to_inject.append((WORKSPACE_FILE, workspace_path))
-
-    # 2. Active plan file (if set)
+    # 1. Active plan file (if set)
     active_plan_file = base_dir / ACTIVE_PLAN_FILE
     if active_plan_file.exists():
         try:
@@ -835,7 +883,31 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append(f'<file path=".meridian/prompts/agent-operating-manual.md" error="Could not read file" />')
             parts.append("")
 
-    # 9. Active work-until loop (if any)
+    # 9. SOUL.md (agent identity and principles)
+    soul_path = base_dir / ".meridian" / "SOUL.md"
+    if soul_path.exists():
+        try:
+            content = soul_path.read_text()
+            parts.append(f'<file path=".meridian/SOUL.md">')
+            parts.append(content.rstrip())
+            parts.append('</file>')
+            parts.append("")
+        except IOError:
+            pass
+
+    # 10. Workspace (agent's living knowledge base — last for highest attention)
+    workspace_path = base_dir / WORKSPACE_FILE
+    if workspace_path.exists():
+        try:
+            content = workspace_path.read_text()
+            parts.append(f'<file path="{WORKSPACE_FILE}">')
+            parts.append(content.rstrip())
+            parts.append('</file>')
+            parts.append("")
+        except IOError:
+            pass
+
+    # 11. Active work-until loop (if any)
     loop_state_path = base_dir / f"{STATE_DIR}/loop-state"
     if loop_state_path.exists():
         try:

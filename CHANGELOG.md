@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.86] - 2026-02-11
+
+### Added
+- **Project file tree at session start**: Context injection now includes a compact TOON-style file tree of the entire project. Uses Python `os.walk` instead of `tree` command — no external dependency. Excludes common noise directories (node_modules, .git, __pycache__, dist, build, target, vendor, etc.).
+
+### Changed
+- **Injection order: SOUL.md and WORKSPACE.md moved to bottom**: Both files are now injected last (before work-until loop state), placing them closest to the agent's working context for highest attention. Previous order had them near the top.
+
 ## [0.0.85] - 2026-02-11
 
 ### Changed

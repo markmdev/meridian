@@ -435,6 +435,8 @@ def _build_file_tree(base_dir: Path) -> str:
         dirs = []
         files = []
         for entry in entries:
+            if entry.is_symlink():
+                continue
             if entry.is_dir():
                 if entry.name in _IGNORED_DIRS:
                     continue

@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Deep code review with full context analysis. Generates walkthrough, sequence diagrams, and finds real issues — not checklist items.
-tools: Glob, Grep, Read, Write, Bash, mcp__firecrawl-mcp__firecrawl_scrape, mcp__firecrawl-mcp__firecrawl_search, mcp__firecrawl-mcp__firecrawl_crawl
+tools: Glob, Grep, Read, Write, Bash
 model: opus
 color: cyan
 ---

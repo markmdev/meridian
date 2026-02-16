@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.86` (2026-02-11) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.88` (2026-02-15) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -38,7 +38,6 @@ Meridian uses Claude Code's hooks system to enforce behaviors automatically:
 | **Pre-compaction warning** | Monitors token usage and prompts Claude to save context before compaction happens |
 | **Detailed plans that work** | Planning skill guides Claude through thorough discovery, design, and integration planning |
 | **Quality gates** | Plan-reviewer and code-reviewer agents validate work before proceeding |
-| **MCP integrations** | Context7 and DeepWiki provide up-to-date library docs and repository knowledge for planning and review |
 | **Your custom docs injected** | Add your architecture docs, API references, etc. to `required-context-files.yaml` — they're injected every session |
 
 **Your behavior doesn't change.** You talk to Claude the same way. Meridian works behind the scenes.
@@ -187,12 +186,12 @@ curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh |
 
 ```bash
 git clone https://github.com/markmdev/meridian.git
-cp -R meridian/.claude meridian/.meridian meridian/.mcp.json /path/to/your/project
+cp -R meridian/.claude meridian/.meridian /path/to/your/project
 cd /path/to/your/project
 find .claude -type f -name '*.py' -print0 | xargs -0 chmod +x
 ```
 
-Open your project in Claude Code. Hooks activate automatically, MCP servers connect.
+Open your project in Claude Code. Hooks activate automatically.
 
 ### Running with Auto-Restart
 
@@ -219,7 +218,6 @@ When context approaches the threshold, the agent saves context and the wrapper a
 | **Large context** | Claude forgets prompt details as context grows | Hooks reinforce key behaviors throughout the session |
 | **Task continuity** | None — each session starts fresh | Context files track progress, decisions, next steps |
 | **Quality gates** | None | Plan review + code review before proceeding |
-| **Library docs** | Claude's training data (potentially outdated) | MCP servers provide current documentation |
 | **Custom docs** | Must be read manually each session | Injected automatically via `required-context-files.yaml` |
 
 `CLAUDE.md` is a static prompt. Meridian hooks actively enforce behaviors and inject context throughout the session.
@@ -235,8 +233,7 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 
 | Hook | Trigger | What it does |
 |------|---------|--------------|
-| `claude-init.py` | SessionStart (startup) | Injects memory, tasks, CODE_GUIDE into context |
-| `session-reload.py` | SessionStart (compact) | Re-injects context after compaction |
+| `claude-init.py` | SessionStart | Injects workspace, tasks, CODE_GUIDE into context |
 | `post-compact-guard.py` | PreToolUse | Blocks first tool until agent acknowledges context |
 | `pre-compaction-sync.py` | PreToolUse | Warns when approaching token limit, prompts context save |
 | `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
@@ -299,7 +296,6 @@ Agents are specialized subagents that validate work. All reviewers use an **issu
 Validates plans before implementation:
 - Verifies file paths and API assumptions against codebase
 - Checks for missing steps, dependencies, integration plan, documentation steps
-- Uses Context7 and DeepWiki to verify library claims
 - Trusts plan claims about packages/versions (user may have private access)
 - Returns score (must reach 9+ to proceed) + findings
 
@@ -317,12 +313,10 @@ Focuses on issues that actually matter, not checklist items or style preferences
 ### Docs Researcher
 
 Researches external tools, APIs, and products:
-- Uses Firecrawl to scrape current documentation from the web
 - Builds comprehensive knowledge docs in `.meridian/api-docs/`
 - Covers current versions, API operations, rate limits, best practices, gotchas
+- Uses relevant MCPs or skills if available for web research
 - Run before using any external library not already documented
-
-**Strict rule:** No code using external APIs unless documented in api-docs. Planning skill has mandatory phase to verify/create docs.
 
 ### Test Writer
 
@@ -368,59 +362,6 @@ Creates Pebble issue hierarchy from plans (when Pebble enabled):
 - Creates verification subtask per feature (steps in description)
 - Adds dependencies between sequential phases
 - Invoked automatically after plan approval
-
-</details>
-
-<details>
-<summary><strong>MCP Servers — External Knowledge</strong></summary>
-
-MCP (Model Context Protocol) servers give Claude access to up-to-date external knowledge. Meridian includes three:
-
-### Context7
-
-Queries documentation for any public library. Claude uses this to:
-- Verify library APIs exist and work as expected
-- Find correct usage patterns and examples
-- Check for deprecations or breaking changes
-
-### DeepWiki
-
-Asks questions about any public GitHub repository. Claude uses this to:
-- Understand how external libraries work internally
-- Verify integration patterns are correct
-- Research best practices for specific tools
-
-### Firecrawl
-
-Web scraping and search capabilities. Used by docs-researcher agent and reviewers to:
-- Scrape current documentation from official sources
-- Search for up-to-date API information
-- Crawl documentation sites for comprehensive coverage
-
-Requires `FIRECRAWL_API_KEY` environment variable.
-
-**Why MCPs matter:** Claude's training data has a cutoff date. When planning or reviewing, Claude can verify claims against current documentation instead of relying on potentially outdated knowledge.
-
-**Configuration:** `.mcp.json` in project root:
-```json
-{
-  "mcpServers": {
-    "context7": {
-      "type": "http",
-      "url": "https://mcp.context7.com/mcp"
-    },
-    "deepwiki": {
-      "type": "http",
-      "url": "https://mcp.deepwiki.com/mcp"
-    },
-    "firecrawl-mcp": {
-      "command": "npx",
-      "args": ["-y", "firecrawl-mcp"],
-      "env": { "FIRECRAWL_API_KEY": "$FIRECRAWL_API_KEY" }
-    }
-  }
-}
-```
 
 </details>
 
@@ -483,13 +424,11 @@ Precedence: Baseline → Project Type Addon
 
 ```
 your-project/
-├── .mcp.json                   # MCP server configuration
 ├── .claude/
 │   ├── settings.json          # Hook configuration
 │   ├── hooks/
 │   │   ├── lib/config.py      # Shared utilities
-│   │   ├── claude-init.py     # Session start
-│   │   ├── session-reload.py  # Post-compaction
+│   │   ├── claude-init.py     # Session start (startup + compaction)
 │   │   ├── post-compact-guard.py
 │   │   ├── pre-compaction-sync.py
 │   │   ├── plan-review.py
@@ -621,10 +560,6 @@ pre_compaction_sync_enabled: false
 **How is this different from subagents?**
 
 Subagents don't share live context, re-read docs (token waste), and can't be resumed after interrupts. Meridian keeps Claude as the primary agent and injects context directly.
-
-**What are the MCP servers for?**
-
-Context7 and DeepWiki give Claude access to current library documentation. Claude's training data has a cutoff, so when it needs to verify an API exists or check usage patterns, it queries these servers instead of guessing.
 
 ---
 

@@ -21,7 +21,6 @@ PLAN_REVIEW_FLAG = f"{STATE_DIR}/plan-review-blocked"
 CONTEXT_ACK_FLAG = f"{STATE_DIR}/context-acknowledgment-pending"
 ACTION_COUNTER_FILE = f"{STATE_DIR}/action-counter"
 PLAN_ACTION_COUNTER_FILE = f"{STATE_DIR}/plan-action-counter"
-DOCS_RESEARCHER_FLAG = f"{STATE_DIR}/docs-researcher-active"
 PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
 ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
 ACTIVE_SUBPLAN_FILE = f"{STATE_DIR}/active-subplan"
@@ -109,12 +108,10 @@ def get_project_config(base_dir: Path) -> dict:
         'pre_compaction_sync_enabled': True,
         'pre_compaction_sync_threshold': 150000,
         'auto_compact_off': False,
-        'workspace_max_lines': 1000,
         'pebble_enabled': False,
         'stop_hook_min_actions': 10,
         'plan_review_min_actions': 20,
         'code_review_enabled': True,
-        'docs_researcher_write_required': True,
         'pebble_scaffolder_enabled': True,
     }
 
@@ -153,14 +150,6 @@ def get_project_config(base_dir: Path) -> dict:
         if aco:
             config['auto_compact_off'] = aco.lower() == 'true'
 
-        # Workspace max lines
-        max_lines = get_config_value(content, 'workspace_max_lines')
-        if max_lines:
-            try:
-                config['workspace_max_lines'] = int(max_lines)
-            except ValueError:
-                pass
-
         # Pebble integration
         pebble = get_config_value(content, 'pebble_enabled')
         if pebble:
@@ -186,11 +175,6 @@ def get_project_config(base_dir: Path) -> dict:
         cr_enabled = get_config_value(content, 'code_review_enabled')
         if cr_enabled:
             config['code_review_enabled'] = cr_enabled.lower() != 'false'
-
-        # Docs researcher write requirement
-        dr_write = get_config_value(content, 'docs_researcher_write_required')
-        if dr_write:
-            config['docs_researcher_write_required'] = dr_write.lower() != 'false'
 
         # Pebble scaffolder auto-invocation
         ps_enabled = get_config_value(content, 'pebble_scaffolder_enabled')
@@ -455,37 +439,6 @@ def _build_file_tree(base_dir: Path) -> str:
 
     _walk(base_dir, 0)
     return '\n'.join(lines)
-
-
-# =============================================================================
-# WORKSPACE HELPERS
-# =============================================================================
-def trim_workspace(base_dir: Path, max_lines: int) -> None:
-    """Trim workspace root file to max_lines, keeping newest entries.
-
-    Args:
-        base_dir: Project root directory
-        max_lines: Maximum lines to keep (0 = no trimming)
-    """
-    if max_lines <= 0:
-        return
-
-    workspace_file = base_dir / WORKSPACE_FILE
-    if not workspace_file.exists():
-        return
-
-    try:
-        content = workspace_file.read_text()
-        lines = content.split('\n')
-
-        if len(lines) <= max_lines:
-            return
-
-        # Keep newest lines (from end)
-        trimmed = lines[-max_lines:]
-        workspace_file.write_text('\n'.join(trimmed))
-    except Exception:
-        pass
 
 
 # =============================================================================
@@ -939,10 +892,6 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     parts.append("")
     parts.append("</injected-project-context>")
 
-    # Trim workspace root file if over limit
-    max_lines = project_config.get('workspace_max_lines', 1000)
-    trim_workspace(base_dir, max_lines)
-
     return "\n".join(parts)
 
 
@@ -1082,7 +1031,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     if code_review_enabled:
         parts.append("- Run **code-reviewer** and **code-health-reviewer** in parallel if you made significant code changes")
 
-    parts.append("- Update your workspace (`.meridian/WORKSPACE.md`) with current state")
+    parts.append("- Update your workspace (`.meridian/WORKSPACE.md`) with any new decisions, lessons, or discoveries")
 
     if pebble_enabled:
         parts.append("- Close/update Pebble issues for completed work")

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.0.88] - 2026-02-15
+
+### Changed
+- **Workspace reframed as persistent knowledge library**: Workspace is no longer described as "session state" or "current state." It's a growing library of project knowledge — decisions, lessons, architecture, gotchas — that accumulates across sessions. Updated SOUL.md, agent-operating-manual, stop hook, and pre-compaction hook.
+- **Merged `session-reload.py` into `claude-init.py`**: Both hooks were identical. Now a single `claude-init.py` handles all SessionStart events (startup, compaction, clear). Deleted `session-reload.py`.
+- **Docs-researcher uses generic web research**: Agent no longer references Firecrawl specifically. Uses "relevant MCPs or skills if available" for web research.
+- **Simplified agent tool lists**: Removed hardcoded MCP tool references from `plan-reviewer.md`, `code-reviewer.md`, and `docs-researcher.md`. Agents use whatever tools are available in their environment.
+- **External Tools rule softened**: Operating manual no longer marks it as "STRICT RULE". Still recommends checking `api-docs/INDEX.md` before using external APIs.
+
+### Removed
+- **`.mcp.json`**: Removed bundled MCP server configuration (Context7, DeepWiki, Firecrawl). Users configure their own MCP servers as needed.
+- **`docs-researcher-tracker.py`**: Removed PostToolUse hook that tracked docs-researcher spawning.
+- **`docs-researcher-stop.py`**: Removed SubagentStop hook that blocked docs-researcher from stopping without writing files.
+- **`block-task-output.py`**: Removed PreToolUse hook that blocked TaskOutput tool.
+- **`docs_researcher_write_required` config option**: Removed from `config.yaml` and `config.py`.
+- **`DOCS_RESEARCHER_FLAG` constant**: Removed from `config.py`.
+- **`SubagentStop` hook section**: Removed from `settings.json` (no remaining SubagentStop hooks).
+- **MCP references from README**: Removed MCP Servers section, Context7/DeepWiki/Firecrawl documentation, and related FAQ.
+- **`trim_workspace` function**: Removed workspace trimming. Workspace grows without limit — agent reorganizes into sub-pages instead of losing old knowledge.
+- **`workspace_max_lines` config option**: Removed from `config.yaml` and `config.py`.
+
 ## [0.0.86] - 2026-02-11
 
 ### Added

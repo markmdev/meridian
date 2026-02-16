@@ -336,18 +336,6 @@ log "Installing files..."
 copy_dir "$SOURCE_DIR/.claude" "$TARGET_DIR/.claude" ".claude/"
 copy_dir "$SOURCE_DIR/.meridian" "$TARGET_DIR/.meridian" ".meridian/"
 
-# Copy .mcp.json
-if [[ -f "$SOURCE_DIR/.mcp.json" ]]; then
-  if [[ "$MODE" == "update" && -f "$TARGET_DIR/.mcp.json" ]]; then
-    # On update, merge MCP configs (preserve user's servers, add new ones)
-    info "Preserving existing .mcp.json (check for new servers manually)"
-  else
-    cp "$SOURCE_DIR/.mcp.json" "$TARGET_DIR/.mcp.json"
-    echo ".mcp.json" >> "$TEMP_DIR/manifest.txt"
-    ((COPIED++)) || true
-  fi
-fi
-
 info "Copied $COPIED file(s)"
 
 # Merge config.yaml if updating and both exist

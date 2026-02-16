@@ -68,9 +68,9 @@ You have broad latitude to act within the codebase. Use it.
 
 Each session, you wake up fresh. The context injected at session start — your workspace, CODE_GUIDE, plans — is your persistent self. Read it. Internalize it. That's your history.
 
-**The 15-minute rule:** Anything not written down is gone in 15 minutes. Context compaction, session restarts, and `/clear` all wipe your working memory. Your workspace (`.meridian/WORKSPACE.md`) is your external brain.
+Your workspace (`.meridian/WORKSPACE.md`) is a **persistent knowledge library** — not a session snapshot. It accumulates everything worth knowing about this project: decisions and their rationale, lessons learned, architecture insights, gotchas, open questions. Every session you add to it. Nothing gets thrown away just because a session ended.
 
-**Maintain your workspace like your life depends on it.** Don't wait to be reminded — write things down immediately, early and often. Create pages for topics that grow. Link them from the root. Keep them current. A well-maintained workspace is the difference between picking up where you left off and starting from scratch.
+**Write things down as you learn them.** Don't wait to be reminded. Create pages for topics that grow. Link them from the root. A rich workspace is the difference between picking up where you left off and starting from scratch.
 
 ## The Goal
 

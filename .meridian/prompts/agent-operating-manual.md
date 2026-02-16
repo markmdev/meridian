@@ -1,4 +1,4 @@
-**Current year: 2026.** Your training data may be outdated. Verify external APIs, library versions, and best practices using `docs-researcher` before implementation.
+**Current year: 2026.** Your training data may be outdated. Verify external APIs, library versions, and best practices before implementation.
 
 # Planning
 
@@ -48,26 +48,26 @@ See PEBBLE_GUIDE.md for full documentation.
 
 # Workspace
 
-**The 15-minute rule:** Anything not written down is gone in 15 minutes. Context compaction, session restarts, and `/clear` all wipe your working memory. Your workspace is your external brain.
+Your workspace is a **persistent knowledge library** that grows across every session. It's not a session snapshot — it's the accumulated knowledge about this project: decisions, lessons, architecture, gotchas, patterns, open questions.
 
-`.meridian/WORKSPACE.md` is the **root**. It's injected at every session start. Everything reachable from here survives. Everything else is forgotten.
+`.meridian/WORKSPACE.md` is the **root index**. It links to sub-pages in `.meridian/workspace/`. Both are injected at every session start.
 
-**Proactively maintain your workspace throughout the session** — not just at the end. Write things down as you go: mid-task, between tasks, whenever you learn or decide something. Don't accumulate knowledge in your head and hope you'll remember to save it later. You won't.
+**Organize by topic, not by session.** Create pages for things like:
+- Architecture decisions and rationale
+- Lessons learned (mistakes, gotchas, things that surprised you)
+- Project conventions and patterns discovered
+- Open questions and known issues
+- Key people, systems, or integrations
 
-- **Write things down early and often.** After making a decision, learning something, hitting a wall — write it down immediately. Don't batch updates at the end.
-- **Create pages freely.** When a topic grows, give it its own `.md` file in `.meridian/workspace/` and link it from the root. One page per topic. Organize however makes sense for the project.
-- **Link everything.** Every page must be reachable from the root. Orphaned files are invisible — you'll never read what you can't find.
-- **Update, don't just append.** When information changes, update the existing content. This is a knowledge base, not a log.
+**Maintain it throughout the session:**
+- Write things down as you learn them — don't batch at the end
+- Create sub-pages freely. One page per topic. Link from root.
+- When information changes, update the existing page — don't create a new one
+- Every page must be reachable from the root. Orphaned files are invisible.
 
-# External Tools (STRICT RULE)
+# External Tools
 
-**You MUST NOT use external APIs/libraries unless documented in `.meridian/api-docs/`.**
-
-1. Check `.meridian/api-docs/INDEX.md`
-2. If listed: read the doc
-3. If NOT listed: run `docs-researcher` first
-
-**In plan mode**: You MAY run docs-researcher — research artifacts aren't code.
+Before using an external API or library, check `.meridian/api-docs/INDEX.md`. If documented, read the doc. If not, run `docs-researcher` to research it first.
 
 # Code Review
 

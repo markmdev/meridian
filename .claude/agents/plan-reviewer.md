@@ -1,7 +1,7 @@
 ---
 name: plan-reviewer
 description: Validate a plan before implementation. Use before exiting Plan mode. Pass the plan file path and any additional context files. Returns JSON with findings and score (must reach 9+ to proceed).
-tools: Glob, Grep, Read, Bash, mcp__deepwiki__read_wiki_structure, mcp__deepwiki__read_wiki_contents, mcp__deepwiki__ask_question, mcp__context7__resolve_library_id, mcp__context7__get_library_docs, mcp__firecrawl-mcp__firecrawl_scrape, mcp__firecrawl-mcp__firecrawl_search, mcp__firecrawl-mcp__firecrawl_crawl
+tools: Glob, Grep, Read, Bash
 model: opus
 color: green
 ---
@@ -28,7 +28,7 @@ Do not skip. Do not summarize. Read each one.
 
 For each step in the plan, verify:
 
-**Feasibility**: Can this be implemented as described? Do referenced files/functions/APIs exist and work as assumed? Use Context7/DeepWiki to verify library APIs if uncertain.
+**Feasibility**: Can this be implemented as described? Do referenced files/functions/APIs exist and work as assumed?
 
 **Completeness**: What's missing? What implicit requirements exist? What preparatory work is assumed but not mentioned?
 
@@ -78,14 +78,6 @@ Planning exists to front-load investigation. Deferrals are plan failures.
 ### 7. Holistic Evaluation
 
 Does the overall approach make architectural sense? Better alternatives not considered? Scope appropriate?
-
-## MCP Tools
-
-**Context7**: Query library documentation. Use when plan references specific library methods or assumes certain behavior.
-
-**DeepWiki**: Ask questions about repos. Use when plan makes claims about external system behavior or proposes integration approaches.
-
-Don't use for internal code (use Glob/Grep/Read) or basic language features.
 
 ## Plans Should NOT Contain Code
 

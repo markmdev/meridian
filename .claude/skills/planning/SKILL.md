@@ -71,7 +71,7 @@ Use ASCII diagrams when they'd clarify visual concepts, data flow, or architectu
 
 **No literal code.** Describe structure instead. Reference patterns: "Follow the pattern in validateUser."
 
-**External APIs:** Check `.meridian/api-docs/INDEX.md` first. Not listed? Run `docs-researcher`.
+**External APIs:** Check `.meridian/api-docs/INDEX.md` first. Not listed? Run `docs-researcher` to research it.
 
 ## Epic Planning
 

@@ -19,7 +19,6 @@ REVIEWER_AGENTS = {
     "code-health-reviewer",
     "architect",
     "pebble-scaffolder",
-    "docs-researcher",
     "implement",
     "refactor",
     "test-writer",

@@ -20,6 +20,7 @@ from config import STATE_DIR, WORKSPACE_FILE
 
 TRANSCRIPT_PATH_STATE = f"{STATE_DIR}/transcript-path"
 WORKSPACE_SYNC_LOCK = f"{STATE_DIR}/workspace-sync.lock"
+LAST_SYNC_FILE = f"{STATE_DIR}/last-workspace-sync"
 MIN_ENTRIES_THRESHOLD = 5  # Skip if fewer than this many meaningful entries
 
 
@@ -296,6 +297,31 @@ def release_lock(project_dir: Path):
         pass
 
 
+def was_recently_synced(project_dir: Path) -> bool:
+    """Check if workspace was synced in the last 30 seconds (dedup for /clear)."""
+    import time
+    sync_path = project_dir / LAST_SYNC_FILE
+    if sync_path.exists():
+        try:
+            last_sync = float(sync_path.read_text().strip())
+            if time.time() - last_sync < 30:
+                return True
+        except (ValueError, IOError):
+            pass
+    return False
+
+
+def mark_synced(project_dir: Path):
+    """Record that workspace was just synced."""
+    import time
+    sync_path = project_dir / LAST_SYNC_FILE
+    try:
+        sync_path.parent.mkdir(parents=True, exist_ok=True)
+        sync_path.write_text(str(time.time()))
+    except IOError:
+        pass
+
+
 def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
     """Run headless claude -p to update workspace. Returns True on success."""
     env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
@@ -360,6 +386,11 @@ def main():
     if not is_compact_clear and not is_session_end:
         sys.exit(0)
 
+    # Dedup: /clear fires both SessionEnd and SessionStart:clear on the same transcript.
+    # Skip if we already processed recently.
+    if was_recently_synced(project_dir):
+        sys.exit(0)
+
     # For compact/clear: acquire lock IMMEDIATELY so context-injector can wait.
     # Hooks run in parallel — lock must exist before context-injector checks for it.
     lock_acquired = False
@@ -410,6 +441,7 @@ def main():
 
         if success:
             print("[Meridian] Workspace updated.", file=sys.stderr)
+            mark_synced(project_dir)
         else:
             print("[Meridian] Workspace update failed.", file=sys.stderr)
 

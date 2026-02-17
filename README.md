@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.0.92` (2026-02-16) | [Changelog](CHANGELOG.md)
+**Current version:** `0.0.93` (2026-02-16) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -233,13 +233,13 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 
 | Hook | Trigger | What it does |
 |------|---------|--------------|
-| `claude-init.py` | SessionStart | Injects workspace, tasks, CODE_GUIDE into context |
-| `post-compact-guard.py` | PreToolUse | Blocks first tool until agent acknowledges context |
-| `pre-compaction-sync.py` | PreToolUse | Warns when approaching token limit, prompts context save |
+| `context-injector.py` | SessionStart | Injects workspace, tasks, CODE_GUIDE into context |
+| `context-acknowledgment-gate.py` | PreToolUse | Blocks first tool until agent acknowledges context |
+| `token-limit-warning.py` | PreToolUse | Warns when approaching token limit, prompts context save |
 | `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
 | `action-counter.py` | PostToolUse | Tracks actions for stop hook threshold |
 | `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create Pebble issues (if enabled) |
-| `pre-stop-update.py` | Stop | Requires context updates and code review |
+| `stop-checklist.py` | Stop | Requires context updates and code review |
 | `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
 | `meridian-path-guard.py` | PermissionRequest | Blocks .meridian/.claude writes outside project root |
 | `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
@@ -428,13 +428,14 @@ your-project/
 │   ├── settings.json          # Hook configuration
 │   ├── hooks/
 │   │   ├── lib/config.py      # Shared utilities
-│   │   ├── claude-init.py     # Session start (startup + compaction)
-│   │   ├── post-compact-guard.py
-│   │   ├── pre-compaction-sync.py
+│   │   ├── context-injector.py       # Injects project context at session start
+│   │   ├── context-acknowledgment-gate.py  # Blocks until agent reads context
+│   │   ├── token-limit-warning.py    # Warns near compaction threshold
+│   │   ├── session-learner.py        # Updates workspace + CLAUDE.md from transcript
+│   │   ├── stop-checklist.py         # Pre-stop checks (review, tests, commits)
 │   │   ├── plan-review.py
 │   │   ├── plan-approval-reminder.py
-│   │   ├── pre-stop-update.py
-│   │   ├── action-counter.py  # Tracks actions for stop hook
+│   │   ├── action-counter.py
 │   │   ├── permission-auto-approver.py
 │   │   ├── meridian-path-guard.py
 │   │   ├── plan-mode-tracker.py

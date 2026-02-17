@@ -79,7 +79,7 @@ def main():
         }
     }
 
-    log_hook_output(base_dir, "post-compact-guard", output)
+    log_hook_output(base_dir, "context-acknowledgment-gate", output)
     sys.exit(0)
 
 

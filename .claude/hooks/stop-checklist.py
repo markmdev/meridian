@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Stop Hook - Pre-Stop Update
+Stop Checklist — Stop Hook
 
-Prompts agent to complete checklist items and optionally run code review.
-Skips if a work-until loop is active (loop hook handles everything).
+Prompts agent to complete checklist items (workspace, code review, tests, commits)
+before stopping. Skips if a work-until loop is active (loop hook handles everything).
 """
 
 import json
@@ -93,7 +93,7 @@ def main():
         "systemMessage": "[Meridian] Running pre-stop checklist."
     }
 
-    log_hook_output(base_dir, "pre-stop-update", output)
+    log_hook_output(base_dir, "stop-checklist", output)
     sys.exit(0)
 
 

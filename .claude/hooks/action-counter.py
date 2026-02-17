@@ -6,7 +6,7 @@ Handles:
 - PostToolUse: Increment counter, track file edits, track plan mode transitions
 - PreToolUse: Detect code-reviewer spawn
 
-Counter is reset by stop hooks (pre-stop-update.py, work-until-stop.py)
+Counter is reset by stop hooks (stop-checklist.py, work-until-stop.py)
 when they actually fire. This ensures actions accumulate across user
 interruptions until the agent sees the stop message.
 

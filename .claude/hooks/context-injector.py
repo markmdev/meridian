@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Claude Init Hook - Session Start
+Context Injector — SessionStart Hook
 
-Injects project context directly into the conversation via additionalContext.
-Triggers on: startup, resume, clear
+Injects project context (workspace, code guide, plans, file tree) into the
+conversation via additionalContext. Triggers on: startup, compact, clear.
 """
 
 import json
@@ -39,7 +39,7 @@ def main() -> int:
     # Build the injected context
     injected_context = build_injected_context(base_dir)
 
-    # Save to state for debugging/inspection and workspace-sync
+    # Save to state for debugging/inspection and session-learner
     state_dir = base_dir / STATE_DIR
     state_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -47,7 +47,7 @@ def main() -> int:
     except IOError:
         pass
 
-    # Save transcript path so workspace-sync can find it after /clear
+    # Save transcript path so session-learner can find it after /clear
     transcript_path = input_data.get("transcript_path", "")
     if transcript_path:
         try:
@@ -63,12 +63,12 @@ def main() -> int:
         }
     }
 
-    log_hook_output(base_dir, "claude-init", output)
+    log_hook_output(base_dir, "context-injector", output)
 
     # Clean up old flags
     cleanup_flag(base_dir, PRE_COMPACTION_FLAG)
 
-    # Create acknowledgment flag - will be checked by post-compact-guard
+    # Create acknowledgment flag - will be checked by context-acknowledgment-gate
     create_flag(base_dir, CONTEXT_ACK_FLAG)
 
     return 0

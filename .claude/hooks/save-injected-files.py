@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Injected Files Log - SessionStart Hook
+Save Injected Files — SessionStart Hook
 
-Logs all files that are injected into context.
-Runs on startup, compact, and clear.
+Saves the list of files injected into context to .meridian/.state/injected-files.
+Agents read this file to know what context is available.
 """
 
 import json

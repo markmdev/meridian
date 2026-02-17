@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Clears pre-compaction-synced flag after compact.
+Reset Token Warning — SessionStart (compact) Hook
 
-This allows the pre-compaction warning to fire again if tokens grow.
+Clears the token warning flag after compaction so the warning can fire again.
 """
 
 import os

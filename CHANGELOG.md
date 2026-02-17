@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.93] - 2026-02-16
+
+### Changed
+- **Hook file renames for clarity**: 7 hooks renamed to better reflect their purpose:
+  - `claude-init.py` → `context-injector.py` — injects project context at session start
+  - `post-compact-guard.py` → `context-acknowledgment-gate.py` — blocks until agent reads context
+  - `pre-stop-update.py` → `stop-checklist.py` — pre-stop checks (review, tests, commits)
+  - `pre-compaction-sync.py` → `token-limit-warning.py` — warns near compaction threshold
+  - `clear-precompaction-flag.py` → `reset-token-warning.py` — resets token warning flag
+  - `injected-files-log.py` → `save-injected-files.py` — saves injected file list to state
+  - `workspace-sync.py` → `session-learner.py` — updates workspace and learns from corrections
+- **Session learner**: Now uses Opus 4.6 (was Sonnet) and learns from user corrections by updating `~/.claude/CLAUDE.md` (global) or `<project>/CLAUDE.md` (project-specific). When the user corrects the agent's behavior, the correction is saved as a permanent instruction.
+
 ## [0.0.92] - 2026-02-16
 
 ### Added

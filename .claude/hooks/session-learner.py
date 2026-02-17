@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Workspace Sync Hook
+Session Learner — SessionStart (compact, clear) + SessionEnd Hook
 
-Extracts session transcript and spawns a headless Claude session to update
-the workspace. Runs synchronously so workspace is ready before context injection.
+Extracts session transcript and spawns a headless Claude session to:
+1. Update the workspace (persistent knowledge library)
+2. Learn from user corrections (update CLAUDE.md files)
 
-Triggers: SessionStart (compact, clear), SessionEnd
+Runs synchronously on SessionStart so workspace is ready before context injection.
 """
 
 import json
@@ -161,53 +162,109 @@ def load_workspace(project_dir: Path) -> tuple[str, list[tuple[str, str]]]:
     return root_content, pages
 
 
-def build_prompt(entries: list[dict], workspace_root: str, workspace_pages: list[tuple[str, str]]) -> str:
+def load_claudemd_files(project_dir: Path) -> tuple[str, str]:
+    """Load global and project CLAUDE.md files."""
+    global_path = Path.home() / ".claude" / "CLAUDE.md"
+    project_path = project_dir / "CLAUDE.md"
+
+    global_content = ""
+    if global_path.exists():
+        try:
+            global_content = global_path.read_text()
+        except IOError:
+            pass
+
+    project_content = ""
+    if project_path.exists():
+        try:
+            project_content = project_path.read_text()
+        except IOError:
+            pass
+
+    return global_content, project_content
+
+
+def build_prompt(entries: list[dict], workspace_root: str, workspace_pages: list[tuple[str, str]], project_dir: Path) -> str:
     """Build the prompt for the workspace maintenance agent."""
+    global_claudemd, project_claudemd = load_claudemd_files(project_dir)
+    global_claudemd_path = str(Path.home() / ".claude" / "CLAUDE.md")
+    project_claudemd_path = str(project_dir / "CLAUDE.md")
+
     parts = []
 
-    parts.append("""You are the Workspace Maintenance Agent. Analyze a coding session transcript and update the project's persistent knowledge base.
+    parts.append("""You are a session maintenance agent with two jobs:
+
+1. **Update the workspace** — persistent knowledge library for the project
+2. **Learn from corrections** — when the user corrects the agent, save it as a permanent instruction
+
+---
+
+## Job 1: Workspace
 
 The workspace is a library of project knowledge — decisions, lessons, architecture, gotchas. NOT a session log.
 
-## Current Workspace Root (.meridian/WORKSPACE.md)
+### Current Workspace Root (.meridian/WORKSPACE.md)
 """)
     parts.append(workspace_root if workspace_root.strip() else "(empty — create it)")
 
     if workspace_pages:
-        parts.append("\n## Current Workspace Pages\n")
+        parts.append("\n### Current Workspace Pages\n")
         for path, content in workspace_pages:
             parts.append(f"<page path=\"{path}\">")
             parts.append(content.rstrip())
             parts.append("</page>\n")
 
-    parts.append("\n## Session Transcript\n")
-    parts.append("```json")
-    parts.append(json.dumps(entries, indent=2, ensure_ascii=False))
-    parts.append("```")
-
-    parts.append("""
-
-## Task
-
-Update the workspace with knowledge worth preserving:
-
-- **Decisions and rationale** — why X was chosen over Y
-- **Lessons learned** — what broke, what worked, gotchas discovered
-- **Architecture insights** — how components connect, patterns that emerged
-- **Key technical details** — file paths, APIs, configurations that matter
-- **Open questions** — what's unresolved, what needs future attention
-
-### Rules
+    parts.append(f"""
+### Workspace Rules
 
 - Write clean reference material. No timestamps, no "in this session", no logs.
 - Update existing pages when the topic already has a page. Don't duplicate.
 - Create new pages in `.meridian/workspace/` for substantial new topics.
 - Every new page MUST be linked from `.meridian/WORKSPACE.md`.
 - Remove information superseded by this session's work.
-- If nothing worth preserving happened, output "No workspace updates needed." and stop.
 - Be concise — write what a future agent needs to know, not everything that happened.
 
-Use the Write tool to update files.""")
+---
+
+## Job 2: Learn from Corrections
+
+Scan the transcript for moments where the user corrects the agent's behavior, expresses a preference, or teaches something that should apply going forward. Save these as permanent instructions in the appropriate CLAUDE.md file.
+
+### Current CLAUDE.md Files
+
+<file path="{global_claudemd_path}">
+{global_claudemd if global_claudemd.strip() else "(empty)"}
+</file>
+
+<file path="{project_claudemd_path}">
+{project_claudemd if project_claudemd.strip() else "(empty)"}
+</file>
+
+### CLAUDE.md Rules
+
+- Write as the user giving instructions to an agent. Direct, imperative voice.
+- **Global** (`{global_claudemd_path}`): preferences that apply to all projects (communication style, workflow habits, general coding preferences).
+- **Project** (`{project_claudemd_path}`): instructions specific to this codebase (architecture decisions, project conventions, tech stack preferences).
+- Don't duplicate instructions already present in either file.
+- Don't add one-time fixes or task-specific instructions. Only lasting preferences.
+- Append new entries. Don't rewrite or reorganize existing content.
+- If no corrections or preferences were expressed, don't touch the CLAUDE.md files.
+
+---
+
+## Session Transcript
+""")
+    parts.append("```json")
+    parts.append(json.dumps(entries, indent=2, ensure_ascii=False))
+    parts.append("```")
+
+    parts.append("""
+
+## Execute
+
+Do both jobs. If nothing worth preserving for either job, say so and stop.
+
+Use the Write tool (or Read then Edit) to update files.""")
 
     return "\n".join(parts)
 
@@ -247,8 +304,8 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
         result = subprocess.run(
             [
                 "claude", "-p",
-                "--model", "sonnet",
-                "--allowedTools", "Write,Read",
+                "--model", "claude-opus-4-6",
+                "--allowedTools", "Write,Read,Edit",
                 "--dangerously-skip-permissions",
                 "--no-session-persistence",
                 "--setting-sources", "user",
@@ -326,7 +383,7 @@ def main():
         workspace_root, workspace_pages = load_workspace(project_dir)
 
         # Build prompt and run agent
-        prompt = build_prompt(entries, workspace_root, workspace_pages)
+        prompt = build_prompt(entries, workspace_root, workspace_pages, project_dir)
 
         print("[Meridian] Updating workspace from session transcript...", file=sys.stderr)
         success = run_workspace_agent(prompt, project_dir)

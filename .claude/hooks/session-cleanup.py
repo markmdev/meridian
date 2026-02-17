@@ -5,7 +5,7 @@ Session cleanup hook - runs on startup, clear, and session end.
 Removes ephemeral state files based on event type. Some files persist
 across certain events (e.g., active-plan is never deleted).
 
-Compact is handled by clear-precompaction-flag.py.
+Compact is handled by reset-token-warning.py.
 """
 
 import json
@@ -76,7 +76,7 @@ def main():
         sys.exit(0)
 
     # Determine which files to delete based on event
-    # Note: compact is handled by clear-precompaction-flag.py
+    # Note: compact is handled by reset-token-warning.py
     if hook_event == "SessionEnd":
         delete_files(SESSION_END_DELETE)
     elif source == "startup":

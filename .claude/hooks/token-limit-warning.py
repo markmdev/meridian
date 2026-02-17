@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Pre-Compaction Context Sync Hook
+Token Limit Warning — PreToolUse Hook
 
-Prompts agent to save context before conversation compacts (based on token usage).
+Warns agent when token usage approaches compaction threshold. Prompts to save
+workspace, commit changes, and preserve context before compaction occurs.
 """
 
 import json
@@ -200,7 +201,7 @@ def main():
         }
     }
 
-    log_hook_output(base_dir, "pre-compaction-sync", output)
+    log_hook_output(base_dir, "token-limit-warning", output)
     sys.exit(0)
 
 

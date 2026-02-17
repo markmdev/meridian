@@ -38,13 +38,21 @@ def main() -> int:
     # Build the injected context
     injected_context = build_injected_context(base_dir, claude_project_dir, source)
 
-    # Save to state for debugging/inspection
+    # Save to state for debugging/inspection and workspace-sync
     state_dir = base_dir / STATE_DIR
     state_dir.mkdir(parents=True, exist_ok=True)
     try:
         (state_dir / "injected-context").write_text(injected_context)
     except IOError:
         pass
+
+    # Save transcript path so workspace-sync can find it after /clear
+    transcript_path = input_data.get("transcript_path", "")
+    if transcript_path:
+        try:
+            (state_dir / "transcript-path").write_text(transcript_path)
+        except IOError:
+            pass
 
     # Output JSON with additionalContext
     output = {

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.90] - 2026-02-16
+
+### Added
+- **Workspace sync agent**: Dedicated headless `claude -p` session that updates the workspace automatically by analyzing the session transcript. Fires synchronously on compaction and `/clear` (before context injection), and on session end. Extracts user messages, assistant text/thinking, and tool calls (without results) since the last compaction boundary. Runs with `--setting-sources "user"` to avoid loading project hooks.
+- **Transcript path persistence**: `claude-init.py` saves the transcript path to `.meridian/.state/transcript-path` so the workspace sync agent can find the old transcript after `/clear` (which creates a new transcript file).
+
+### Changed
+- **Planning skill: Non-Goals section**: Plans now require a `Non-Goals` section that explicitly fences scope to prevent implementation drift.
+- **Planning skill: Current State section**: Plans document what exists today — relevant files, data flows, constraints — before proposing changes.
+- **Planning skill: Self-Review checklist**: Four verification items before finalizing: existing controls integration, state invariants, transaction boundaries, and verification executability.
+- **Workspace maintenance is automatic**: Removed workspace update reminders from stop hook and pre-compaction hook. SOUL.md updated to reflect that a dedicated agent handles workspace maintenance.
+
 ## [0.0.89] - 2026-02-16
 
 ### Changed

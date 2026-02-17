@@ -56,14 +56,23 @@ Spawn as many Explore agents simultaneously as the task demands — 5, 10, 15, t
 
 Plans document your understanding. Include what matters for this specific task:
 
-- **Data**: Tables, fields, transformations, what the data looks like
-- **Flow**: How data moves, what calls what, where state changes
-- **Decisions**: Why this approach, tradeoffs, assumptions
+- **Current State**: What exists today — relevant files, data flows, constraints, existing patterns. Ground the plan in reality before proposing changes.
 - **Changes**: Every file to create/modify/delete, how changes connect
+- **Decisions**: Why this approach, tradeoffs, assumptions
 - **Acceptance criteria**: What must be true when each step is "done" — specific, not vague
 - **Test cases**: For behavioral changes, include input → expected output examples
+- **Non-Goals**: What is explicitly out of scope. Fence adjacent tempting work to prevent implementation drift.
 
 Use ASCII diagrams when they'd clarify visual concepts, data flow, or architecture.
+
+## Self-Review Before Finalizing
+
+Before presenting the plan, verify against real code:
+
+- **Existing controls**: Identify permissions, lifecycle checks, feature switches, and constraints already in the codebase. State how new behavior integrates with or extends them.
+- **State invariants**: Define legal lifecycle transitions and where enforcement lives (service layer, DB, or both). Don't leave state management implicit.
+- **Transaction boundaries**: For multi-write operations, define boundaries so retries can't create split state.
+- **Verification executability**: Every verification command must work with current tooling. If scripts or runners are missing, add setup steps.
 
 ## Rules
 

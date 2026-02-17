@@ -1103,8 +1103,6 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     if code_review_enabled:
         parts.append("- Run **code-reviewer** and **code-health-reviewer** in parallel if you made significant code changes")
 
-    parts.append("- Update your workspace (`.meridian/WORKSPACE.md`) with any new decisions, lessons, or discoveries")
-
     if pebble_enabled:
         parts.append("- Close/update Pebble issues for completed work")
 

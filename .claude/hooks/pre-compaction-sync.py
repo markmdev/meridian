@@ -161,7 +161,6 @@ def main():
 
     # Core checklist - agent knows HOW from SOUL.md
     parts.append("**Checklist:**")
-    parts.append("- Update your workspace (`.meridian/WORKSPACE.md`) with any new decisions, lessons, or discoveries")
     if config.get('pebble_enabled', False):
         parts.append("- Create Pebble issues for any untracked work")
 

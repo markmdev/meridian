@@ -9,6 +9,7 @@ conversation via additionalContext. Triggers on: startup, compact, clear.
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 # Add lib to path for imports
@@ -23,6 +24,21 @@ from config import (
     STATE_DIR,
 )
 
+SYNC_LOCK = f"{STATE_DIR}/workspace-sync.lock"
+SYNC_WAIT_TIMEOUT = 190  # slightly longer than session-learner's 180s timeout
+
+
+def wait_for_session_learner(base_dir: Path, source: str) -> None:
+    """On compact/clear, wait for session-learner to finish updating workspace."""
+    if source not in ("compact", "clear"):
+        return
+    lock_path = base_dir / SYNC_LOCK
+    if not lock_path.exists():
+        return
+    deadline = time.time() + SYNC_WAIT_TIMEOUT
+    while lock_path.exists() and time.time() < deadline:
+        time.sleep(0.5)
+
 
 def main() -> int:
     # Read input to get session info
@@ -35,6 +51,9 @@ def main() -> int:
 
     claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR", "")
     base_dir = Path(claude_project_dir)
+
+    # Wait for session-learner to finish updating workspace before injecting
+    wait_for_session_learner(base_dir, source)
 
     # Build the injected context
     injected_context = build_injected_context(base_dir)

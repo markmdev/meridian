@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.98] - 2026-02-16
+
+### Fixed
+- **Workspace injected before session learner finishes**: Context injector now waits for the session learner lock to release on compact/clear before injecting workspace. Previously hooks ran in parallel, so the old workspace was injected before the session learner could update it.
+
 ## [0.0.97] - 2026-02-16
 
 ### Added

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.97] - 2026-02-16
+
+### Added
+- **Session learner output saved**: `claude -p` agent output now saved to `.meridian/.state/session-learner-output.md` for inspection.
+
+### Fixed
+- **Hook logs no longer cleared**: Removed `clear_hook_logs()` from session-cleanup. Hook logs persist across sessions — each hook overwrites its own file naturally, so no accumulation.
+
 ## [0.0.96] - 2026-02-16
 
 ### Changed

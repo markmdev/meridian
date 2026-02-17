@@ -317,6 +317,16 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
             cwd=str(project_dir),
             env=env,
         )
+        # Save agent output for inspection
+        output_path = project_dir / f"{STATE_DIR}/session-learner-output.md"
+        try:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            from datetime import datetime
+            header = f"# Session Learner Output\n**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  \n**Exit code:** {result.returncode}\n\n---\n\n"
+            output_path.write_text(header + (result.stdout or "*(no output)*") + "\n")
+        except (IOError, OSError):
+            pass
+
         if result.returncode != 0:
             print(f"[Meridian] Workspace agent exited with code {result.returncode}", file=sys.stderr)
             if result.stderr:

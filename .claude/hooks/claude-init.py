@@ -36,7 +36,7 @@ def main() -> int:
     base_dir = Path(claude_project_dir)
 
     # Build the injected context
-    injected_context = build_injected_context(base_dir, claude_project_dir, source)
+    injected_context = build_injected_context(base_dir)
 
     # Save to state for debugging/inspection and workspace-sync
     state_dir = base_dir / STATE_DIR

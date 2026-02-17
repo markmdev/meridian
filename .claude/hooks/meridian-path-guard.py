@@ -110,8 +110,13 @@ def main():
         is_valid, error = check_guarded_path(path, project_dir, cwd)
         if not is_valid:
             output = {
-                "decision": "block",
-                "reason": error
+                "hookSpecificOutput": {
+                    "hookEventName": "PermissionRequest",
+                    "decision": {
+                        "behavior": "deny",
+                        "message": error
+                    }
+                }
             }
             print(json.dumps(output))
             sys.exit(0)

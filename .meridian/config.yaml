@@ -31,16 +31,6 @@ pre_compaction_sync_threshold: 144000
 # This gives you control over when sessions reset.
 auto_compact_off: false
 
-# Folders to ignore for CLAUDE.md review suggestions.
-# When agent modifies files, stop hook suggests reviewing CLAUDE.md files
-# on the path to those files. These folders are excluded.
-# Default: .git, .meridian, node_modules, __pycache__, .venv, venv, dist, build
-# claudemd_ignored_folders:
-#   - .git
-#   - .meridian
-#   - node_modules
-#   - vendor
-
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.
 # See PEBBLE_GUIDE.md for command reference and principles.
@@ -55,3 +45,14 @@ stop_hook_min_actions: 15
 # Pebble scaffolder: Auto-invoke pebble-scaffolder after plan approval.
 # When false, you can use Pebble without automatic issue scaffolding.
 pebble_scaffolder_enabled: true
+
+# File tree: Maximum files shown per directory in the project structure tree.
+# Directories with more files show the first N and a "+X truncated" note.
+file_tree_max_files_per_dir: 40
+
+# File tree: Additional file extensions to exclude from the project structure tree.
+# Built-in exclusions: images, fonts, audio, video, archives, PDFs.
+# Format: list of extensions (with or without leading dot).
+# file_tree_ignored_extensions:
+#   - .map
+#   - .min.js

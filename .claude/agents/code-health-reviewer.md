@@ -60,7 +60,7 @@ Your scope: recently changed files + one level out (their importers and imports)
 
 ## Output
 
-Create Pebble issues for each finding.
+If Pebble is available (`pb` command works), create Pebble issues for each finding. Otherwise, return findings directly to the main agent.
 
 **Severity:** p1 (should fix) or p2 (consider fixing)
 

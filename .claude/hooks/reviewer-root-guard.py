@@ -70,7 +70,7 @@ def main():
                 f"You are currently in: `{cwd}`\n"
                 f"Project root is: `{project_dir}`\n\n"
                 "Reviewer agents must be spawned from the project root directory "
-                "to correctly read `.injected-files` and access project context.\n\n"
+                "to correctly read `.meridian/.state/injected-files` and access project context.\n\n"
                 "**Fix:** Navigate to project root first:\n"
                 f"```bash\n"
                 f"cd \"{project_dir}\"\n"

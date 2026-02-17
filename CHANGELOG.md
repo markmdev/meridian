@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.0.91] - 2026-02-16
+
+### Fixed
+- **PermissionRequest hook format**: `meridian-path-guard.py` now uses the correct PermissionRequest output format (`hookSpecificOutput.decision.behavior`) instead of Stop hook format. Previously may have silently failed to block invalid paths.
+- **UserPromptSubmit hook format**: `plan-mode-tracker.py` now uses JSON `additionalContext` instead of raw `print("<system-message>")`. Previously context may have been silently dropped.
+- **`required-context-files.yaml` preserved on update**: Added to `STATE_PATTERNS` array in `install.sh` to match `is_state_file()` behavior.
+- **Pebble fallback in agents**: `architect.md` and `code-health-reviewer.md` no longer unconditionally assume Pebble is enabled. They check availability first.
+- **Error message path**: `reviewer-root-guard.py` now shows correct path `.meridian/.state/injected-files`.
+- **Docstring accuracy**: `pre-stop-update.py` no longer references deleted memory feature.
+
+### Removed
+- **Dead hook file**: `plan-tracker.py` — not registered in `settings.json`, never fired.
+- **Dead code in `config.py`**: Removed 11 unused functions (`read_file`, `get_required_files`, `parse_yaml_dict`, 3 worktree helpers, `get_action_counter`, 4 pending-reads functions), 2 unused constants (`PENDING_READS_DIR`, `RESTART_SIGNAL`), and 2 unused parameters on `build_injected_context`.
+- **Dead config**: Removed `claudemd_ignored_folders` (commented out, no implementation) from `config.yaml`.
+- **Dead state reference**: Removed `code-reviewer-active` from `session-cleanup.py` cleanup lists (no hook creates this file).
+- **Dead YAML sections**: Removed unused `core` and `project_type_addons` sections from `required-context-files.yaml` (injection is hardcoded in `build_injected_context`).
+- **Stale migration**: Removed `session-context.md` → `WORKSPACE.md` migration code from `install.sh`.
+- **Stale reference**: Removed `.mcp.json` from setup command in project CLAUDE.md.
+- **Duplicate banner**: Merged two `companyAnnouncements` entries into one in `settings.json`.
+- **Build artifacts**: Removed `.DS_Store` and `__pycache__` files from distribution.
+
+### Added
+- **File tree config documented**: `file_tree_max_files_per_dir` (default: 40) and `file_tree_ignored_extensions` now documented in `config.yaml`.
+
 ## [0.0.90] - 2026-02-16
 
 ### Added

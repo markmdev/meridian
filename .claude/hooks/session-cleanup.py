@@ -23,7 +23,6 @@ STARTUP_DELETE = [
     "plan-mode-state",
     "plan-review-blocked",
     "plan-action-counter",
-    "code-reviewer-active",
 ]
 
 # Files to delete on clear (user cleared conversation)
@@ -32,13 +31,11 @@ CLEAR_DELETE = [
     "pre-compaction-synced",
     "plan-mode-state",
     "plan-review-blocked",
-    "code-reviewer-active",
 ]
 
 # Files to delete on SessionEnd
 SESSION_END_DELETE = [
     "plan-action-counter",
-    "code-reviewer-active",
 ]
 
 

@@ -2,7 +2,7 @@
 """
 Stop Hook - Pre-Stop Update
 
-Prompts agent to update task files, memory, and optionally run code review.
+Prompts agent to complete checklist items and optionally run code review.
 Skips if a work-until loop is active (loop hook handles everything).
 """
 

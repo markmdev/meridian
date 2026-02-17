@@ -54,7 +54,8 @@ Bugs, security (CodeReviewer). Dead code, duplication (CodeHealthReviewer). Code
 ## Output
 
 **Codebase Review:**
-- Create Pebble issues for findings
+- If Pebble is available (`pb` command works), create Pebble issues for findings
+- Otherwise, return findings directly to the main agent
 - Each issue: problem statement, why it matters, suggested direction
 - Severity: p1 (blocking) or p2 (friction)
 - Recommend ADRs when decisions need documenting

@@ -43,11 +43,17 @@ def main():
             config = get_project_config(PROJECT_DIR)
             pebble_enabled = config.get('pebble_enabled', False)
 
-            print("<system-message>")
-            print("Plan mode activated. Use `/planning` skill for methodology. Spawn Plan agents for concrete implementation details.")
+            context = "Plan mode activated. Use `/planning` skill for methodology. Spawn Plan agents for concrete implementation details."
             if pebble_enabled:
-                print("Pebble is enabled — proactively use it to track this work.")
-            print("</system-message>")
+                context += "\nPebble is enabled — proactively use it to track this work."
+
+            output = {
+                "hookSpecificOutput": {
+                    "hookEventName": "UserPromptSubmit",
+                    "additionalContext": context
+                }
+            }
+            print(json.dumps(output))
 
     save_mode(current_mode)
     sys.exit(0)

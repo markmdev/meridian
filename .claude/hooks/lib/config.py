@@ -15,7 +15,6 @@ WORKSPACE_FILE = ".meridian/WORKSPACE.md"
 
 # System state files (ephemeral, cleaned up on session start)
 STATE_DIR = ".meridian/.state"
-PENDING_READS_DIR = f"{STATE_DIR}/pending-context-reads"
 PRE_COMPACTION_FLAG = f"{STATE_DIR}/pre-compaction-synced"
 PLAN_REVIEW_FLAG = f"{STATE_DIR}/plan-review-blocked"
 CONTEXT_ACK_FLAG = f"{STATE_DIR}/context-acknowledgment-pending"
@@ -26,7 +25,6 @@ ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
 ACTIVE_SUBPLAN_FILE = f"{STATE_DIR}/active-subplan"
 CURRENT_PLAN_AUTO_FILE = f"{STATE_DIR}/current-plan-auto"
 INJECTED_FILES_LOG = f"{STATE_DIR}/injected-files"
-RESTART_SIGNAL = f"{STATE_DIR}/restart-signal"
 
 
 # =============================================================================
@@ -65,41 +63,9 @@ def parse_yaml_list(content: str, key: str) -> list[str]:
     return result
 
 
-def parse_yaml_dict(content: str, key: str) -> dict[str, str]:
-    """Parse a simple YAML dict under a key."""
-    lines = content.split('\n')
-    result = {}
-    in_section = False
-
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith('#') or not stripped:
-            continue
-
-        if stripped.startswith(f'{key}:'):
-            in_section = True
-            continue
-
-        if in_section and not line.startswith(' ') and not line.startswith('\t') and ':' in stripped:
-            break
-
-        if in_section and ':' in stripped:
-            k, v = stripped.split(':', 1)
-            result[k.strip()] = v.strip()
-
-    return result
-
-
 # =============================================================================
 # CONFIG FILE HELPERS
 # =============================================================================
-def read_file(path: Path) -> str:
-    """Read file content or return missing marker."""
-    if path.is_file():
-        return path.read_text()
-    return f"(missing: {path})\n"
-
-
 def get_project_config(base_dir: Path) -> dict:
     """Read project config and return as dict with defaults."""
     config = {
@@ -203,33 +169,6 @@ def get_project_config(base_dir: Path) -> dict:
     return config
 
 
-def get_required_files(base_dir: Path) -> list[str]:
-    """Get list of required context files based on config."""
-    config_path = base_dir / REQUIRED_CONTEXT_CONFIG
-    if not config_path.exists():
-        return [
-            ".meridian/SOUL.md",
-            ".meridian/prompts/agent-operating-manual.md",
-            ".meridian/CODE_GUIDE.md",
-        ]
-
-    content = config_path.read_text()
-    files = parse_yaml_list(content, 'core')
-
-    # Get project config for conditional files
-    project_config = get_project_config(base_dir)
-
-    # Add project type addon
-    addons = parse_yaml_dict(content, 'project_type_addons')
-    project_type = project_config['project_type']
-    if project_type in addons:
-        addon_path = addons[project_type]
-        if (base_dir / addon_path).exists():
-            files.append(addon_path)
-
-    return files
-
-
 def get_additional_review_files(base_dir: Path, absolute: bool = False) -> list[str]:
     """Get list of additional files for implementation/plan review.
 
@@ -283,100 +222,8 @@ def flag_exists(base_dir: Path, flag_path: str) -> bool:
 
 
 # =============================================================================
-# GIT WORKTREE HELPERS
-# =============================================================================
-def get_main_worktree_path(base_dir: Path) -> Path | None:
-    """Get path to main worktree using 'git worktree list --porcelain'.
-
-    The first 'worktree' entry is always the main worktree.
-
-    Args:
-        base_dir: Any directory in the git repository
-
-    Returns:
-        Path to main worktree, or None if not a git repo or command fails
-    """
-    try:
-        result = subprocess.run(
-            ["git", "worktree", "list", "--porcelain"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            cwd=str(base_dir)
-        )
-        if result.returncode != 0:
-            return None
-
-        # First 'worktree' line is always the main worktree
-        for line in result.stdout.splitlines():
-            if line.startswith("worktree "):
-                return Path(line.split(" ", 1)[1])
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        pass
-    return None
-
-
-def is_main_worktree(base_dir: Path) -> bool:
-    """Check if the given directory is the main worktree.
-
-    Args:
-        base_dir: Directory to check
-
-    Returns:
-        True if base_dir is the main worktree, False otherwise
-    """
-    main = get_main_worktree_path(base_dir)
-    if main is None:
-        return False
-    try:
-        return main.resolve() == base_dir.resolve()
-    except OSError:
-        return False
-
-
-def get_worktree_name(base_dir: Path) -> str:
-    """Get current worktree name (branch name or folder name).
-
-    Uses 'git branch --show-current' to get the branch name.
-    Falls back to folder name if not on a branch.
-
-    Args:
-        base_dir: Directory in the worktree
-
-    Returns:
-        Branch name or folder name as string
-    """
-    try:
-        result = subprocess.run(
-            ["git", "branch", "--show-current"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            cwd=str(base_dir)
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        pass
-
-    # Fallback to folder name
-    return base_dir.resolve().name
-
-
-# =============================================================================
 # ACTION COUNTER HELPERS
 # =============================================================================
-def get_action_counter(base_dir: Path) -> int:
-    """Get current action counter value."""
-    counter_path = base_dir / ACTION_COUNTER_FILE
-    try:
-        if counter_path.exists():
-            return int(counter_path.read_text().strip())
-    except (ValueError, IOError):
-        pass
-    return 0
-
-
 def get_plan_action_counter(base_dir: Path) -> int:
     """Get current plan action counter value."""
     counter_path = base_dir / PLAN_ACTION_COUNTER_FILE
@@ -502,92 +349,6 @@ def _build_file_tree(base_dir: Path) -> str:
 
 
 # =============================================================================
-# PENDING READS DIRECTORY HELPERS
-# =============================================================================
-def create_pending_reads(base_dir: Path, files: list[str]) -> None:
-    """Create pending reads directory with marker files for each required file."""
-    pending_dir = base_dir / PENDING_READS_DIR
-
-    # Clean up any existing directory
-    if pending_dir.exists():
-        try:
-            for f in pending_dir.iterdir():
-                f.unlink()
-            pending_dir.rmdir()
-        except Exception:
-            pass
-
-    # Create fresh directory with marker files
-    try:
-        pending_dir.mkdir(parents=True, exist_ok=True)
-        for i, file_path in enumerate(files):
-            marker = pending_dir / f"{i}.pending"
-            marker.write_text(file_path)
-    except Exception:
-        pass
-
-
-def get_pending_reads(base_dir: Path) -> list[str]:
-    """Get list of pending files from marker directory."""
-    pending_dir = base_dir / PENDING_READS_DIR
-
-    if not pending_dir.exists() or not pending_dir.is_dir():
-        return []
-
-    files = []
-    try:
-        for marker in sorted(pending_dir.iterdir()):
-            if marker.suffix == ".pending":
-                files.append(marker.read_text().strip())
-    except Exception:
-        pass
-
-    return files
-
-
-def remove_pending_read(base_dir: Path, file_path: str) -> bool:
-    """Remove a file from pending reads. Returns True if found and removed."""
-    pending_dir = base_dir / PENDING_READS_DIR
-
-    if not pending_dir.exists():
-        return False
-
-    normalized_target = str(Path(file_path).resolve())
-
-    try:
-        for marker in pending_dir.iterdir():
-            if marker.suffix == ".pending":
-                pending_file = marker.read_text().strip()
-                try:
-                    normalized_pending = str(Path(pending_file).resolve())
-                except Exception:
-                    normalized_pending = pending_file
-
-                if normalized_pending == normalized_target:
-                    marker.unlink()  # Atomic delete
-                    return True
-    except Exception:
-        pass
-
-    return False
-
-
-def cleanup_pending_reads(base_dir: Path) -> None:
-    """Remove pending reads directory if empty."""
-    pending_dir = base_dir / PENDING_READS_DIR
-
-    if not pending_dir.exists():
-        return
-
-    try:
-        remaining = list(pending_dir.iterdir())
-        if not remaining:
-            pending_dir.rmdir()
-    except Exception:
-        pass
-
-
-# =============================================================================
 # PEBBLE INTEGRATION
 # =============================================================================
 
@@ -644,13 +405,11 @@ def get_pebble_context(base_dir: Path) -> str:
 # =============================================================================
 # CONTEXT INJECTION HELPERS
 # =============================================================================
-def build_injected_context(base_dir: Path, claude_project_dir: str, source: str = "startup") -> str:
+def build_injected_context(base_dir: Path) -> str:
     """Build the full injected context string with XML-wrapped file contents.
 
     Args:
         base_dir: Base directory of the project
-        claude_project_dir: CLAUDE_PROJECT_DIR environment variable value
-        source: Source of the injection (startup, resume, clear, compact)
 
     Returns:
         Full context string ready for additionalContext injection
@@ -776,7 +535,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     # Description is optional — appears above the file to explain its purpose.
     files_to_inject = []
 
-    # 0. User-provided docs (injected first, before everything else)
+    # User-provided docs (injected first, before everything else)
     config_path = base_dir / REQUIRED_CONTEXT_CONFIG
     if config_path.exists():
         content = config_path.read_text()
@@ -786,7 +545,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             if full_path.exists():
                 files_to_inject.append((doc_path, full_path, ""))
 
-    # 1. Active plan file (if set)
+    # Active plan file (if set)
     active_plan_file = base_dir / ACTIVE_PLAN_FILE
     if active_plan_file.exists():
         try:
@@ -801,7 +560,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         except IOError:
             pass
 
-    # 3.5. Active subplan file (if in an epic)
+    # Active subplan file (if in an epic)
     active_subplan_file = base_dir / ACTIVE_SUBPLAN_FILE
     if active_subplan_file.exists():
         try:
@@ -816,7 +575,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         except IOError:
             pass
 
-    # 4. CODE_GUIDE and addons
+    # CODE_GUIDE and addons
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
     if code_guide_path.exists():
         files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path, "Project coding conventions. Follow these standards in all code you write."))
@@ -833,7 +592,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         if addon_path.exists():
             files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path, "Production-mode coding standards overlay."))
 
-    # 5. Architecture Decision Records index (agent reads individual ADRs when needed)
+    # Architecture Decision Records index (agent reads individual ADRs when needed)
     adr_index = base_dir / ".meridian" / "adrs" / "INDEX.md"
     if adr_index.exists():
         files_to_inject.append((".meridian/adrs/INDEX.md", adr_index, "Architecture Decision Records. Read individual ADRs before making related decisions."))
@@ -857,7 +616,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append(f'<file path="{rel_path}" error="Could not read file" />')
             parts.append("")
 
-    # 6. API docs index (tells agent which external APIs are documented)
+    # API docs index (tells agent which external APIs are documented)
     api_docs_index = base_dir / ".meridian" / "api-docs" / "INDEX.md"
     if api_docs_index.exists():
         try:
@@ -871,7 +630,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append(f'<file path=".meridian/api-docs/INDEX.md" error="Could not read file" />')
             parts.append("")
 
-    # 7. Pebble guide and context (if enabled)
+    # Pebble guide and context (if enabled)
     if project_config.get('pebble_enabled', False):
         pebble_guide_path = base_dir / ".meridian" / "PEBBLE_GUIDE.md"
         if pebble_guide_path.exists():
@@ -894,7 +653,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append('</pebble-context>')
             parts.append("")
 
-    # 8. Agent operating manual (authoritative — follow at all times)
+    # Agent operating manual (authoritative — follow at all times)
     manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
     if manual_path.exists():
         try:
@@ -908,7 +667,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append(f'<file path=".meridian/prompts/agent-operating-manual.md" error="Could not read file" />')
             parts.append("")
 
-    # 9. SOUL.md (agent identity and principles)
+    # SOUL.md (agent identity and principles)
     soul_path = base_dir / ".meridian" / "SOUL.md"
     if soul_path.exists():
         try:
@@ -921,7 +680,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         except IOError:
             pass
 
-    # 10. Workspace (agent's living knowledge base — last for highest attention)
+    # Workspace (agent's living knowledge base — last for highest attention)
     workspace_path = base_dir / WORKSPACE_FILE
     if workspace_path.exists():
         try:
@@ -934,7 +693,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         except IOError:
             pass
 
-    # 11. Active work-until loop (if any)
+    # Active work-until loop (if any)
     loop_state_path = base_dir / f"{STATE_DIR}/loop-state"
     if loop_state_path.exists():
         try:

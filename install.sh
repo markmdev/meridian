@@ -166,6 +166,7 @@ STATE_PATTERNS=(
   ".meridian/tasks/"
   ".meridian/.manifest"
   ".meridian/.version"
+  ".meridian/required-context-files.yaml"
   ".claude/plans/"
 )
 
@@ -416,13 +417,6 @@ fi
 # Write manifest and version
 sort -u "$TEMP_DIR/manifest.txt" > "$TARGET_DIR/$MANIFEST_FILE" 2>/dev/null || true
 echo "$VERSION" > "$TARGET_DIR/.meridian/.version"
-
-# Migrate session-context.md → WORKSPACE.md (if upgrading from older version)
-if [[ "$MODE" == "update" && -f "$TARGET_DIR/.meridian/session-context.md" && ! -f "$TARGET_DIR/.meridian/WORKSPACE.md" ]]; then
-  log "Migrating session-context.md to WORKSPACE.md..."
-  cp "$TARGET_DIR/.meridian/session-context.md" "$TARGET_DIR/.meridian/WORKSPACE.md"
-  mkdir -p "$TARGET_DIR/.meridian/workspace"
-fi
 
 # Make scripts executable
 log "Setting permissions..."

@@ -1,16 +1,23 @@
 # External Tools & APIs
 
-Knowledge docs for external tools, APIs, and libraries. Each doc contains everything you need to work with that tool: overview, current state, API operations, limits, gotchas.
+Knowledge docs for external tools, APIs, and libraries. Each doc contains everything needed to work with that tool: overview, API operations, limits, gotchas.
 
-**Rule: You MUST NOT write code using an external tool unless it's documented here.** If you need a tool that isn't listed (or need info not covered), research it first using the `docs-researcher` agent.
+**Rule: You MUST NOT write code using an external tool unless it's documented here.** If you need a tool that isn't listed, research it first using the `docs-researcher` agent.
 
-## When to Read These Docs
+## Frontmatter Format
 
-- Before writing ANY code that uses an external tool
-- When planning features that involve external integrations
-- When you need current info (versions, models, limits)
-- When something isn't working as expected
+Every API doc needs YAML frontmatter so it appears in the agent's context:
 
-## Available Documentation
+```yaml
+---
+summary: Stripe API integration — payments, subscriptions, webhooks
+read_when:
+  - payments
+  - billing
+  - subscriptions
+---
+```
 
-<!-- Entries added by docs-researcher agent -->
+## Documentation
+
+<!-- Add API doc files to this directory with frontmatter -->

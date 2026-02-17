@@ -454,6 +454,87 @@ def get_pebble_context(base_dir: Path) -> str:
 
 
 # =============================================================================
+# FRONTMATTER-BASED DOC SCANNING
+# =============================================================================
+def extract_frontmatter(file_path: Path) -> tuple[str, list[str]]:
+    """Extract summary and read_when from YAML frontmatter.
+
+    Returns (summary, read_when_list). Both empty if no valid frontmatter.
+    """
+    try:
+        content = file_path.read_text()
+    except IOError:
+        return "", []
+
+    if not content.startswith("---"):
+        return "", []
+
+    end_idx = content.find("\n---", 3)
+    if end_idx == -1:
+        return "", []
+
+    frontmatter = content[3:end_idx].strip()
+    summary = ""
+    read_when: list[str] = []
+    collecting_read_when = False
+
+    for line in frontmatter.split("\n"):
+        stripped = line.strip()
+
+        if stripped.startswith("summary:"):
+            summary = stripped[len("summary:"):].strip().strip("'\"")
+            collecting_read_when = False
+
+        elif stripped.startswith("read_when:"):
+            collecting_read_when = True
+            inline = stripped[len("read_when:"):].strip()
+            if inline.startswith("[") and inline.endswith("]"):
+                try:
+                    import json
+                    parsed = json.loads(inline.replace("'", '"'))
+                    if isinstance(parsed, list):
+                        read_when.extend(str(x).strip() for x in parsed if x)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+
+        elif collecting_read_when and stripped.startswith("- "):
+            hint = stripped[2:].strip()
+            if hint:
+                read_when.append(hint)
+        elif collecting_read_when and stripped:
+            collecting_read_when = False
+
+    return summary, read_when
+
+
+def scan_docs_directory(dir_path: Path, base_dir: Path) -> str:
+    """Scan a directory for .md files with frontmatter, return formatted listing.
+
+    Skips INDEX.md and README.md files. Returns empty string if no docs found.
+    """
+    if not dir_path.exists():
+        return ""
+
+    skip_names = {"INDEX.md", "README.md"}
+    entries = []
+
+    for md_file in sorted(dir_path.rglob("*.md")):
+        if md_file.name in skip_names:
+            continue
+        rel_path = md_file.relative_to(base_dir)
+        summary, read_when = extract_frontmatter(md_file)
+        if summary:
+            entry = f"- **{rel_path}** — {summary}"
+            if read_when:
+                entry += f"\n  Read when: {'; '.join(read_when)}"
+            entries.append(entry)
+        else:
+            entries.append(f"- **{rel_path}** — *(missing summary frontmatter)*")
+
+    return "\n".join(entries)
+
+
+# =============================================================================
 # CONTEXT INJECTION HELPERS
 # =============================================================================
 def build_injected_context(base_dir: Path) -> str:
@@ -643,11 +724,6 @@ def build_injected_context(base_dir: Path) -> str:
         if addon_path.exists():
             files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path, "Production-mode coding standards overlay."))
 
-    # Architecture Decision Records index (agent reads individual ADRs when needed)
-    adr_index = base_dir / ".meridian" / "adrs" / "INDEX.md"
-    if adr_index.exists():
-        files_to_inject.append((".meridian/adrs/INDEX.md", adr_index, "Architecture Decision Records. Read individual ADRs before making related decisions."))
-
     # Inject each file with XML tags (deduplicate by resolved path)
     injected_paths = set()
     for rel_path, full_path, desc in files_to_inject:
@@ -667,18 +743,19 @@ def build_injected_context(base_dir: Path) -> str:
             parts.append(f'<file path="{rel_path}" error="Could not read file" />')
             parts.append("")
 
-    # API docs index (tells agent which external APIs are documented)
-    api_docs_index = base_dir / ".meridian" / "api-docs" / "INDEX.md"
-    if api_docs_index.exists():
-        try:
-            content = api_docs_index.read_text()
-            parts.append("**External API documentation index. Read the relevant doc before using any listed API.**")
-            parts.append(f'<file path=".meridian/api-docs/INDEX.md">')
-            parts.append(content.rstrip())
-            parts.append('</file>')
-            parts.append("")
-        except IOError:
-            parts.append(f'<file path=".meridian/api-docs/INDEX.md" error="Could not read file" />')
+    # Documentation directories — scan for frontmatter summaries
+    doc_dirs = [
+        (".meridian/adrs", "Architecture Decision Records. Read the relevant ADR before making related decisions."),
+        (".meridian/api-docs", "External API docs. Read the relevant doc before using any listed API."),
+        (".meridian/docs", "Project documentation. Read relevant docs when your task matches a hint below."),
+    ]
+    for dir_rel, header in doc_dirs:
+        listing = scan_docs_directory(base_dir / dir_rel, base_dir)
+        if listing:
+            parts.append(f"**{header}**")
+            parts.append(f"<docs-index dir=\"{dir_rel}\">")
+            parts.append(listing)
+            parts.append("</docs-index>")
             parts.append("")
 
     # Pebble guide and context (if enabled)

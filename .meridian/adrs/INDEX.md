@@ -1,15 +1,21 @@
 # Architecture Decision Records
 
-Decisions about system architecture. Read these to understand why things are the way they are.
+Significant architectural decisions for the project. Each ADR documents the context, decision, and consequences of a choice.
 
-## How to Use
+## Frontmatter Format
 
-- **Before planning:** Check if relevant ADRs exist for the area you're changing
-- **After decisions:** Document significant architectural choices here
-- **When reviewing:** Architect agent reads these to understand existing decisions
+Every ADR file needs YAML frontmatter so it appears in the agent's context:
+
+```yaml
+---
+summary: Why we chose PostgreSQL over MongoDB
+read_when:
+  - database
+  - data model
+  - schema changes
+---
+```
 
 ## Records
 
-| ADR | Title | Status | Date |
-|-----|-------|--------|------|
-<!-- Entries added as ADRs are created -->
+<!-- Add ADR files to this directory with frontmatter -->

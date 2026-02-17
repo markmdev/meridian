@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.0] - 2026-02-17
+
+### Changed
+- **Frontmatter-based docs injection**: ADRs, API docs, and the new `.meridian/docs/` directory are now scanned for YAML frontmatter (`summary`, `read_when`) instead of injecting INDEX.md files. Agent sees a compact listing of what each doc covers and when to read it. Full docs are read on demand.
+
+### Added
+- **`.meridian/docs/` directory**: General-purpose docs folder for agent-created documentation. Automatically scanned and injected like ADRs and API docs.
+- **`extract_frontmatter()` and `scan_docs_directory()`**: New utilities in config.py for parsing doc frontmatter.
+
+### Fixed
+- **Session learner double-fire on /clear**: Added timestamp-based dedup — session learner skips if it already ran within 30 seconds, preventing duplicate processing when `/clear` fires both SessionEnd and SessionStart.
+
 ## [0.0.99] - 2026-02-16
 
 ### Fixed

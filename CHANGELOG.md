@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.94] - 2026-02-16
+
+### Removed
+- **`reset-token-warning.py`**: Merged into `session-cleanup.py`. Was a standalone hook that only deleted one flag file.
+
+### Fixed
+- **Dead `CLEAR_DELETE` code path**: `session-cleanup.py` now registered for `SessionStart:compact|clear` events. Previously only ran on `startup` and `SessionEnd`, making the clear/compact cleanup lists unreachable (audit finding #1).
+
 ## [0.0.93] - 2026-02-16
 
 ### Changed

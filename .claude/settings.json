@@ -22,7 +22,7 @@
           },
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/reset-token-warning.py"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-cleanup.py"
           }
         ]
       },

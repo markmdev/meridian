@@ -20,6 +20,7 @@ from config import (
     update_loop_iteration,
     clear_loop_state,
     build_stop_prompt,
+    log_hook_output,
     ACTION_COUNTER_FILE,
     flag_exists,
     PRE_COMPACTION_FLAG,
@@ -140,7 +141,7 @@ def main():
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
-        sys.exit(1)
+        sys.exit(0)
 
     if input_data.get("hook_event_name") != "Stop":
         sys.exit(0)
@@ -205,7 +206,7 @@ def main():
         "systemMessage": sys_msg
     }
 
-    print(json.dumps(output))
+    log_hook_output(base_dir, "work-until-stop", output)
     sys.exit(0)
 
 

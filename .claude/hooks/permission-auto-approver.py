@@ -4,6 +4,10 @@ import os
 import sys
 from pathlib import Path
 
+# Add lib to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import log_hook_output
+
 
 SKILL_WHITELIST = {"planning", "claudemd-writer"}
 BASH_SUBSTRINGS = {"setup-work-until.sh"}
@@ -73,6 +77,9 @@ def main():
     except json.JSONDecodeError:
         return
 
+    if payload.get("hook_event_name") != "PermissionRequest":
+        return
+
     if should_allow(payload, project_dir):
         output = {
             "hookSpecificOutput": {
@@ -80,7 +87,7 @@ def main():
                 "decision": {"behavior": "allow"},
             }
         }
-        print(json.dumps(output, indent=2))
+        log_hook_output(project_dir, "permission-auto-approver", output)
 
 
 if __name__ == "__main__":

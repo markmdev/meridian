@@ -17,6 +17,7 @@ from config import (
     flag_exists,
     cleanup_flag,
     get_project_config,
+    log_hook_output,
     CONTEXT_ACK_FLAG,
 )
 
@@ -25,7 +26,7 @@ def main():
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
-        sys.exit(1)
+        sys.exit(0)
 
     if input_data.get("hook_event_name") != "PreToolUse":
         sys.exit(0)
@@ -78,7 +79,7 @@ def main():
         }
     }
 
-    print(json.dumps(output))
+    log_hook_output(base_dir, "post-compact-guard", output)
     sys.exit(0)
 
 

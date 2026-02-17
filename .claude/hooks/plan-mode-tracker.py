@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, PLAN_MODE_STATE
+from config import get_project_config, log_hook_output, PLAN_MODE_STATE
 
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 
@@ -53,7 +53,7 @@ def main():
                     "additionalContext": context
                 }
             }
-            print(json.dumps(output))
+            log_hook_output(PROJECT_DIR, "plan-mode-tracker", output)
 
     save_mode(current_mode)
     sys.exit(0)

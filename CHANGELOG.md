@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.92] - 2026-02-16
+
+### Added
+- **Hook output logging**: All hooks now log their output to `.meridian/.state/hook_logs/{hook-name}.json` for debugging and inspection. New `log_hook_output()` helper in `config.py` replaces direct `print(json.dumps())` calls. Logs are cleared on session start and `/clear`.
+
+### Fixed
+- **JSONDecodeError exit codes**: `work-until-stop.py`, `pre-stop-update.py`, `plan-review.py`, and `post-compact-guard.py` now exit with code 0 (silent) instead of code 1 (error) on JSON parse failure, consistent with all other hooks.
+- **Missing event validation**: `plan-file-sync.py` and `permission-auto-approver.py` now validate `hook_event_name` before processing, consistent with other hooks.
+- **Install preserves plans**: `.meridian/plans/` and `.meridian/subplans/` added to `STATE_PATTERNS` and `is_state_file()` in `install.sh`, preventing loss of archived plans on update.
+- **Config merge operator precedence**: Fixed Python ternary precedence bug in `install.sh` config merge script that prevented version comments from being written correctly.
+- **Dev CLAUDE.md stale references**: Removed references to deleted features (task-manager skill, task-backlog, .mcp.json, implementation reviewer, browser verifier, periodic reminders, MCP servers). Renamed Beads to Pebble. Updated config table and architecture diagram. Added code-health-reviewer to review agents section.
+
 ## [0.0.91] - 2026-02-16
 
 ### Fixed

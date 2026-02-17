@@ -18,6 +18,7 @@ from config import (
     get_project_config,
     flag_exists,
     create_flag,
+    log_hook_output,
     PRE_COMPACTION_FLAG,
     PLAN_MODE_STATE,
 )
@@ -199,7 +200,7 @@ def main():
         }
     }
 
-    print(json.dumps(output))
+    log_hook_output(base_dir, "pre-compaction-sync", output)
     sys.exit(0)
 
 

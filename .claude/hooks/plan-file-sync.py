@@ -16,13 +16,16 @@ import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import CURRENT_PLAN_AUTO_FILE
+from config import CURRENT_PLAN_AUTO_FILE, log_hook_output
 
 
 def main():
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
+        sys.exit(0)
+
+    if input_data.get("hook_event_name") != "PreToolUse":
         sys.exit(0)
 
     # Get transcript path
@@ -92,7 +95,7 @@ def main():
                     "additionalContext": f"[SYSTEM]: Plan file synced from previous session. Your plan is at: {current_plan_path}"
                 }
             }
-            print(json.dumps(output))
+            log_hook_output(base_dir, "plan-file-sync", output)
         except IOError:
             pass
 

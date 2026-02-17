@@ -10,6 +10,11 @@ spawned from a subdirectory.
 import json
 import os
 import sys
+from pathlib import Path
+
+# Add lib to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import log_hook_output
 
 
 # Agents that require being in project root
@@ -80,7 +85,7 @@ def main():
         }
     }
 
-    print(json.dumps(output))
+    log_hook_output(Path(project_dir), "reviewer-root-guard", output)
     sys.exit(0)
 
 

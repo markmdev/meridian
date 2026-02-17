@@ -50,6 +50,18 @@ def delete_files(files: list[str]) -> None:
             pass
 
 
+def clear_hook_logs() -> None:
+    """Clear all hook log files."""
+    log_dir = STATE_DIR / "hook_logs"
+    if not log_dir.exists():
+        return
+    try:
+        for f in log_dir.iterdir():
+            f.unlink()
+    except Exception:
+        pass
+
+
 def main():
     # Parse input
     try:
@@ -69,8 +81,10 @@ def main():
         delete_files(SESSION_END_DELETE)
     elif source == "startup":
         delete_files(STARTUP_DELETE)
+        clear_hook_logs()
     elif source == "clear":
         delete_files(CLEAR_DELETE)
+        clear_hook_logs()
 
     sys.exit(0)
 

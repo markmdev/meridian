@@ -19,6 +19,7 @@ from config import (
     flag_exists,
     create_flag,
     get_plan_action_counter,
+    log_hook_output,
     PLAN_REVIEW_FLAG,
 )
 
@@ -29,7 +30,7 @@ def main():
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
-        sys.exit(1)
+        sys.exit(0)
 
     hook_event = input_data.get("hook_event_name", "")
     tool_name = input_data.get("tool_name", "")
@@ -92,7 +93,7 @@ def main():
         }
     }
 
-    print(json.dumps(output))
+    log_hook_output(base_dir, "plan-review", output)
     sys.exit(0)
 
 

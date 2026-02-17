@@ -11,6 +11,10 @@ import os
 import sys
 from pathlib import Path
 
+# Add lib to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from config import log_hook_output
+
 # Folders that must only exist at project root
 GUARDED_FOLDERS = [".meridian", ".claude"]
 
@@ -118,7 +122,7 @@ def main():
                     }
                 }
             }
-            print(json.dumps(output))
+            log_hook_output(project_dir, "meridian-path-guard", output)
             sys.exit(0)
 
     # Allow if no issues found

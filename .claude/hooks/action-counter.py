@@ -25,6 +25,7 @@ from config import (
     ACTION_COUNTER_FILE,
     PLAN_MODE_STATE,
     increment_plan_action_counter,
+    log_hook_output,
 )
 
 
@@ -81,7 +82,7 @@ def main() -> int:
                     )
                 }
             }
-            print(json.dumps(output))
+            log_hook_output(base_dir, "action-counter", output)
         elif tool_name == "ExitPlanMode":
             plan_mode_file.write_text("other")
 

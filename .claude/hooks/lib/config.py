@@ -25,6 +25,39 @@ ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
 ACTIVE_SUBPLAN_FILE = f"{STATE_DIR}/active-subplan"
 CURRENT_PLAN_AUTO_FILE = f"{STATE_DIR}/current-plan-auto"
 INJECTED_FILES_LOG = f"{STATE_DIR}/injected-files"
+HOOK_LOGS_DIR = f"{STATE_DIR}/hook_logs"
+
+
+# =============================================================================
+# HOOK OUTPUT LOGGING
+# =============================================================================
+def log_hook_output(base_dir: Path, hook_name: str, output: dict) -> None:
+    """Write hook output to stdout and save a copy to hook_logs/ for inspection.
+
+    Replaces `print(json.dumps(output))` in hooks. Logs are overwritten each
+    time the hook fires, keeping only the latest output.
+    """
+    import json
+    from datetime import datetime
+
+    output_str = json.dumps(output)
+
+    # Log to file
+    log_dir = base_dir / HOOK_LOGS_DIR
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "output": output,
+        }
+        (log_dir / f"{hook_name}.json").write_text(
+            json.dumps(log_entry, indent=2)
+        )
+    except (IOError, OSError):
+        pass
+
+    # Print to stdout for Claude Code
+    print(output_str)
 
 
 # =============================================================================

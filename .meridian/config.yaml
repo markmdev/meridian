@@ -34,7 +34,6 @@ auto_compact_off: false
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.
 # See PEBBLE_GUIDE.md for command reference and principles.
-# See: https://github.com/anthropics/pebble
 pebble_enabled: false
 
 # Stop hook minimum actions: Skip stop hook prompts if fewer than this many
@@ -48,7 +47,7 @@ pebble_scaffolder_enabled: true
 
 # File tree: Maximum files shown per directory in the project structure tree.
 # Directories with more files show the first N and a "+X truncated" note.
-file_tree_max_files_per_dir: 40
+file_tree_max_files_per_dir: 2000
 
 # File tree: Additional file extensions to exclude from the project structure tree.
 # Built-in exclusions: images, fonts, audio, video, archives, PDFs.

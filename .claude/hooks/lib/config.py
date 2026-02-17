@@ -112,7 +112,7 @@ def get_project_config(base_dir: Path) -> dict:
         'plan_review_min_actions': 20,
         'code_review_enabled': True,
         'pebble_scaffolder_enabled': True,
-        'file_tree_max_files_per_dir': 40,
+        'file_tree_max_files_per_dir': 2000,
         'file_tree_ignored_extensions': [],
     }
 
@@ -323,7 +323,7 @@ def _build_file_tree(base_dir: Path) -> str:
     """Build a TOON-style compact file tree. Directories as nested keys, files inline."""
     lines = []
     project_config = get_project_config(base_dir)
-    max_files_per_dir = project_config.get('file_tree_max_files_per_dir', 40)
+    max_files_per_dir = project_config.get('file_tree_max_files_per_dir', 2000)
     ignored_extensions = set(_IGNORED_FILE_EXTENSIONS)
     for ext in project_config.get('file_tree_ignored_extensions', []):
         normalized = _normalize_extension(ext)

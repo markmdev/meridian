@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.95] - 2026-02-16
+
+### Changed
+- **File tree default**: `file_tree_max_files_per_dir` default increased from 40 to 2000.
+- **Stop hook threshold**: `stop_hook_min_actions` default changed from 10 to 15.
+
 ## [0.0.94] - 2026-02-16
 
 ### Removed

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.96] - 2026-02-16
+
+### Changed
+- **Hook logs now markdown**: Hook output logs in `.meridian/.state/hook_logs/` are now `.md` files with readable metadata (timestamp, event, decision) and content rendered as markdown instead of raw JSON.
+
 ## [0.0.95] - 2026-02-16
 
 ### Changed

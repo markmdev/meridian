@@ -32,27 +32,45 @@ HOOK_LOGS_DIR = f"{STATE_DIR}/hook_logs"
 # HOOK OUTPUT LOGGING
 # =============================================================================
 def log_hook_output(base_dir: Path, hook_name: str, output: dict) -> None:
-    """Write hook output to stdout and save a copy to hook_logs/ for inspection.
+    """Write hook output to stdout and save a readable markdown copy to hook_logs/.
 
-    Replaces `print(json.dumps(output))` in hooks. Logs are overwritten each
-    time the hook fires, keeping only the latest output.
+    Logs are overwritten each time the hook fires, keeping only the latest output.
     """
     import json
     from datetime import datetime
 
     output_str = json.dumps(output)
 
-    # Log to file
+    # Log readable markdown version
     log_dir = base_dir / HOOK_LOGS_DIR
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
-        log_entry = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "output": output,
-        }
-        (log_dir / f"{hook_name}.json").write_text(
-            json.dumps(log_entry, indent=2)
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        hook_specific = output.get("hookSpecificOutput", {})
+        event_name = hook_specific.get("hookEventName", output.get("decision", "unknown"))
+        decision = hook_specific.get("permissionDecision", output.get("decision", ""))
+
+        lines = [f"# {hook_name}", f"**Time:** {timestamp}  ", f"**Event:** {event_name}  "]
+        if decision:
+            lines.append(f"**Decision:** {decision}  ")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
+        # Extract the human-readable content
+        content = (
+            hook_specific.get("additionalContext")
+            or hook_specific.get("permissionDecisionReason")
+            or output.get("reason")
+            or ""
         )
+        if content:
+            lines.append(content)
+        else:
+            lines.append("*(no content)*")
+
+        (log_dir / f"{hook_name}.md").write_text("\n".join(lines) + "\n")
     except (IOError, OSError):
         pass
 

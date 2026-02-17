@@ -749,14 +749,19 @@ def build_injected_context(base_dir: Path) -> str:
         (".meridian/api-docs", "External API docs. Read the relevant doc before using any listed API."),
         (".meridian/docs", "Project documentation. Read relevant docs when your task matches a hint below."),
     ]
+    any_docs = False
     for dir_rel, header in doc_dirs:
         listing = scan_docs_directory(base_dir / dir_rel, base_dir)
         if listing:
+            any_docs = True
             parts.append(f"**{header}**")
             parts.append(f"<docs-index dir=\"{dir_rel}\">")
             parts.append(listing)
             parts.append("</docs-index>")
             parts.append("")
+    if any_docs:
+        parts.append("When your task matches a \"Read when\" hint above, read that doc before coding. Keep docs current as behavior changes, and suggest new docs when coverage is missing.")
+        parts.append("")
 
     # Pebble guide and context (if enabled)
     if project_config.get('pebble_enabled', False):

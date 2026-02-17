@@ -113,6 +113,8 @@ def get_project_config(base_dir: Path) -> dict:
         'plan_review_min_actions': 20,
         'code_review_enabled': True,
         'pebble_scaffolder_enabled': True,
+        'file_tree_max_files_per_dir': 40,
+        'file_tree_ignored_extensions': [],
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -180,6 +182,20 @@ def get_project_config(base_dir: Path) -> dict:
         ps_enabled = get_config_value(content, 'pebble_scaffolder_enabled')
         if ps_enabled:
             config['pebble_scaffolder_enabled'] = ps_enabled.lower() != 'false'
+
+        # Project structure tree filtering
+        max_files = get_config_value(content, 'file_tree_max_files_per_dir')
+        if max_files:
+            try:
+                parsed = int(max_files)
+                if parsed > 0:
+                    config['file_tree_max_files_per_dir'] = parsed
+            except ValueError:
+                pass
+
+        ignored_exts = parse_yaml_list(content, 'file_tree_ignored_extensions')
+        if ignored_exts:
+            config['file_tree_ignored_extensions'] = ignored_exts
 
     except IOError:
         pass
@@ -405,10 +421,34 @@ _IGNORED_DIRS = {
     ".parcel-cache", ".vite",
 }
 
+_IGNORED_FILE_EXTENSIONS = {
+    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".avif", ".bmp", ".ico",
+    ".ttf", ".otf", ".woff", ".woff2", ".eot",
+    ".mp3", ".wav", ".aiff", ".m4a", ".mp4", ".mov", ".avi", ".webm",
+    ".zip", ".gz", ".tar", ".tgz", ".7z", ".dmg", ".pdf",
+}
+
+
+def _normalize_extension(value: str) -> str:
+    """Normalize extension values from config to lowercase .ext form."""
+    value = value.strip().lower()
+    if not value:
+        return ""
+    if not value.startswith("."):
+        value = f".{value}"
+    return value
+
 
 def _build_file_tree(base_dir: Path) -> str:
     """Build a TOON-style compact file tree. Directories as nested keys, files inline."""
     lines = []
+    project_config = get_project_config(base_dir)
+    max_files_per_dir = project_config.get('file_tree_max_files_per_dir', 40)
+    ignored_extensions = set(_IGNORED_FILE_EXTENSIONS)
+    for ext in project_config.get('file_tree_ignored_extensions', []):
+        normalized = _normalize_extension(ext)
+        if normalized:
+            ignored_extensions.add(normalized)
 
     def _walk(dir_path: Path, indent: int):
         try:
@@ -418,6 +458,7 @@ def _build_file_tree(base_dir: Path) -> str:
 
         dirs = []
         files = []
+        filtered_count = 0
         for entry in entries:
             if entry.is_symlink():
                 continue
@@ -428,11 +469,30 @@ def _build_file_tree(base_dir: Path) -> str:
             else:
                 if entry.name == '.DS_Store':
                     continue
+                ext = Path(entry.name).suffix.lower()
+                if ext in ignored_extensions:
+                    filtered_count += 1
+                    continue
                 files.append(entry.name)
 
         prefix = "  " * indent
-        if files:
-            lines.append(f"{prefix}[{len(files)}]: {','.join(files)}")
+        shown_files = files
+        truncated_count = 0
+        if max_files_per_dir and len(files) > max_files_per_dir:
+            shown_files = files[:max_files_per_dir]
+            truncated_count = len(files) - max_files_per_dir
+
+        if shown_files:
+            suffix_parts = []
+            if filtered_count:
+                suffix_parts.append(f"+{filtered_count} filtered")
+            if truncated_count:
+                suffix_parts.append(f"+{truncated_count} truncated")
+            suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
+            lines.append(f"{prefix}[{len(shown_files)}{suffix}]: {','.join(shown_files)}")
+        elif filtered_count:
+            lines.append(f"{prefix}[0 shown (+{filtered_count} filtered)]")
+
         for d in dirs:
             lines.append(f"{prefix}{d.name}/")
             _walk(d, indent + 1)
@@ -672,10 +732,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
-    # Recent PRs (open)
+    # Recent PRs (open, with authors)
     try:
         result = subprocess.run(
-            ["gh", "pr", "list", "--state", "open", "--limit", "5"],
+            ["gh", "pr", "list", "--state", "open", "--limit", "5",
+             "--json", "number,title,author,headRefName",
+             "--template", '{{range .}}#{{.number}} {{.title}} ({{.author.login}}) [{{.headRefName}}]\n{{end}}'],
             capture_output=True,
             text=True,
             timeout=10,
@@ -690,10 +752,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
-    # Recent PRs (merged)
+    # Recent PRs (merged, with authors)
     try:
         result = subprocess.run(
-            ["gh", "pr", "list", "--state", "merged", "--limit", "5"],
+            ["gh", "pr", "list", "--state", "merged", "--limit", "5",
+             "--json", "number,title,author,mergedAt",
+             "--template", '{{range .}}#{{.number}} {{.title}} ({{.author.login}}) merged {{timeago .mergedAt}}\n{{end}}'],
             capture_output=True,
             text=True,
             timeout=10,
@@ -708,7 +772,8 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
-    # Build ordered file list
+    # Build ordered file list: (rel_path, full_path, description)
+    # Description is optional — appears above the file to explain its purpose.
     files_to_inject = []
 
     # 0. User-provided docs (injected first, before everything else)
@@ -719,7 +784,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         for doc_path in user_docs:
             full_path = base_dir / doc_path
             if full_path.exists():
-                files_to_inject.append((doc_path, full_path))
+                files_to_inject.append((doc_path, full_path, ""))
 
     # 1. Active plan file (if set)
     active_plan_file = base_dir / ACTIVE_PLAN_FILE
@@ -732,7 +797,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
                 else:
                     full_path = base_dir / plan_path
                 if full_path.exists():
-                    files_to_inject.append((plan_path, full_path))
+                    files_to_inject.append((plan_path, full_path, "Active implementation plan. Follow this plan during implementation."))
         except IOError:
             pass
 
@@ -747,14 +812,14 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
                 else:
                     full_path = base_dir / subplan_path
                 if full_path.exists():
-                    files_to_inject.append((subplan_path, full_path))
+                    files_to_inject.append((subplan_path, full_path, "Active subplan for current epic phase."))
         except IOError:
             pass
 
     # 4. CODE_GUIDE and addons
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
     if code_guide_path.exists():
-        files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path))
+        files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path, "Project coding conventions. Follow these standards in all code you write."))
 
     # Get project config for addons and pebble
     project_config = get_project_config(base_dir)
@@ -762,26 +827,28 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if project_config['project_type'] == 'hackathon':
         addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_HACKATHON.md"
         if addon_path.exists():
-            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_HACKATHON.md", addon_path))
+            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_HACKATHON.md", addon_path, "Hackathon-mode coding standards overlay."))
     elif project_config['project_type'] == 'production':
         addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_PRODUCTION.md"
         if addon_path.exists():
-            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path))
+            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path, "Production-mode coding standards overlay."))
 
     # 5. Architecture Decision Records index (agent reads individual ADRs when needed)
     adr_index = base_dir / ".meridian" / "adrs" / "INDEX.md"
     if adr_index.exists():
-        files_to_inject.append((".meridian/adrs/INDEX.md", adr_index))
+        files_to_inject.append((".meridian/adrs/INDEX.md", adr_index, "Architecture Decision Records. Read individual ADRs before making related decisions."))
 
     # Inject each file with XML tags (deduplicate by resolved path)
     injected_paths = set()
-    for rel_path, full_path in files_to_inject:
+    for rel_path, full_path, desc in files_to_inject:
         resolved = full_path.resolve()
         if resolved in injected_paths:
             continue
         injected_paths.add(resolved)
         try:
             content = full_path.read_text()
+            if desc:
+                parts.append(f"**{desc}**")
             parts.append(f'<file path="{rel_path}">')
             parts.append(content.rstrip())
             parts.append('</file>')
@@ -795,6 +862,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if api_docs_index.exists():
         try:
             content = api_docs_index.read_text()
+            parts.append("**External API documentation index. Read the relevant doc before using any listed API.**")
             parts.append(f'<file path=".meridian/api-docs/INDEX.md">')
             parts.append(content.rstrip())
             parts.append('</file>')
@@ -809,6 +877,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
         if pebble_guide_path.exists():
             try:
                 content = pebble_guide_path.read_text()
+                parts.append("**Pebble issue tracker reference. Use these commands to manage issues.**")
                 parts.append(f'<file path=".meridian/PEBBLE_GUIDE.md">')
                 parts.append(content.rstrip())
                 parts.append('</file>')
@@ -825,11 +894,12 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
             parts.append('</pebble-context>')
             parts.append("")
 
-    # 8. Agent operating manual
+    # 8. Agent operating manual (authoritative — follow at all times)
     manual_path = base_dir / ".meridian" / "prompts" / "agent-operating-manual.md"
     if manual_path.exists():
         try:
             content = manual_path.read_text()
+            parts.append("**Agent operating manual. This is authoritative — follow these procedures at all times.**")
             parts.append(f'<file path=".meridian/prompts/agent-operating-manual.md">')
             parts.append(content.rstrip())
             parts.append('</file>')
@@ -843,6 +913,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if soul_path.exists():
         try:
             content = soul_path.read_text()
+            parts.append("**Agent identity and principles. This defines who you are and how you work.**")
             parts.append(f'<file path=".meridian/SOUL.md">')
             parts.append(content.rstrip())
             parts.append('</file>')
@@ -855,6 +926,7 @@ def build_injected_context(base_dir: Path, claude_project_dir: str, source: str 
     if workspace_path.exists():
         try:
             content = workspace_path.read_text()
+            parts.append("**Your persistent knowledge base. Update this throughout the session with decisions, discoveries, and lessons.**")
             parts.append(f'<file path="{WORKSPACE_FILE}">')
             parts.append(content.rstrip())
             parts.append('</file>')

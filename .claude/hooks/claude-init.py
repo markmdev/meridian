@@ -19,6 +19,7 @@ from config import (
     create_flag,
     PRE_COMPACTION_FLAG,
     CONTEXT_ACK_FLAG,
+    STATE_DIR,
 )
 
 
@@ -36,6 +37,14 @@ def main() -> int:
 
     # Build the injected context
     injected_context = build_injected_context(base_dir, claude_project_dir, source)
+
+    # Save to state for debugging/inspection
+    state_dir = base_dir / STATE_DIR
+    state_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        (state_dir / "injected-context").write_text(injected_context)
+    except IOError:
+        pass
 
     # Output JSON with additionalContext
     output = {

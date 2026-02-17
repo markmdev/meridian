@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.89] - 2026-02-16
+
+### Changed
+- **PR listings show authors**: Open and merged PRs in injected context now display the author's username. Open PRs show `#123 Title (author) [branch]`, merged PRs show `#123 Title (author) merged 2 days ago`.
+- **Injected files have descriptions**: Each file injected at session start now has a bold description above it explaining its purpose and how the agent should treat it (e.g., "Agent operating manual. This is authoritative — follow these procedures at all times.").
+- **Injected context saved to state**: `claude-init.py` writes the built context to `.meridian/.state/injected-context` for debugging and inspection.
+- **Pebble plan decomposition rule**: Plans with explicit phases/steps must be decomposed into Pebble child tasks before implementation starts.
+
+### Removed
+- **`agent-operating-manual.md`**: Removed standalone file. Content is covered by SOUL.md, planning skill, and other injected context.
+
+### Fixed
+- **Install script preserves ADR directory**: `.meridian/adrs/` is now preserved on update, preventing loss of Architecture Decision Records.
+
 ## [0.0.88] - 2026-02-15
 
 ### Changed

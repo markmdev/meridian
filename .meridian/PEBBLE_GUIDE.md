@@ -74,6 +74,14 @@ Every issue connects to the work graph (parent epic or dependencies).
 ### 7. Comprehensive Descriptions
 Write like a PM: Purpose, Why It Matters, Requirements, Acceptance Criteria. Future agents need full context.
 
+### 8. Approved Plan Decomposition (Required)
+If implementation is based on an approved plan with explicit phases/steps, create Pebble child tasks for each phase/step before or at implementation start (and immediately after resume if missing).
+
+- Parent each step task under the epic (or current phase task for subplans)
+- Add dependencies to match required sequence from the plan
+- Keep exactly one task `in_progress`, but preserve full step-level traceability in Pebble
+- Do not collapse multi-phase execution into a single long-running task
+
 ---
 
 ## Verification Issues

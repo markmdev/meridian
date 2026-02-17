@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.0.99] - 2026-02-16
+
+### Fixed
+- **Workspace sync race condition**: Fixed parallel hook timing where context injector checked for the session learner lock before it was created. Session learner now acquires the lock immediately on compact/clear (before transcript validation), and context injector waits up to 5 seconds for the lock to appear. Previously the lock was acquired late, so context injector saw no lock and injected the old workspace.
+
 ## [0.0.98] - 2026-02-16
 
 ### Fixed

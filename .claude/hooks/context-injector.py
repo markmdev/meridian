@@ -33,8 +33,17 @@ def wait_for_session_learner(base_dir: Path, source: str) -> None:
     if source not in ("compact", "clear"):
         return
     lock_path = base_dir / SYNC_LOCK
+
+    # Hooks run in parallel — session-learner may not have created the lock yet.
+    # Wait briefly for it to appear before giving up.
+    appear_deadline = time.time() + 5
+    while not lock_path.exists() and time.time() < appear_deadline:
+        time.sleep(0.2)
+
     if not lock_path.exists():
-        return
+        return  # session-learner not running or already finished
+
+    # Lock exists — wait for session-learner to release it
     deadline = time.time() + SYNC_WAIT_TIMEOUT
     while lock_path.exists() and time.time() < deadline:
         time.sleep(0.5)

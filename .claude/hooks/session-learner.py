@@ -353,33 +353,43 @@ def main():
 
     project_dir = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 
-    # Determine which transcript to read
-    if hook_event == "SessionStart" and source == "clear":
-        # On clear, new transcript is created — read the OLD path from state
-        saved_path = project_dir / TRANSCRIPT_PATH_STATE
-        if saved_path.exists():
-            transcript_path = saved_path.read_text().strip()
-        else:
-            print("[Meridian] No saved transcript path for clear event, skipping workspace sync", file=sys.stderr)
+    # Determine if this is an event we handle
+    is_compact_clear = hook_event == "SessionStart" and source in ("compact", "clear")
+    is_session_end = hook_event == "SessionEnd"
+
+    if not is_compact_clear and not is_session_end:
+        sys.exit(0)
+
+    # For compact/clear: acquire lock IMMEDIATELY so context-injector can wait.
+    # Hooks run in parallel — lock must exist before context-injector checks for it.
+    lock_acquired = False
+    if is_compact_clear:
+        if not acquire_lock(project_dir):
+            print("[Meridian] Workspace sync already running, skipping", file=sys.stderr)
             sys.exit(0)
-    elif hook_event == "SessionStart" and source == "compact":
-        # On compact, same transcript file — use input_data directly
-        pass
-    elif hook_event == "SessionEnd":
-        # On exit, use input_data directly
-        pass
-    else:
-        sys.exit(0)
-
-    if not transcript_path or not Path(transcript_path).exists():
-        sys.exit(0)
-
-    # Acquire lock
-    if not acquire_lock(project_dir):
-        print("[Meridian] Workspace sync already running, skipping", file=sys.stderr)
-        sys.exit(0)
+        lock_acquired = True
 
     try:
+        # Determine which transcript to read
+        if source == "clear":
+            saved_path = project_dir / TRANSCRIPT_PATH_STATE
+            if saved_path.exists():
+                transcript_path = saved_path.read_text().strip()
+            else:
+                print("[Meridian] No saved transcript path for clear event, skipping", file=sys.stderr)
+                return
+        # compact and SessionEnd use transcript_path from input_data directly
+
+        if not transcript_path or not Path(transcript_path).exists():
+            return
+
+        # For SessionEnd: acquire lock now (context-injector doesn't run, no rush)
+        if is_session_end:
+            if not acquire_lock(project_dir):
+                print("[Meridian] Workspace sync already running, skipping", file=sys.stderr)
+                return
+            lock_acquired = True
+
         # Extract transcript
         start_line, end_line = get_extraction_range(transcript_path, source if source else "end")
         entries = extract_transcript(transcript_path, start_line, end_line)
@@ -387,7 +397,7 @@ def main():
         # Skip if too few meaningful entries
         meaningful = [e for e in entries if e["type"] in ("user", "assistant")]
         if len(meaningful) < MIN_ENTRIES_THRESHOLD:
-            sys.exit(0)
+            return
 
         # Load workspace
         workspace_root, workspace_pages = load_workspace(project_dir)
@@ -404,7 +414,8 @@ def main():
             print("[Meridian] Workspace update failed.", file=sys.stderr)
 
     finally:
-        release_lock(project_dir)
+        if lock_acquired:
+            release_lock(project_dir)
 
     sys.exit(0)
 

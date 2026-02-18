@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1] - 2026-02-17
+
+### Added
+- **Docs "read when" reminder**: After the docs index listing, a reminder tells the agent to read relevant docs before coding when the task matches a hint, and to keep docs current.
+- **Descriptive plan names**: Plan files are renamed from random slugs (e.g. `linked-beaming-crayon.md`) to descriptive kebab-case names (e.g. `add-user-auth.md`) when archived after approval.
+- **Setup guide**: `.meridian/SETUP_GUIDE.md` with a CLAUDE.md snippet users can copy to enable proactive documentation — the agent creates docs in `.meridian/docs/` for decisions, learnings, and features without being asked.
+
 ## [0.1.0] - 2026-02-17
 
 ### Changed

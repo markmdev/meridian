@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.2] - 2026-02-17
+
+### Changed
+- **Setup guide expanded**: CLAUDE.md snippet now includes workflow guidance (stop and re-plan when things break, use subagents liberally, staff engineer self-check) and autonomous bug fixing (write reproducing test first, then fix without hand-holding).
+
 ## [0.1.1] - 2026-02-17
 
 ### Added

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.4] - 2026-02-18
+
+### Changed
+- **Removed file tree from injected context**: Was noisy and token-heavy. Agent can explore the codebase with tools when needed.
+- **Stronger docs guidance**: Docs reminder now tells the agent to update docs when making changes to documented topics and create new docs for decisions and gotchas. Documentation is part of the work, not an afterthought.
+
 ## [0.1.3] - 2026-02-18
 
 ### Added

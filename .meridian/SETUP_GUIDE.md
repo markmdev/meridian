@@ -5,6 +5,17 @@
 Copy the following into `~/.claude/CLAUDE.md`:
 
 ```markdown
+## Workflow
+
+- If something goes sideways during implementation, STOP and re-plan. Don't keep pushing a broken approach.
+- Use subagents liberally. Offload research, exploration, and parallel analysis to keep the main context window clean. One task per subagent for focused execution.
+- Before finishing any non-trivial change, ask yourself: "Would a staff engineer approve this?"
+
+## Bugs
+
+- When a bug is reported, first write a test that reproduces it.
+- Then fix it. Don't ask for hand-holding — point at logs, errors, failing tests, then resolve them.
+
 ## Documentation
 
 Be proactive about documentation. When you encounter any of the following, create or update a doc in `.meridian/docs/`:

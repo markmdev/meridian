@@ -193,10 +193,11 @@ def build_prompt(entries: list[dict], workspace_root: str, workspace_pages: list
 
     parts = []
 
-    parts.append("""You are a session maintenance agent with two jobs:
+    parts.append("""You are a session maintenance agent with three jobs:
 
 1. **Update the workspace** — persistent knowledge library for the project
 2. **Learn from corrections** — when the user corrects the agent, save it as a permanent instruction
+3. **Capture next steps** — so the next agent knows what to work on
 
 ---
 
@@ -253,6 +254,19 @@ Scan the transcript for moments where the user corrects the agent's behavior, ex
 
 ---
 
+## Job 3: Next Steps
+
+Maintain a `## Next steps` section at the bottom of `.meridian/WORKSPACE.md`. The agent that picks up after compaction reads this to know what to work on.
+
+### Rules
+
+- Write 2-5 concrete, actionable items based on what was in progress or discussed.
+- Include enough context that a fresh agent can act without re-reading the full workspace.
+- Replace the previous "Next steps" section entirely — don't append to it.
+- If the session ended with everything complete and nothing pending, write "No pending work."
+
+---
+
 ## Session Transcript
 """)
     parts.append("```json")
@@ -263,7 +277,7 @@ Scan the transcript for moments where the user corrects the agent's behavior, ex
 
 ## Execute
 
-Do both jobs. If nothing worth preserving for either job, say so and stop.
+Do all three jobs. If nothing worth preserving for a job, skip it.
 
 Use the Write tool (or Read then Edit) to update files.""")
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.3] - 2026-02-18
+
+### Added
+- **Next steps in workspace**: Session learner now maintains a "Next steps" section at the bottom of WORKSPACE.md after each compaction/clear — 2-5 actionable items so the next agent knows what to work on.
+
 ## [0.1.2] - 2026-02-17
 
 ### Changed

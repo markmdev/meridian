@@ -561,18 +561,6 @@ def build_injected_context(base_dir: Path) -> str:
     parts.append(f"**Current datetime:** {now}")
     parts.append("")
 
-    # Project file tree (TOON-style: compact, token-efficient)
-    try:
-        tree_output = _build_file_tree(base_dir)
-        if tree_output:
-            parts.append("## Project Structure")
-            parts.append("```")
-            parts.append(tree_output)
-            parts.append("```")
-            parts.append("")
-    except Exception:
-        pass
-
     # Uncommitted changes (git diff --stat)
     try:
         result = subprocess.run(
@@ -760,7 +748,7 @@ def build_injected_context(base_dir: Path) -> str:
             parts.append("</docs-index>")
             parts.append("")
     if any_docs:
-        parts.append("When your task matches a \"Read when\" hint above, read that doc before coding. Keep docs current as behavior changes, and suggest new docs when coverage is missing.")
+        parts.append("When your task matches a \"Read when\" hint above, read that doc before coding. When you make changes that affect a documented topic, update the doc. When you discover something worth preserving — a decision, a gotcha, a new integration — create a new doc in `.meridian/docs/` with frontmatter (`summary`, `read_when`). Documentation is part of the work, not an afterthought.")
         parts.append("")
 
     # Pebble guide and context (if enabled)

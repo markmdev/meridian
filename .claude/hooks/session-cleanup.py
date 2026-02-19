@@ -17,7 +17,7 @@ STATE_DIR = PROJECT_DIR / ".meridian/.state"
 # Files to delete on startup (fresh session)
 STARTUP_DELETE = [
     "action-counter",
-    "pre-compaction-synced",
+
     "plan-mode-state",
     "plan-review-blocked",
     "plan-action-counter",
@@ -26,15 +26,13 @@ STARTUP_DELETE = [
 # Files to delete on clear (user cleared conversation)
 CLEAR_DELETE = [
     "action-counter",
-    "pre-compaction-synced",
+
     "plan-mode-state",
     "plan-review-blocked",
 ]
 
-# Files to delete on compact (allow token warning to fire again)
-COMPACT_DELETE = [
-    "pre-compaction-synced",
-]
+# Files to delete on compact
+COMPACT_DELETE = []
 
 # Files to delete on SessionEnd
 SESSION_END_DELETE = [

@@ -19,18 +19,6 @@ plan_review_min_actions: 20
 # When false, code review is skipped.
 code_review_enabled: true
 
-# Pre-compaction sync: prompt agent to save context before conversation compacts.
-# When false, no warning is given before compaction.
-pre_compaction_sync_enabled: true
-
-# Token threshold for pre-compaction sync warning (default: 150000).
-pre_compaction_sync_threshold: 144000
-
-# Auto-compact off: When true, agent stops after pre-compaction sync
-# instead of allowing auto-compaction. User must run /clear manually.
-# This gives you control over when sessions reset.
-auto_compact_off: false
-
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.
 # See PEBBLE_GUIDE.md for command reference and principles.

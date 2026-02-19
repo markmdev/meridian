@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5] - 2026-02-18
+
+### Removed
+- **Pre-compaction warning hook**: `token-limit-warning.py` deleted. Session learner now handles workspace updates, CLAUDE.md learning, and next steps automatically after compaction — making the manual pre-compaction save redundant.
+- **`auto_compact_off` config option**: Depended on the pre-compaction hook to trigger. Removed from config.yaml and config.py.
+- **`pre_compaction_sync_enabled` / `pre_compaction_sync_threshold` config options**: No longer needed.
+
 ## [0.1.4] - 2026-02-18
 
 ### Changed

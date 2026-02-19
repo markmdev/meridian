@@ -16,10 +16,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from config import (
     build_injected_context,
-    cleanup_flag,
     create_flag,
     log_hook_output,
-    PRE_COMPACTION_FLAG,
     CONTEXT_ACK_FLAG,
     STATE_DIR,
 )
@@ -92,9 +90,6 @@ def main() -> int:
     }
 
     log_hook_output(base_dir, "context-injector", output)
-
-    # Clean up old flags
-    cleanup_flag(base_dir, PRE_COMPACTION_FLAG)
 
     # Create acknowledgment flag - will be checked by context-acknowledgment-gate
     create_flag(base_dir, CONTEXT_ACK_FLAG)

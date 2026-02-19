@@ -15,7 +15,6 @@ WORKSPACE_FILE = ".meridian/WORKSPACE.md"
 
 # System state files (ephemeral, cleaned up on session start)
 STATE_DIR = ".meridian/.state"
-PRE_COMPACTION_FLAG = f"{STATE_DIR}/pre-compaction-synced"
 PLAN_REVIEW_FLAG = f"{STATE_DIR}/plan-review-blocked"
 CONTEXT_ACK_FLAG = f"{STATE_DIR}/context-acknowledgment-pending"
 ACTION_COUNTER_FILE = f"{STATE_DIR}/action-counter"
@@ -122,9 +121,6 @@ def get_project_config(base_dir: Path) -> dict:
     config = {
         'project_type': 'standard',
         'plan_review_enabled': True,
-        'pre_compaction_sync_enabled': True,
-        'pre_compaction_sync_threshold': 150000,
-        'auto_compact_off': False,
         'pebble_enabled': False,
         'stop_hook_min_actions': 10,
         'plan_review_min_actions': 20,
@@ -150,24 +146,6 @@ def get_project_config(base_dir: Path) -> dict:
         pr = get_config_value(content, 'plan_review_enabled')
         if pr:
             config['plan_review_enabled'] = pr.lower() != 'false'
-
-        # Pre-compaction sync
-        pcs = get_config_value(content, 'pre_compaction_sync_enabled')
-        if pcs:
-            config['pre_compaction_sync_enabled'] = pcs.lower() != 'false'
-
-        # Threshold
-        threshold = get_config_value(content, 'pre_compaction_sync_threshold')
-        if threshold:
-            try:
-                config['pre_compaction_sync_threshold'] = int(threshold)
-            except ValueError:
-                pass
-
-        # Auto-compact off
-        aco = get_config_value(content, 'auto_compact_off')
-        if aco:
-            config['auto_compact_off'] = aco.lower() == 'true'
 
         # Pebble integration
         pebble = get_config_value(content, 'pebble_enabled')

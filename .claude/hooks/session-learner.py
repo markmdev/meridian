@@ -450,6 +450,14 @@ def main():
         # Build prompt and run agent
         prompt = build_prompt(entries, workspace_root, workspace_pages, project_dir)
 
+        # Save prompt for inspection
+        try:
+            prompt_path = project_dir / f"{STATE_DIR}/session-learner-prompt.md"
+            prompt_path.parent.mkdir(parents=True, exist_ok=True)
+            prompt_path.write_text(prompt)
+        except (IOError, OSError):
+            pass
+
         print("[Meridian] Updating workspace from session transcript...", file=sys.stderr)
         success = run_workspace_agent(prompt, project_dir)
 

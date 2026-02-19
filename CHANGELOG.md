@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.7] - 2026-02-19
+
+### Added
+- **Session learner prompt saved for inspection**: The full prompt sent to the session learner agent (transcript entries, workspace, CLAUDE.md contents) is now saved to `.meridian/.state/session-learner-prompt.md` on each run, alongside the existing output file.
+
 ## [0.1.6] - 2026-02-18
 
 ### Removed

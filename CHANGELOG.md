@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.6] - 2026-02-18
+
+### Removed
+- **Dead file tree code**: `_build_file_tree()`, constants, helpers, and `file_tree_max_files_per_dir` / `file_tree_ignored_extensions` config options. File tree was removed from context in v0.1.4 but ~117 lines of code remained.
+
 ## [0.1.5] - 2026-02-18
 
 ### Removed

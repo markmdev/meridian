@@ -32,14 +32,3 @@ stop_hook_min_actions: 15
 # Pebble scaffolder: Auto-invoke pebble-scaffolder after plan approval.
 # When false, you can use Pebble without automatic issue scaffolding.
 pebble_scaffolder_enabled: true
-
-# File tree: Maximum files shown per directory in the project structure tree.
-# Directories with more files show the first N and a "+X truncated" note.
-file_tree_max_files_per_dir: 2000
-
-# File tree: Additional file extensions to exclude from the project structure tree.
-# Built-in exclusions: images, fonts, audio, video, archives, PDFs.
-# Format: list of extensions (with or without leading dot).
-# file_tree_ignored_extensions:
-#   - .map
-#   - .min.js

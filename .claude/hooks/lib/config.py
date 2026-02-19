@@ -126,8 +126,6 @@ def get_project_config(base_dir: Path) -> dict:
         'plan_review_min_actions': 20,
         'code_review_enabled': True,
         'pebble_scaffolder_enabled': True,
-        'file_tree_max_files_per_dir': 2000,
-        'file_tree_ignored_extensions': [],
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -177,20 +175,6 @@ def get_project_config(base_dir: Path) -> dict:
         ps_enabled = get_config_value(content, 'pebble_scaffolder_enabled')
         if ps_enabled:
             config['pebble_scaffolder_enabled'] = ps_enabled.lower() != 'false'
-
-        # Project structure tree filtering
-        max_files = get_config_value(content, 'file_tree_max_files_per_dir')
-        if max_files:
-            try:
-                parsed = int(max_files)
-                if parsed > 0:
-                    config['file_tree_max_files_per_dir'] = parsed
-            except ValueError:
-                pass
-
-        ignored_exts = parse_yaml_list(content, 'file_tree_ignored_extensions')
-        if ignored_exts:
-            config['file_tree_ignored_extensions'] = ignored_exts
 
     except IOError:
         pass
@@ -287,96 +271,6 @@ def clear_plan_action_counter(base_dir: Path) -> None:
 
 # =============================================================================
 # FILE TREE HELPERS
-# =============================================================================
-
-_IGNORED_DIRS = {
-    "node_modules", ".git", "__pycache__", ".next", "dist", "build",
-    ".venv", "venv", "coverage", ".cache", ".turbo", "target", "vendor",
-    "bin", ".gradle", ".idea", "obj", ".eggs", ".pytest_cache",
-    ".mypy_cache", ".ruff_cache", ".nuxt", ".output", ".svelte-kit",
-    ".parcel-cache", ".vite",
-}
-
-_IGNORED_FILE_EXTENSIONS = {
-    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".avif", ".bmp", ".ico",
-    ".ttf", ".otf", ".woff", ".woff2", ".eot",
-    ".mp3", ".wav", ".aiff", ".m4a", ".mp4", ".mov", ".avi", ".webm",
-    ".zip", ".gz", ".tar", ".tgz", ".7z", ".dmg", ".pdf",
-}
-
-
-def _normalize_extension(value: str) -> str:
-    """Normalize extension values from config to lowercase .ext form."""
-    value = value.strip().lower()
-    if not value:
-        return ""
-    if not value.startswith("."):
-        value = f".{value}"
-    return value
-
-
-def _build_file_tree(base_dir: Path) -> str:
-    """Build a TOON-style compact file tree. Directories as nested keys, files inline."""
-    lines = []
-    project_config = get_project_config(base_dir)
-    max_files_per_dir = project_config.get('file_tree_max_files_per_dir', 2000)
-    ignored_extensions = set(_IGNORED_FILE_EXTENSIONS)
-    for ext in project_config.get('file_tree_ignored_extensions', []):
-        normalized = _normalize_extension(ext)
-        if normalized:
-            ignored_extensions.add(normalized)
-
-    def _walk(dir_path: Path, indent: int):
-        try:
-            entries = sorted(dir_path.iterdir(), key=lambda e: (not e.is_dir(), e.name.lower()))
-        except PermissionError:
-            return
-
-        dirs = []
-        files = []
-        filtered_count = 0
-        for entry in entries:
-            if entry.is_symlink():
-                continue
-            if entry.is_dir():
-                if entry.name in _IGNORED_DIRS:
-                    continue
-                dirs.append(entry)
-            else:
-                if entry.name == '.DS_Store':
-                    continue
-                ext = Path(entry.name).suffix.lower()
-                if ext in ignored_extensions:
-                    filtered_count += 1
-                    continue
-                files.append(entry.name)
-
-        prefix = "  " * indent
-        shown_files = files
-        truncated_count = 0
-        if max_files_per_dir and len(files) > max_files_per_dir:
-            shown_files = files[:max_files_per_dir]
-            truncated_count = len(files) - max_files_per_dir
-
-        if shown_files:
-            suffix_parts = []
-            if filtered_count:
-                suffix_parts.append(f"+{filtered_count} filtered")
-            if truncated_count:
-                suffix_parts.append(f"+{truncated_count} truncated")
-            suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
-            lines.append(f"{prefix}[{len(shown_files)}{suffix}]: {','.join(shown_files)}")
-        elif filtered_count:
-            lines.append(f"{prefix}[0 shown (+{filtered_count} filtered)]")
-
-        for d in dirs:
-            lines.append(f"{prefix}{d.name}/")
-            _walk(d, indent + 1)
-
-    _walk(base_dir, 0)
-    return '\n'.join(lines)
-
-
 # =============================================================================
 # PEBBLE INTEGRATION
 # =============================================================================

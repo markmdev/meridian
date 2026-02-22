@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.8] - 2026-02-22
+
+### Added
+- **Session learner creates docs**: Session learner agent (Job 4) now creates docs in `.meridian/docs/` with proper `summary` + `read_when` frontmatter for significant knowledge from the session — architectural decisions, integrations, debugging discoveries, gotchas.
+
 ## [0.1.7] - 2026-02-19
 
 ### Added

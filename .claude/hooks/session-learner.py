@@ -275,9 +275,30 @@ Maintain a `## Next steps` section at the bottom of `.meridian/WORKSPACE.md`. Th
 
     parts.append("""
 
+## Job 4: Docs
+
+Create docs in `.meridian/docs/` for significant knowledge worth preserving — architectural decisions, integrations, debugging discoveries, complex workflows, gotchas.
+
+Every doc must start with YAML frontmatter:
+
+```
+---
+summary: One-line description of what this doc covers
+read_when:
+  - keyword or phrase that would make this doc relevant
+  - another keyword
+---
+```
+
+Use kebab-case filenames: `auth-flow.md`, `stripe-webhooks.md`, `postgres-gotchas.md`.
+
+Only create docs for knowledge that's genuinely reusable. Skip routine fixes, obvious information, and content already captured in the workspace.
+
+---
+
 ## Execute
 
-Do all three jobs. If nothing worth preserving for a job, skip it.
+Do all four jobs. If nothing worth preserving for a job, skip it.
 
 Use the Write tool (or Read then Edit) to update files.""")
 

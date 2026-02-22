@@ -87,6 +87,17 @@ Fix all issues, re-run until clean. The reviewers must verify fixes.
 - No secrets/PII in code or logs
 - Workspace updated with important decisions
 
+# Error Handling
+
+Errors belong to the user, not to a catch block.
+
+- **Never swallow errors silently.** Every caught exception must propagate, crash, or be shown to the user. `catch(e) {}` and catch-then-continue are bugs.
+- **No silent fallbacks.** If the primary path fails, fail loudly — never silently switch to a worse model, stale cache, or degraded mode. The user must know something went wrong.
+- **No backwards compatibility shims** unless explicitly requested. Delete old code paths rather than keeping them alongside new ones.
+- **Required config has no defaults.** `process.env.X || 'fallback'` for required values hides misconfiguration. Missing required config is a startup error.
+
+Use `/error-audit` to find and fix these patterns in existing code.
+
 # Hard Rules
 
 - No credentials in code, config, or prompts — use environment variables

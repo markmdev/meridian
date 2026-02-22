@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.9] - 2026-02-22
+
+### Added
+- **`/error-audit` skill**: Audits code for silent error swallowing, fallbacks to degraded alternatives, backwards compatibility shims, and required config with default values. Fixes all occurrences and reports what changed.
+- **Error handling rules in operating manual**: New "Error Handling" section — no silent swallowing, no silent fallbacks, no backwards compat shims, no default values for required config.
+
 ## [0.1.8] - 2026-02-22
 
 ### Added

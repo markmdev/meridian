@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.3] - 2026-02-22
+
+### Added
+- **Mandatory verification before handoff**: SOUL.md, agent operating manual, and stop hook all require the agent to prove its work before stopping — run it, call it, load it. "It should work" is not accepted. New "Verification" section in operating manual with examples per work type.
+- **Required reading in workspace**: Session learner now maintains a `## Required reading` section in WORKSPACE.md listing `.meridian/docs/` files the next agent must read before starting work.
+
 ## [0.2.2] - 2026-02-22
 
 ### Changed

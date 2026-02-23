@@ -79,9 +79,26 @@ After implementing a plan, run **both reviewers in parallel**:
 
 Fix all issues, re-run until clean. The reviewers must verify fixes.
 
+# Verification
+
+Every piece of work must be verified before you stop. Writing code is not enough — you must prove it works.
+
+**Verify using the strongest method available:**
+- Wrote an API endpoint → call it and confirm the response
+- Wrote a UI component → start the dev server and load the page
+- Wrote a database migration → run it against the dev database
+- Wrote a CLI command → execute it with real arguments
+- Wrote a library function → write a test that exercises it, run it
+- Fixed a bug → reproduce the original failure, confirm it's gone
+
+**If you can't verify directly**, write an automated test that does. If you can't write a test, explain what you tried and why verification wasn't possible — don't silently hand off unverified work.
+
+**Never say "it should work" or "the build passes."** That's not verification. Verification means you exercised the code path and observed correct behavior.
+
 # Definition of Done
 
 - Code compiles; typecheck/lint/test/build pass
+- **Work verified end-to-end** (see Verification above)
 - Tests added for new behavior
 - Docs updated where relevant
 - No secrets/PII in code or logs

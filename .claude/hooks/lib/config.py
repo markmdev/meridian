@@ -858,6 +858,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     if pebble_enabled:
         parts.append("- Close/update Pebble issues for completed work")
 
+    parts.append("- **Verify your work end-to-end** — run it, call it, load it. Don't hand off unverified code.")
     parts.append("- Run tests/lint/build if you made code changes")
     parts.append("- Consider updating CLAUDE.md if you made architectural changes")
 

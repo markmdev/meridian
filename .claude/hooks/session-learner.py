@@ -277,7 +277,7 @@ Maintain a `## Next steps` section at the bottom of `.meridian/WORKSPACE.md`. Th
 
 ## Job 4: Docs
 
-Create docs in `.meridian/docs/` for significant knowledge worth preserving — architectural decisions, integrations, debugging discoveries, complex workflows, gotchas.
+Maintain docs in `.meridian/docs/` — create new ones, update existing ones, delete outdated ones.
 
 Every doc must start with YAML frontmatter:
 
@@ -292,7 +292,11 @@ read_when:
 
 Use kebab-case filenames: `auth-flow.md`, `stripe-webhooks.md`, `postgres-gotchas.md`.
 
-Only create docs for knowledge that's genuinely reusable. Skip routine fixes, obvious information, and content already captured in the workspace.
+**Create** docs for significant new knowledge: architectural decisions, integrations, debugging discoveries, complex workflows, gotchas. Skip routine fixes and obvious information.
+
+**Update** existing docs when this session changed what they describe. Read the existing doc first, then rewrite with current accurate content.
+
+**Delete** docs that are fully outdated — the thing they described no longer exists or has completely changed. To mark for deletion, append the relative path to `.meridian/.state/docs-to-delete` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish.
 
 ---
 
@@ -355,6 +359,32 @@ def mark_synced(project_dir: Path):
         sync_path.write_text(str(time.time()))
     except IOError:
         pass
+
+
+def cleanup_docs_to_delete(project_dir: Path):
+    """Delete docs marked for deletion by the session learner agent."""
+    delete_list_path = project_dir / STATE_DIR / "docs-to-delete"
+    if not delete_list_path.exists():
+        return
+
+    try:
+        paths = [p.strip() for p in delete_list_path.read_text().splitlines() if p.strip()]
+        delete_list_path.unlink()
+    except IOError:
+        return
+
+    deleted = []
+    for rel_path in paths:
+        target = project_dir / rel_path
+        try:
+            if target.exists() and target.is_file():
+                target.unlink()
+                deleted.append(rel_path)
+        except OSError:
+            pass
+
+    if deleted:
+        print(f"[Meridian] Deleted outdated docs: {', '.join(deleted)}", file=sys.stderr)
 
 
 def cleanup_orphaned_workspace_pages(project_dir: Path):
@@ -512,6 +542,7 @@ def main():
 
         if success:
             print("[Meridian] Workspace updated.", file=sys.stderr)
+            cleanup_docs_to_delete(project_dir)
             cleanup_orphaned_workspace_pages(project_dir)
             mark_synced(project_dir)
         else:

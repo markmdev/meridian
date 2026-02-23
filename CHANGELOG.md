@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.2] - 2026-02-22
+
+### Changed
+- **Session learner maintains docs/ fully**: Job 4 now covers create, update, and delete. Agent marks outdated docs for deletion by writing paths to `.meridian/.state/docs-to-delete`; Python deletes them after the agent finishes.
+
 ## [0.2.1] - 2026-02-22
 
 ### Added

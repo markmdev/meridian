@@ -254,15 +254,27 @@ Scan the transcript for moments where the user corrects the agent's behavior, ex
 
 ---
 
-## Job 3: Next Steps
+## Job 3: Next Steps + Required Reading
 
-Maintain a `## Next steps` section at the bottom of `.meridian/WORKSPACE.md`. The agent that picks up after compaction reads this to know what to work on.
+Maintain two sections at the bottom of `.meridian/WORKSPACE.md`:
 
-### Rules
+### `## Required reading`
+
+List docs from `.meridian/docs/` that the next agent MUST read before starting work. Based on what was discussed or worked on this session, identify which docs contain essential context.
+
+- Use the format: `- [filename.md](.meridian/docs/filename.md) — why it's needed`
+- Only list docs that exist in `.meridian/docs/`. Don't invent files.
+- Include docs that cover active integrations, architecture in play, or gotchas relevant to the current work.
+- Replace the previous section entirely each time.
+- If no docs are relevant, write "No required docs for current work."
+
+### `## Next steps`
+
+What the next agent should work on.
 
 - Write 2-5 concrete, actionable items based on what was in progress or discussed.
 - Include enough context that a fresh agent can act without re-reading the full workspace.
-- Replace the previous "Next steps" section entirely — don't append to it.
+- Replace the previous section entirely — don't append to it.
 - If the session ended with everything complete and nothing pending, write "No pending work."
 
 ---

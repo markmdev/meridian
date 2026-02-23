@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.0] - 2026-02-22
+
+### Added
+- **`/ux-states-audit` skill**: Audits UI for missing loading, empty, and error states. Finds components that handle the happy path but leave other states blank. Implements missing states using the app's existing patterns.
+- **`/observability-audit` skill**: Audits code for observability gaps — debug logs left in, errors caught without being logged, missing context, untracked critical operations. Research-first: uses whatever observability tooling already exists in the app.
+
+### Changed
+- **`/error-audit` updated**: Now explicitly covers the UI layer — data fetches that swallow errors and render blank, error boundaries that catch but show nothing, async operations with no error state in the UI.
+
 ## [0.1.9] - 2026-02-22
 
 ### Added

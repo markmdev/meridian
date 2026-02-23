@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1] - 2026-02-22
+
+### Added
+- **Orphaned workspace page cleanup**: After each session learner run, workspace pages not linked from `WORKSPACE.md` are automatically deleted. Keeps `.meridian/workspace/` from accumulating stale pages.
+
+### Removed
+- **`adrs/INDEX.md` and `api-docs/INDEX.md`**: These files were already skipped by the frontmatter scanner (since v0.1.0) and served no purpose.
+
 ## [0.2.0] - 2026-02-22
 
 ### Added

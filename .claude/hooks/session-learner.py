@@ -357,6 +357,34 @@ def mark_synced(project_dir: Path):
         pass
 
 
+def cleanup_orphaned_workspace_pages(project_dir: Path):
+    """Delete workspace pages not linked from WORKSPACE.md."""
+    workspace_dir = project_dir / ".meridian" / "workspace"
+    workspace_root_path = project_dir / WORKSPACE_FILE
+
+    if not workspace_dir.exists() or not workspace_root_path.exists():
+        return
+
+    try:
+        root_content = workspace_root_path.read_text()
+    except IOError:
+        return
+
+    deleted = []
+    for page in sorted(workspace_dir.rglob("*.md")):
+        # Check if this page is reachable from WORKSPACE.md by filename or relative path
+        rel = str(page.relative_to(project_dir))
+        if page.name not in root_content and rel not in root_content:
+            try:
+                page.unlink()
+                deleted.append(page.name)
+            except OSError:
+                pass
+
+    if deleted:
+        print(f"[Meridian] Deleted orphaned workspace pages: {', '.join(deleted)}", file=sys.stderr)
+
+
 def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
     """Run headless claude -p to update workspace. Returns True on success."""
     env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
@@ -484,6 +512,7 @@ def main():
 
         if success:
             print("[Meridian] Workspace updated.", file=sys.stderr)
+            cleanup_orphaned_workspace_pages(project_dir)
             mark_synced(project_dir)
         else:
             print("[Meridian] Workspace update failed.", file=sys.stderr)

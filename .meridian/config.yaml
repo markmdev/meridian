@@ -1,11 +1,5 @@
 # Project-level configuration for the Claude workflow
 
-# Project type affects which code guide add-on is loaded:
-# - hackathon   → use CODE_GUIDE_ADDON_HACKATHON.md
-# - standard    → baseline only
-# - production  → use CODE_GUIDE_ADDON_PRODUCTION.md
-project_type: standard
-
 # Plan review: require plan-reviewer agent before exiting plan mode.
 # When false, ExitPlanMode proceeds without review.
 plan_review_enabled: true
@@ -21,7 +15,7 @@ code_review_enabled: true
 
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.
-# See PEBBLE_GUIDE.md for command reference and principles.
+# See agent-operating-manual.md for Pebble rules and workflow.
 pebble_enabled: false
 
 # Stop hook minimum actions: Skip stop hook prompts if fewer than this many

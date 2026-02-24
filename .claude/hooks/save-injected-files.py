@@ -15,8 +15,8 @@ from datetime import datetime
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from config import (
-    get_project_config,
     parse_yaml_list,
+    get_project_config,
     WORKSPACE_FILE,
     REQUIRED_CONTEXT_CONFIG,
     ACTIVE_PLAN_FILE,
@@ -71,33 +71,6 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
     if code_guide_path.exists():
         files.append(str(code_guide_path))
-
-    # 5b. CODE_GUIDE addons
-    project_config = get_project_config(base_dir)
-    if project_config['project_type'] == 'hackathon':
-        addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_HACKATHON.md"
-        if addon_path.exists():
-            files.append(str(addon_path))
-    elif project_config['project_type'] == 'production':
-        addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_PRODUCTION.md"
-        if addon_path.exists():
-            files.append(str(addon_path))
-
-    # 5c. Architecture Decision Records index (agent reads individual ADRs when needed)
-    adr_index = base_dir / ".meridian" / "adrs" / "INDEX.md"
-    if adr_index.exists():
-        files.append(str(adr_index))
-
-    # 6. PEBBLE_GUIDE (if enabled)
-    if project_config.get('pebble_enabled', False):
-        pebble_guide_path = base_dir / ".meridian" / "PEBBLE_GUIDE.md"
-        if pebble_guide_path.exists():
-            files.append(str(pebble_guide_path))
-
-    # 7. API docs index (tells agent which external APIs are documented)
-    api_docs_index = base_dir / ".meridian" / "api-docs" / "INDEX.md"
-    if api_docs_index.exists():
-        files.append(str(api_docs_index))
 
     # Note: agent-operating-manual.md is excluded - not needed for reviewer agents
 

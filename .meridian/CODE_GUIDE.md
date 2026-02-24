@@ -15,9 +15,42 @@ Type safety is non-negotiable. The compiler is your first line of defense.
 
 ## Error Handling
 
+Errors belong to the user, not to a catch block.
+
 - Fail explicitly — no silent fallbacks (`data || {}`, empty catch blocks)
+- Every caught exception must propagate, crash, or be shown to the user
+- No silent degradation — never switch to a worse model, stale cache, or degraded mode without telling the user
+- No backwards compatibility shims unless explicitly requested — delete old code paths
+- Required config has no defaults — missing required config is a startup crash, not a fallback
 - Actionable messages with context: "User 123 not found in database" not "Not found"
-- Use a consistent error shape `{ code, message, details }` so callers can handle programmatically
+
+## Security
+
+Never compromise on security fundamentals.
+
+- No credentials in code, config, or prompts — use environment variables
+- Auth tokens in httpOnly cookies — never in localStorage or sessionStorage
+- Sanitize all user-supplied content before rendering
+- Validate and verify webhook signatures
+- Tenant isolation enforced at the database layer — never rely on application-level filtering alone
+
+## Reliability
+
+Systems must handle failure gracefully and visibly.
+
+- Timeouts on every external call — network, database, APIs
+- Idempotent operations — safe to retry without unintended side effects
+- Transactions for consistency — multi-step writes must be atomic
+- Failed async work must be observable and recoverable — no silent job failures
+
+## Observability
+
+If you can't see it, you can't debug it.
+
+- Structured logging with consistent fields — never ad-hoc string concatenation
+- Include enough context to reproduce issues: who, what, where
+- Never log passwords, tokens, PII, or secrets
+- Every error path must leave a trace — caught exceptions that vanish are bugs
 
 ## Code Organization
 
@@ -30,12 +63,6 @@ Type safety is non-negotiable. The compiler is your first line of defense.
 - Extend rather than modify existing interfaces when possible
 - Deprecate before removing — give consumers time to migrate
 - Version APIs when breaking changes are necessary
-
-## Logging
-
-- Structured format: JSON with consistent fields (level, timestamp, message, context)
-- Include context: request IDs, user IDs, operation, relevant entity IDs
-- Never log passwords, tokens, PII, or secrets
 
 ## Testing
 
@@ -50,6 +77,6 @@ Type safety is non-negotiable. The compiler is your first line of defense.
 
 ## Backend
 
-- Transactions for consistency — multi-step writes should be atomic
-- Idempotent operations — safe to retry without unintended side effects
-- Timeouts everywhere — network calls, database queries, external APIs
+- Validate config at startup — exit on invalid configuration, don't fall back to defaults for required values
+- Separate long-running work from request handlers
+- Bound all retries — never retry indefinitely

@@ -62,7 +62,6 @@ State files preserved on update:
   - .meridian/config.yaml (merged with new defaults)
   - .meridian/required-context-files.yaml
   - .meridian/api-docs/
-  - .meridian/adrs/
   - .meridian/tasks/
   - .claude/plans/
 EOF
@@ -162,7 +161,6 @@ STATE_PATTERNS=(
   ".meridian/workspace/"
   ".meridian/config.yaml"
   ".meridian/api-docs/"
-  ".meridian/adrs/"
   ".meridian/tasks/"
   ".meridian/.manifest"
   ".meridian/.version"
@@ -178,7 +176,6 @@ is_state_file() {
     .meridian/config.yaml) return 0 ;;
     .meridian/required-context-files.yaml) return 0 ;;
     .meridian/api-docs|.meridian/api-docs/*) return 0 ;;
-    .meridian/adrs|.meridian/adrs/*) return 0 ;;
     .meridian/tasks|.meridian/tasks/*) return 0 ;;
     .meridian/plans|.meridian/plans/*) return 0 ;;
     .meridian/subplans|.meridian/subplans/*) return 0 ;;

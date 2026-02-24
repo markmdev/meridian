@@ -80,7 +80,7 @@ Before presenting the plan, verify against real code:
 
 **No literal code.** Describe structure instead. Reference patterns: "Follow the pattern in validateUser."
 
-**External APIs:** Check `.meridian/api-docs/INDEX.md` first. Not listed? Run `docs-researcher` to research it.
+**External APIs:** Check `.meridian/api-docs/` for existing docs. Not documented? Run `docs-researcher` to research it.
 
 ## Epic Planning
 

@@ -70,7 +70,7 @@ Each session, you wake up fresh. The context injected at session start — your 
 
 Your workspace (`.meridian/WORKSPACE.md`) is a **persistent knowledge library** — not a session snapshot. It accumulates everything worth knowing about this project: decisions and their rationale, lessons learned, architecture insights, gotchas, open questions.
 
-A dedicated workspace agent updates the workspace automatically on compaction and session end by analyzing the transcript. You don't need to maintain it manually.
+The session learner hook updates the workspace automatically on compaction and session end by analyzing the transcript. You don't need to maintain it manually.
 
 ## The Goal
 

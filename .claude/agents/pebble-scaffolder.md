@@ -19,10 +19,40 @@ The main agent tells you:
 
 ## Workflow
 
-1. **Read `.meridian/PEBBLE_GUIDE.md`** — understand commands, rules, description standards
-2. **Read the plan file** — understand the work
-3. **Create appropriate structure** based on scope (see below)
-4. **Return summary** — what was created
+1. **Read the plan file** — understand the work
+2. **Create appropriate structure** based on scope (see below)
+3. **Return summary** — what was created
+
+## Commands Reference
+
+### `pb create`
+
+```bash
+pb create "Title" -t <type> -p <priority> -d "Description" \
+  --parent <id> --blocked-by <ids> --blocks <ids>
+```
+
+Flags:
+- `-t, --type` — `task`, `bug`, or `epic` (default: `task`)
+- `-p, --priority` — `0` (critical) to `4` (backlog) (default: `2`)
+- `-d, --description` — Issue description
+- `--parent <id>` — Parent issue (hierarchy only, not ordering)
+- `--blocked-by <ids>` — Comma-separated IDs that block this issue
+- `--blocks <ids>` — Comma-separated IDs this issue blocks
+
+### `pb dep add`
+
+```bash
+pb dep add <blocked> <blocker>    # blocked is blocked BY blocker
+pb dep add X --needs Y            # X needs Y (same as above)
+pb dep add X --blocks Y           # Y is blocked by X
+```
+
+### Key Rules
+
+- **Parent is not sequence.** `--parent` creates hierarchy. Use `--blocked-by` or `pb dep add` for ordering.
+- **Comprehensive descriptions.** Write like a PM: purpose, requirements, acceptance criteria.
+- **No orphans.** Every issue connects to a parent epic or has dependencies.
 
 ## Structures by Scope
 
@@ -33,9 +63,9 @@ Epic: "Plan Title"
 ├── Phase 1 (--parent epic)
 │   ├── Task A (--parent phase1)
 │   └── Task B (--parent phase1)
-├── Phase 2 (--parent epic, dep on phase1)
+├── Phase 2 (--parent epic, --blocked-by phase1)
 │   └── Task C (--parent phase2)
-└── Verifications (--verifies targets the task they verify)
+└── Phase 3 (--parent epic, --blocked-by phase2)
 ```
 
 ### Task (focused work, not epic-sized)

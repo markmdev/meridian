@@ -119,7 +119,6 @@ def parse_yaml_list(content: str, key: str) -> list[str]:
 def get_project_config(base_dir: Path) -> dict:
     """Read project config and return as dict with defaults."""
     config = {
-        'project_type': 'standard',
         'plan_review_enabled': True,
         'pebble_enabled': False,
         'stop_hook_min_actions': 10,
@@ -134,11 +133,6 @@ def get_project_config(base_dir: Path) -> dict:
 
     try:
         content = config_path.read_text()
-
-        # Project type
-        pt = get_config_value(content, 'project_type')
-        if pt in ('hackathon', 'standard', 'production'):
-            config['project_type'] = pt
 
         # Plan review
         pr = get_config_value(content, 'plan_review_enabled')
@@ -190,16 +184,6 @@ def get_additional_review_files(base_dir: Path, absolute: bool = False) -> list[
         absolute: If True, return absolute paths; otherwise relative paths
     """
     files = [".meridian/CODE_GUIDE.md", ".meridian/WORKSPACE.md"]
-    project_config = get_project_config(base_dir)
-
-    if project_config['project_type'] == 'hackathon':
-        addon = ".meridian/CODE_GUIDE_ADDON_HACKATHON.md"
-        if (base_dir / addon).exists():
-            files.append(addon)
-    elif project_config['project_type'] == 'production':
-        addon = ".meridian/CODE_GUIDE_ADDON_PRODUCTION.md"
-        if (base_dir / addon).exists():
-            files.append(addon)
 
     if absolute:
         return [str(base_dir / f) for f in files]
@@ -406,6 +390,54 @@ def scan_docs_directory(dir_path: Path, base_dir: Path) -> str:
     return "\n".join(entries)
 
 
+MAX_DOC_DEPTH = 3  # Max directory depth for project-wide frontmatter scanning
+
+SKIP_DIRS = {
+    ".git", "node_modules", ".next", "dist", "build", "__pycache__",
+    "vendor", ".venv", ".env", ".tox", ".mypy_cache", ".ruff_cache",
+}
+
+SKIP_NAMES = {"INDEX.md", "README.md", "CHANGELOG.md"}
+
+
+def scan_project_frontmatter(project_dir: Path) -> str:
+    """Scan the project for .md files with frontmatter, up to MAX_DOC_DEPTH levels deep.
+
+    Returns formatted listing with absolute paths, summaries, and read_when hints.
+    Only includes files that have a valid 'summary' field in their frontmatter.
+    """
+    entries = []
+
+    for md_file in sorted(project_dir.rglob("*.md")):
+        # Depth check
+        rel = md_file.relative_to(project_dir)
+        if len(rel.parts) - 1 > MAX_DOC_DEPTH:
+            continue
+
+        # Skip junk directories
+        if any(part in SKIP_DIRS for part in rel.parts):
+            continue
+
+        # Skip ephemeral state
+        if str(rel).startswith(".meridian/.state"):
+            continue
+
+        # Skip index/readme/changelog
+        if md_file.name in SKIP_NAMES:
+            continue
+
+        summary, read_when = extract_frontmatter(md_file)
+        if not summary:
+            continue
+
+        entry = f"- **{md_file}** — {summary}"
+        if read_when:
+            entry += f"\n  Read when: {'; '.join(read_when)}"
+        entries.append(entry)
+
+    return "\n".join(entries)
+
+
 # =============================================================================
 # CONTEXT INJECTION HELPERS
 # =============================================================================
@@ -575,15 +607,6 @@ def build_injected_context(base_dir: Path) -> str:
     # Get project config for addons and pebble
     project_config = get_project_config(base_dir)
 
-    if project_config['project_type'] == 'hackathon':
-        addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_HACKATHON.md"
-        if addon_path.exists():
-            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_HACKATHON.md", addon_path, "Hackathon-mode coding standards overlay."))
-    elif project_config['project_type'] == 'production':
-        addon_path = base_dir / ".meridian" / "CODE_GUIDE_ADDON_PRODUCTION.md"
-        if addon_path.exists():
-            files_to_inject.append((".meridian/CODE_GUIDE_ADDON_PRODUCTION.md", addon_path, "Production-mode coding standards overlay."))
-
     # Inject each file with XML tags (deduplicate by resolved path)
     injected_paths = set()
     for rel_path, full_path, desc in files_to_inject:
@@ -605,7 +628,6 @@ def build_injected_context(base_dir: Path) -> str:
 
     # Documentation directories — scan for frontmatter summaries
     doc_dirs = [
-        (".meridian/adrs", "Architecture Decision Records. Read the relevant ADR before making related decisions."),
         (".meridian/api-docs", "External API docs. Read the relevant doc before using any listed API."),
         (".meridian/docs", "Project documentation. Read relevant docs when your task matches a hint below."),
     ]
@@ -623,21 +645,8 @@ def build_injected_context(base_dir: Path) -> str:
         parts.append("When your task matches a \"Read when\" hint above, read that doc before coding. When you make changes that affect a documented topic, update the doc. When you discover something worth preserving — a decision, a gotcha, a new integration — create a new doc in `.meridian/docs/` with frontmatter (`summary`, `read_when`). Documentation is part of the work, not an afterthought.")
         parts.append("")
 
-    # Pebble guide and context (if enabled)
+    # Pebble live context (if enabled)
     if project_config.get('pebble_enabled', False):
-        pebble_guide_path = base_dir / ".meridian" / "PEBBLE_GUIDE.md"
-        if pebble_guide_path.exists():
-            try:
-                content = pebble_guide_path.read_text()
-                parts.append("**Pebble issue tracker reference. Use these commands to manage issues.**")
-                parts.append(f'<file path=".meridian/PEBBLE_GUIDE.md">')
-                parts.append(content.rstrip())
-                parts.append('</file>')
-                parts.append("")
-            except IOError:
-                parts.append(f'<file path=".meridian/PEBBLE_GUIDE.md" error="Could not read file" />')
-                parts.append("")
-
         # Get live Pebble context (epics, recent activity)
         pebble_context = get_pebble_context(base_dir)
         if pebble_context:
@@ -858,7 +867,6 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     if pebble_enabled:
         parts.append("- Close/update Pebble issues for completed work")
 
-    parts.append("- **Verify your work end-to-end** — run it, call it, load it. Don't hand off unverified code.")
     parts.append("- Run tests/lint/build if you made code changes")
     parts.append("- Consider updating CLAUDE.md if you made architectural changes")
 

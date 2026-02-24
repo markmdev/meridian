@@ -121,10 +121,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/meridian-path-guard.py"
-          },
-          {
-            "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/permission-auto-approver.py"
           }
         ]
@@ -160,6 +156,8 @@
       }
     ]
   },
-  "companyAnnouncements": ["Welcome to Meridian! Please star the repo: github.com/markmdev/meridian — Follow on X: @markmdev\n▗▄ ▄▖            █     ▗▖  █            \n▐█ █▌            ▀     ▐▌  ▀            \n▐███▌ ▟█▙  █▟█▌ ██   ▟█▟▌ ██   ▟██▖▐▙██▖\n▐▌█▐▌▐▙▄▟▌ █▘    █  ▐▛ ▜▌  █   ▘▄▟▌▐▛ ▐▌\n▐▌▀▐▌▐▛▀▀▘ █     █  ▐▌ ▐▌  █  ▗█▀▜▌▐▌ ▐▌\n▐▌ ▐▌▝█▄▄▌ █   ▗▄█▄▖▝█▄█▌▗▄█▄▖▐▙▄█▌▐▌ ▐▌\n▝▘ ▝▘ ▝▀▀  ▀   ▝▀▀▀▘ ▝▀▝▘▝▀▀▀▘ ▀▀▝▘▝▘ ▝▘\n[Meridian] Project environment loaded. Core rules, guides, and tasks are now active. Claude will review the context before continuing. If you see any errors during this process, don't worry, they are intentional."],
+  "companyAnnouncements": [
+    "Welcome to Meridian! Please star the repo: github.com/markmdev/meridian \u2014 Follow on X: @markmdev\n\u2597\u2584 \u2584\u2596            \u2588     \u2597\u2596  \u2588            \n\u2590\u2588 \u2588\u258c            \u2580     \u2590\u258c  \u2580            \n\u2590\u2588\u2588\u2588\u258c \u259f\u2588\u2599  \u2588\u259f\u2588\u258c \u2588\u2588   \u259f\u2588\u259f\u258c \u2588\u2588   \u259f\u2588\u2588\u2596\u2590\u2599\u2588\u2588\u2596\n\u2590\u258c\u2588\u2590\u258c\u2590\u2599\u2584\u259f\u258c \u2588\u2598    \u2588  \u2590\u259b \u259c\u258c  \u2588   \u2598\u2584\u259f\u258c\u2590\u259b \u2590\u258c\n\u2590\u258c\u2580\u2590\u258c\u2590\u259b\u2580\u2580\u2598 \u2588     \u2588  \u2590\u258c \u2590\u258c  \u2588  \u2597\u2588\u2580\u259c\u258c\u2590\u258c \u2590\u258c\n\u2590\u258c \u2590\u258c\u259d\u2588\u2584\u2584\u258c \u2588   \u2597\u2584\u2588\u2584\u2596\u259d\u2588\u2584\u2588\u258c\u2597\u2584\u2588\u2584\u2596\u2590\u2599\u2584\u2588\u258c\u2590\u258c \u2590\u258c\n\u259d\u2598 \u259d\u2598 \u259d\u2580\u2580  \u2580   \u259d\u2580\u2580\u2580\u2598 \u259d\u2580\u259d\u2598\u259d\u2580\u2580\u2580\u2598 \u2580\u2580\u259d\u2598\u259d\u2598 \u259d\u2598\n[Meridian] Project environment loaded. Core rules, guides, and tasks are now active. Claude will review the context before continuing. If you see any errors during this process, don't worry, they are intentional."
+  ],
   "includeCoAuthoredBy": false
 }

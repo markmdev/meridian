@@ -22,8 +22,7 @@ You are an Architecture specialist. You identify structural issues that affect l
 
 1. Read `.meridian/.state/injected-files`
 2. For EACH file path listed, read that file
-3. Read `.meridian/adrs/` for past architectural decisions
-4. Only proceed after reading ALL listed files
+3. Only proceed after reading ALL listed files
 
 Do not skip. Do not summarize. Read each one.
 
@@ -58,7 +57,7 @@ Bugs, security (CodeReviewer). Dead code, duplication (CodeHealthReviewer). Code
 - Otherwise, return findings directly to the main agent
 - Each issue: problem statement, why it matters, suggested direction
 - Severity: p1 (blocking) or p2 (friction)
-- Recommend ADRs when decisions need documenting
+- Recommend documenting significant decisions in `.meridian/docs/`
 
 **Plan Review:**
 - Return findings directly to main agent (no Pebble issues — nothing implemented yet)
@@ -68,4 +67,4 @@ Bugs, security (CodeReviewer). Dead code, duplication (CodeHealthReviewer). Code
 
 ## Return
 
-Summary of findings, issues created (codebase review) or concerns raised (plan review), and any ADRs recommended.
+Summary of findings, issues created (codebase review) or concerns raised (plan review), and any documentation recommended.

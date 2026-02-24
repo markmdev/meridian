@@ -8,12 +8,11 @@
 
 **Workflow**:
 1. Interview the user thoroughly
-2. Check existing ADRs in `.meridian/adrs/` for relevant architectural decisions
-3. Research the codebase (direct tools or Explore agents)
-4. Follow the `/planning` skill for methodology
-5. Spawn Plan agents for concrete implementation details
-6. Plan is created in `~/.claude/plans/` during plan mode
-7. On approval, archive to `.meridian/plans/` and update state files
+2. Research the codebase (direct tools or Explore agents)
+3. Follow the `/planning` skill for methodology
+4. Spawn Plan agents for concrete implementation details
+5. Plan is created in `~/.claude/plans/` during plan mode
+6. On approval, archive to `.meridian/plans/` and update state files
 
 **Direct tools vs Explore agents**: Use direct tools (Glob, Grep, Read) when you know where to look. Use Explore agents for broad research.
 
@@ -44,9 +43,30 @@ For large projects spanning multiple systems:
 
 Issues are audit records. Even a 30-second bug fix: create issue → fix → comment with file:line → close.
 
-**Plan execution rule:** If an approved plan has explicit phases/steps, create child Pebble tasks for each phase/step (with dependencies) before or at implementation start. Keep one task `in_progress`, but do not execute a multi-phase plan under a single undifferentiated task.
+## Work Loop
 
-See PEBBLE_GUIDE.md for full documentation.
+```
+pb ready              # What's unblocked
+pb claim <id>         # Start work (one at a time)
+# ... implement ...
+pb comments add <id> "Done: file:line changes, tests added"
+pb close <id> --reason "Implemented"
+```
+
+## Rules
+
+1. **One task at a time.** Only one issue `in_progress`. Transition current before claiming another.
+2. **Comment before closing.** Every close needs file paths, line numbers, and what was done.
+3. **Every code change gets an issue.** No issue = invisible fix.
+4. **Dependencies = "blocked by."** `pb dep add B A` means B needs A first. Prefer `--blocked-by`/`--blocks` flags for clarity.
+5. **Parent is not sequence.** `--parent` creates hierarchy. Use `pb dep add` for ordering.
+6. **No orphans.** Every issue connects to a parent epic or has dependencies.
+7. **Comprehensive descriptions.** Write like a PM: purpose, requirements, acceptance criteria.
+8. **Plan decomposition.** If an approved plan has phases/steps, create child Pebble tasks for each with dependencies. One `in_progress` at a time.
+
+Use `pb --help` and `pb <command> --help` for command reference.
+
+**Plan execution rule:** If an approved plan has explicit phases/steps, create child Pebble tasks for each phase/step (with dependencies) before or at implementation start. Keep one task `in_progress`, but do not execute a multi-phase plan under a single undifferentiated task.
 
 # Workspace
 
@@ -69,7 +89,7 @@ Your workspace is a **persistent knowledge library** that grows across every ses
 
 # External Tools
 
-Before using an external API or library, check `.meridian/api-docs/INDEX.md`. If documented, read the doc. If not, run `docs-researcher` to research it first.
+Before using an external API or library, check if it's documented in `.meridian/api-docs/`. If documented, read the doc. If not, run `docs-researcher` to research it first.
 
 # Code Review
 

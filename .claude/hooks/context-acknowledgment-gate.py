@@ -47,19 +47,12 @@ def main():
     config = get_project_config(base_dir)
     pebble_enabled = config.get('pebble_enabled', False)
 
-    # Check if api-docs exist
-    api_docs_index = base_dir / ".meridian" / "api-docs" / "INDEX.md"
-    has_api_docs = api_docs_index.exists()
-
     reason = (
         "**CONTEXT ACKNOWLEDGMENT REQUIRED**\n\n"
         "Project context has been injected into this session. "
         "Before using any tools, please acknowledge that you have read and understood "
         "the injected context: workspace, active plans, CODE_GUIDE, and operating manual."
     )
-
-    if has_api_docs:
-        reason += " Check api-docs/INDEX.md before using external APIs."
 
     if pebble_enabled:
         reason += " Pebble is enabled — check project state."

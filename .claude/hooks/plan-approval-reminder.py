@@ -19,7 +19,7 @@ def main():
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
-        sys.exit(1)
+        sys.exit(0)
 
     tool_name = input_data.get("tool_name", "")
     claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR", "")
@@ -27,17 +27,16 @@ def main():
     if tool_name != "ExitPlanMode":
         sys.exit(0)
 
-    # Clear state files (ExitPlanMode succeeded = plan approved)
-    if claude_project_dir:
-        base_dir = Path(claude_project_dir)
-        cleanup_flag(base_dir, PLAN_REVIEW_FLAG)
-        clear_plan_action_counter(base_dir)
-
-    # Check if Pebble and scaffolder are enabled
     if not claude_project_dir:
         sys.exit(0)
 
-    config = get_project_config(Path(claude_project_dir))
+    base_dir = Path(claude_project_dir)
+
+    # Clear state files (ExitPlanMode succeeded = plan approved)
+    cleanup_flag(base_dir, PLAN_REVIEW_FLAG)
+    clear_plan_action_counter(base_dir)
+
+    config = get_project_config(base_dir)
     pebble_enabled = config.get('pebble_enabled', False)
     scaffolder_enabled = config.get('pebble_scaffolder_enabled', True)
 

@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import STATE_DIR, WORKSPACE_FILE
+from config import STATE_DIR, WORKSPACE_FILE, scan_project_frontmatter
 
 TRANSCRIPT_PATH_STATE = f"{STATE_DIR}/transcript-path"
 WORKSPACE_SYNC_LOCK = f"{STATE_DIR}/workspace-sync.lock"
@@ -193,11 +193,12 @@ def build_prompt(entries: list[dict], workspace_root: str, workspace_pages: list
 
     parts = []
 
-    parts.append("""You are a session maintenance agent with three jobs:
+    parts.append("""You are a session maintenance agent with four jobs:
 
 1. **Update the workspace** — persistent knowledge library for the project
 2. **Learn from corrections** — when the user corrects the agent, save it as a permanent instruction
 3. **Capture next steps** — so the next agent knows what to work on
+4. **Maintain docs** — create, update, or delete `.meridian/docs/` files
 
 ---
 
@@ -254,27 +255,15 @@ Scan the transcript for moments where the user corrects the agent's behavior, ex
 
 ---
 
-## Job 3: Next Steps + Required Reading
+## Job 3: Next Steps
 
-Maintain two sections at the bottom of `.meridian/WORKSPACE.md`:
+Maintain a `## Next steps` section at the bottom of `.meridian/WORKSPACE.md`. The agent that picks up after compaction reads this to know what to work on.
 
-### `## Required reading`
-
-List docs from `.meridian/docs/` that the next agent MUST read before starting work. Based on what was discussed or worked on this session, identify which docs contain essential context.
-
-- Use the format: `- [filename.md](.meridian/docs/filename.md) — why it's needed`
-- Only list docs that exist in `.meridian/docs/`. Don't invent files.
-- Include docs that cover active integrations, architecture in play, or gotchas relevant to the current work.
-- Replace the previous section entirely each time.
-- If no docs are relevant, write "No required docs for current work."
-
-### `## Next steps`
-
-What the next agent should work on.
+### Rules
 
 - Write 2-5 concrete, actionable items based on what was in progress or discussed.
 - Include enough context that a fresh agent can act without re-reading the full workspace.
-- Replace the previous section entirely — don't append to it.
+- Replace the previous "Next steps" section entirely — don't append to it.
 - If the session ended with everything complete and nothing pending, write "No pending work."
 
 ---
@@ -285,11 +274,22 @@ What the next agent should work on.
     parts.append(json.dumps(entries, indent=2, ensure_ascii=False))
     parts.append("```")
 
+    # Scan project for frontmatter'd docs
+    doc_index = scan_project_frontmatter(project_dir)
+
     parts.append("""
 
 ## Job 4: Docs
 
-Maintain docs in `.meridian/docs/` — create new ones, update existing ones, delete outdated ones.
+Maintain frontmatter'd docs across the project. Any `.md` file with `summary` and `read_when` frontmatter is in scope.
+
+### Existing Docs
+""")
+    parts.append(doc_index if doc_index else "No frontmatter'd docs found in the project.")
+
+    parts.append("""
+
+### Frontmatter Format
 
 Every doc must start with YAML frontmatter:
 
@@ -302,13 +302,13 @@ read_when:
 ---
 ```
 
-Use kebab-case filenames: `auth-flow.md`, `stripe-webhooks.md`, `postgres-gotchas.md`.
+### Rules
 
-**Create** docs for significant new knowledge: architectural decisions, integrations, debugging discoveries, complex workflows, gotchas. Skip routine fixes and obvious information.
+**Create** new docs in `.meridian/docs/` for significant new knowledge: architectural decisions, integrations, debugging discoveries, complex workflows, gotchas. Use kebab-case filenames. Skip routine fixes and obvious information.
 
-**Update** existing docs when this session changed what they describe. Read the existing doc first, then rewrite with current accurate content.
+**Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md.
 
-**Delete** docs that are fully outdated — the thing they described no longer exists or has completely changed. To mark for deletion, append the relative path to `.meridian/.state/docs-to-delete` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish.
+**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `.meridian/.state/docs-to-delete` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish.
 
 ---
 

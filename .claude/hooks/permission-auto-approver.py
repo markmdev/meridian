@@ -65,20 +65,20 @@ def main():
     try:
         raw_input = sys.stdin.read()
     except Exception:
-        return
+        sys.exit(0)
 
     project_dir_env = os.environ.get("CLAUDE_PROJECT_DIR")
     if not project_dir_env:
-        return  # Can't auto-approve without knowing project dir
+        sys.exit(0)
     project_dir = Path(project_dir_env)
 
     try:
         payload = json.loads(raw_input)
     except json.JSONDecodeError:
-        return
+        sys.exit(0)
 
     if payload.get("hook_event_name") != "PermissionRequest":
-        return
+        sys.exit(0)
 
     if should_allow(payload, project_dir):
         output = {
@@ -88,6 +88,8 @@ def main():
             }
         }
         log_hook_output(project_dir, "permission-auto-approver", output)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":

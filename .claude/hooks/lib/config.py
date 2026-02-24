@@ -264,7 +264,7 @@ def get_pebble_context(base_dir: Path) -> str:
     """Get Pebble context for injection: epics overview, in-progress work, ready issues.
 
     Runs pb commands to get:
-    - Epic summary (open epics, progress, verification counts)
+    - Epic summary (open epics, progress)
     - Currently in-progress issues
     - Ready issues (unblocked, can be picked up)
 

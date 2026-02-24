@@ -66,8 +66,6 @@ pb close <id> --reason "Implemented"
 
 Use `pb --help` and `pb <command> --help` for command reference.
 
-**Plan execution rule:** If an approved plan has explicit phases/steps, create child Pebble tasks for each phase/step (with dependencies) before or at implementation start. Keep one task `in_progress`, but do not execute a multi-phase plan under a single undifferentiated task.
-
 # Workspace
 
 Your workspace is a **persistent knowledge library** that grows across every session. It's not a session snapshot — it's the accumulated knowledge about this project: decisions, lessons, architecture, gotchas, patterns, open questions.

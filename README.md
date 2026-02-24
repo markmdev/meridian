@@ -356,10 +356,8 @@ Executes detailed implementation specs autonomously:
 ### Pebble Scaffolder
 
 Creates Pebble issue hierarchy from plans (when Pebble enabled):
-- Reads plan with verification features
 - Creates epic for overall plan
 - Creates task per phase as children of epic
-- Creates verification subtask per feature (steps in description)
 - Adds dependencies between sequential phases
 - Invoked automatically after plan approval
 

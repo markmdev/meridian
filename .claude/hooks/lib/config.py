@@ -125,6 +125,7 @@ def get_project_config(base_dir: Path) -> dict:
         'plan_review_min_actions': 20,
         'code_review_enabled': True,
         'pebble_scaffolder_enabled': True,
+        'session_learner_mode': 'project',
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -169,6 +170,11 @@ def get_project_config(base_dir: Path) -> dict:
         ps_enabled = get_config_value(content, 'pebble_scaffolder_enabled')
         if ps_enabled:
             config['pebble_scaffolder_enabled'] = ps_enabled.lower() != 'false'
+
+        # Session learner mode: "project" (default) or "assistant"
+        sl_mode = get_config_value(content, 'session_learner_mode')
+        if sl_mode and sl_mode.lower() in ('project', 'assistant'):
+            config['session_learner_mode'] = sl_mode.lower()
 
     except IOError:
         pass

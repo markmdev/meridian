@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.1] - 2026-02-23
+
+### Added
+- **Session learner assistant mode**: New `session_learner_mode: assistant` config option. When enabled, the session learner can create, update, and delete files anywhere in the project (following existing directory conventions) instead of being restricted to `.meridian/docs/` and `.meridian/workspace/`. Designed for personal knowledge bases and AI assistant workspaces where the agent maintains daily logs, people files, research artifacts, etc.
+
 ## [0.3.0] - 2026-02-23
 
 ### Removed

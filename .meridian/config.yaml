@@ -26,3 +26,10 @@ stop_hook_min_actions: 15
 # Pebble scaffolder: Auto-invoke pebble-scaffolder after plan approval.
 # When false, you can use Pebble without automatic issue scaffolding.
 pebble_scaffolder_enabled: true
+
+# Session learner mode: "project" (default) or "assistant".
+# project: maintains .meridian/workspace/ and .meridian/docs/ only.
+# assistant: maintains the entire workspace — can create, update, and delete
+# files anywhere, following the project's existing directory conventions.
+# Use for personal knowledge bases, AI assistant workspaces, etc.
+session_learner_mode: project

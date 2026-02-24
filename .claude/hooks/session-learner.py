@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import STATE_DIR, WORKSPACE_FILE, scan_project_frontmatter
+from config import STATE_DIR, WORKSPACE_FILE, scan_project_frontmatter, get_project_config
 
 TRANSCRIPT_PATH_STATE = f"{STATE_DIR}/transcript-path"
 WORKSPACE_SYNC_LOCK = f"{STATE_DIR}/workspace-sync.lock"
@@ -185,20 +185,26 @@ def load_claudemd_files(project_dir: Path) -> tuple[str, str]:
     return global_content, project_content
 
 
-def build_prompt(entries: list[dict], workspace_root: str, workspace_pages: list[tuple[str, str]], project_dir: Path) -> str:
+def build_prompt(entries: list[dict], workspace_root: str, workspace_pages: list[tuple[str, str]], project_dir: Path, mode: str = "project") -> str:
     """Build the prompt for the workspace maintenance agent."""
+    assistant_mode = mode == "assistant"
     global_claudemd, project_claudemd = load_claudemd_files(project_dir)
     global_claudemd_path = str(Path.home() / ".claude" / "CLAUDE.md")
     project_claudemd_path = str(project_dir / "CLAUDE.md")
 
     parts = []
 
-    parts.append("""You are a session maintenance agent with four jobs:
+    if assistant_mode:
+        job4_desc = "**Maintain docs** — create, update, or delete files across the workspace"
+    else:
+        job4_desc = "**Maintain docs** — create, update, or delete `.meridian/docs/` files"
+
+    parts.append(f"""You are a session maintenance agent with four jobs:
 
 1. **Update the workspace** — persistent knowledge library for the project
 2. **Learn from corrections** — when the user corrects the agent, save it as a permanent instruction
 3. **Capture next steps** — so the next agent knows what to work on
-4. **Maintain docs** — create, update, or delete `.meridian/docs/` files
+4. {job4_desc}
 
 ---
 
@@ -217,15 +223,27 @@ The workspace is a library of project knowledge — decisions, lessons, architec
             parts.append(content.rstrip())
             parts.append("</page>\n")
 
-    parts.append(f"""
-### Workspace Rules
+    if assistant_mode:
+        workspace_rules = """### Workspace Rules
+
+- Write clean reference material. No timestamps, no "in this session", no logs.
+- Update existing pages when the topic already has a page. Don't duplicate.
+- Create new pages following the project's existing directory conventions (infer from existing file paths).
+- Every new page MUST be linked from `.meridian/WORKSPACE.md`.
+- Remove information superseded by this session's work.
+- Be concise — write what a future agent needs to know, not everything that happened."""
+    else:
+        workspace_rules = """### Workspace Rules
 
 - Write clean reference material. No timestamps, no "in this session", no logs.
 - Update existing pages when the topic already has a page. Don't duplicate.
 - Create new pages in `.meridian/workspace/` for substantial new topics.
 - Every new page MUST be linked from `.meridian/WORKSPACE.md`.
 - Remove information superseded by this session's work.
-- Be concise — write what a future agent needs to know, not everything that happened.
+- Be concise — write what a future agent needs to know, not everything that happened."""
+
+    parts.append(f"""
+{workspace_rules}
 
 ---
 
@@ -287,7 +305,24 @@ Maintain frontmatter'd docs across the project. Any `.md` file with `summary` an
 """)
     parts.append(doc_index if doc_index else "No frontmatter'd docs found in the project.")
 
-    parts.append("""
+    if assistant_mode:
+        docs_rules = """### Rules
+
+**Create** new files anywhere in the project following existing directory conventions. Infer the right location from existing file paths (e.g., daily logs next to other daily logs, people files next to other people files). Every new file must have frontmatter with `summary` and `read_when`.
+
+**Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content.
+
+**Delete** outdated or superseded files. To mark for deletion, append the relative path to `.meridian/.state/docs-to-delete` (one path per line). Python will handle the actual file deletion. Never delete core identity or configuration files."""
+    else:
+        docs_rules = """### Rules
+
+**Create** new docs in `.meridian/docs/` for significant new knowledge: architectural decisions, integrations, debugging discoveries, complex workflows, gotchas. Use kebab-case filenames. Skip routine fixes and obvious information.
+
+**Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md.
+
+**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `.meridian/.state/docs-to-delete` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish."""
+
+    parts.append(f"""
 
 ### Frontmatter Format
 
@@ -302,13 +337,7 @@ read_when:
 ---
 ```
 
-### Rules
-
-**Create** new docs in `.meridian/docs/` for significant new knowledge: architectural decisions, integrations, debugging discoveries, complex workflows, gotchas. Use kebab-case filenames. Skip routine fixes and obvious information.
-
-**Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md.
-
-**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `.meridian/.state/docs-to-delete` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish.
+{docs_rules}
 
 ---
 
@@ -535,11 +564,13 @@ def main():
         if len(meaningful) < MIN_ENTRIES_THRESHOLD:
             return
 
-        # Load workspace
+        # Load workspace and config
         workspace_root, workspace_pages = load_workspace(project_dir)
+        config = get_project_config(project_dir)
+        learner_mode = config.get('session_learner_mode', 'project')
 
         # Build prompt and run agent
-        prompt = build_prompt(entries, workspace_root, workspace_pages, project_dir)
+        prompt = build_prompt(entries, workspace_root, workspace_pages, project_dir, mode=learner_mode)
 
         # Save prompt for inspection
         try:

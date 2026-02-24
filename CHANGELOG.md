@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0] - 2026-02-23
+
+### Removed
+- **PEBBLE_GUIDE.md eliminated**: 360-line guide no longer injected into agent sessions. Behavioral rules moved to agent operating manual (8 rules + work loop). CLI is self-documenting via improved `--help` output with examples. Net: ~360 fewer lines of injected context per session.
+- **CODE_GUIDE addons**: Merged hackathon and production addons into a single unified CODE_GUIDE.md.
+- **ADRs system**: Empty directory removed. Decisions live in `.meridian/docs/` now.
+- **meridian-path-guard hook**: Caused friction in dev environments. Removed from settings.json.
+- **save-context command**: Superseded by session learner.
+- **meridian-wrapper**: No longer needed.
+
+### Changed
+- **Pebble-scaffolder agent rewritten**: Embeds commands reference directly instead of reading PEBBLE_GUIDE.md. Only creates issues — doesn't reference claim/close/comment workflows.
+- **Code-reviewer agent rewritten**: Returns findings to main agent instead of writing files. Streamlined output format.
+- **Docs-researcher agent rewritten**: Firecrawl-first with WebSearch/WebFetch fallback.
+- **Agent operating manual**: Expanded Pebble section with 8 numbered rules, work loop example, and `pb --help` reference.
+
+### Added
+- **`/docs` skill**: User-invoked skill for documenting codebase modules. Agent explores a module and produces `.meridian/docs/` files with frontmatter.
+- **Session learner doc awareness**: `scan_project_frontmatter()` scans all frontmatter'd `.md` files (3 levels deep). Session learner can now update any frontmatter'd doc.
+
+### Fixed
+- **plan-approval-reminder.py**: `sys.exit(1)` → `sys.exit(0)` on JSON decode error; removed dead code.
+- **permission-auto-approver.py**: Bare `return` → `sys.exit(0)` for consistency.
+- **save-injected-files.py**: Added missing `get_project_config` import (latent bug).
+- **config.py**: Removed stale "verification counts" from `get_pebble_context()` docstring.
+
 ## [0.2.3] - 2026-02-22
 
 ### Added

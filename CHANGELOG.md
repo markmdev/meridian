@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.2] - 2026-02-24
+
+### Added
+- **add-frontmatter skill**: Scans all .md files and adds/fixes YAML frontmatter (summary + read_when) for Reflex discovery.
+- **skill-creator skill**: Guide for creating effective skills with progressive disclosure, bundled resources, and packaging.
+
 ## [0.3.1] - 2026-02-23
 
 ### Added

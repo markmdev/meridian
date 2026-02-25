@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0] - 2026-02-25
+
+### Changed
+- **State directory moved to `~/.meridian/state/<hash>/`**: Ephemeral session state (counters, flags, locks) no longer lives inside `.meridian/.state/`. State is now stored per-working-directory in the user's home directory. This enables symlinking the entire `.meridian/` folder across git worktrees without sharing session state. Each worktree gets isolated state automatically via path hashing.
+- **Hooks lib renamed**: `config.py` → `meridian_config.py` to avoid name collisions with Python's built-in `config` module.
+
+### Added
+- **Nested git repository context**: The context injector now scans for nested `.git` directories (up to 3 levels deep) and injects their recent commits and current branch. Useful for workspaces containing multiple sub-projects.
+- **Frontmatter enforcement in session learner**: Job 1 (workspace pages) and Job 4 (docs) now require YAML frontmatter (`summary` + `read_when`) on every `.md` file. Files without frontmatter are flagged as invisible to context routers. Existing files missing frontmatter get it added.
+
 ## [0.3.2] - 2026-02-24
 
 ### Added

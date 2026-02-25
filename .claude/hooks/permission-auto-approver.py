@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import log_hook_output
+from meridian_config import log_hook_output
 
 
 SKILL_WHITELIST = {"planning", "claudemd-writer"}

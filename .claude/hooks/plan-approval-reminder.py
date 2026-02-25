@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import get_project_config, cleanup_flag, clear_plan_action_counter, log_hook_output, PLAN_REVIEW_FLAG
+from meridian_config import get_project_config, cleanup_flag, clear_plan_action_counter, log_hook_output, PLAN_REVIEW_FLAG
 
 
 def main():

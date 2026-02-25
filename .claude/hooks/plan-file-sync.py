@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import CURRENT_PLAN_AUTO_FILE, log_hook_output
+from meridian_config import CURRENT_PLAN_AUTO_FILE, log_hook_output
 
 
 def main():

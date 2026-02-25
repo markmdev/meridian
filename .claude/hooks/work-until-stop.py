@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import (
+from meridian_config import (
     get_project_config,
     get_loop_state,
     update_loop_iteration,

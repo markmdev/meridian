@@ -16,7 +16,7 @@ import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import STATE_DIR, WORKSPACE_FILE, scan_project_frontmatter, get_project_config
+from meridian_config import STATE_DIR, WORKSPACE_FILE, scan_project_frontmatter, get_project_config
 
 TRANSCRIPT_PATH_STATE = f"{STATE_DIR}/transcript-path"
 WORKSPACE_SYNC_LOCK = f"{STATE_DIR}/workspace-sync.lock"

@@ -14,7 +14,7 @@ from datetime import datetime
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from config import (
+from meridian_config import (
     parse_yaml_list,
     get_project_config,
     WORKSPACE_FILE,

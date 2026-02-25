@@ -10,20 +10,20 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import get_project_config, log_hook_output, PLAN_MODE_STATE
+from meridian_config import get_project_config, log_hook_output, state_path, PLAN_MODE_STATE
 
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 
 
 def get_previous_mode() -> str:
-    state_file = PROJECT_DIR / PLAN_MODE_STATE
+    state_file = state_path(PROJECT_DIR, PLAN_MODE_STATE)
     if state_file.exists():
         return state_file.read_text().strip()
     return "other"
 
 
 def save_mode(mode: str) -> None:
-    state_file = PROJECT_DIR / PLAN_MODE_STATE
+    state_file = state_path(PROJECT_DIR, PLAN_MODE_STATE)
     state_file.parent.mkdir(parents=True, exist_ok=True)
     state_file.write_text(mode)
 

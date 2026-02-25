@@ -18,11 +18,12 @@ from meridian_config import (
     build_injected_context,
     create_flag,
     log_hook_output,
+    get_state_dir,
+    state_path,
     CONTEXT_ACK_FLAG,
-    STATE_DIR,
 )
 
-SYNC_LOCK = f"{STATE_DIR}/workspace-sync.lock"
+SYNC_LOCK = "workspace-sync.lock"
 SYNC_WAIT_TIMEOUT = 190  # slightly longer than session-learner's 180s timeout
 
 
@@ -30,7 +31,7 @@ def wait_for_session_learner(base_dir: Path, source: str) -> None:
     """On compact/clear, wait for session-learner to finish updating workspace."""
     if source not in ("compact", "clear"):
         return
-    lock_path = base_dir / SYNC_LOCK
+    lock_path = state_path(base_dir, SYNC_LOCK)
 
     # Hooks run in parallel — session-learner may not have created the lock yet.
     # Wait briefly for it to appear before giving up.
@@ -66,10 +67,9 @@ def main() -> int:
     injected_context = build_injected_context(base_dir)
 
     # Save to state for debugging/inspection and session-learner
-    state_dir = base_dir / STATE_DIR
-    state_dir.mkdir(parents=True, exist_ok=True)
+    sd = get_state_dir(base_dir)
     try:
-        (state_dir / "injected-context").write_text(injected_context)
+        (sd / "injected-context").write_text(injected_context)
     except IOError:
         pass
 
@@ -77,7 +77,7 @@ def main() -> int:
     transcript_path = input_data.get("transcript_path", "")
     if transcript_path:
         try:
-            (state_dir / "transcript-path").write_text(transcript_path)
+            (sd / "transcript-path").write_text(transcript_path)
         except IOError:
             pass
 

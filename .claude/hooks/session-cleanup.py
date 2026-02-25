@@ -11,8 +11,12 @@ import os
 import sys
 from pathlib import Path
 
+# Add lib to path for imports
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from meridian_config import get_state_dir
+
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
-STATE_DIR = PROJECT_DIR / ".meridian/.state"
+STATE_DIR = get_state_dir(PROJECT_DIR)
 
 # Files to delete on startup (fresh session)
 STARTUP_DELETE = [

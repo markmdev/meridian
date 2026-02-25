@@ -18,13 +18,14 @@ from meridian_config import (
     is_loop_active,
     build_stop_prompt,
     log_hook_output,
+    state_path,
     ACTION_COUNTER_FILE,
 )
 
 
 def get_action_count(base_dir: Path) -> int:
     """Read current action counter value."""
-    counter_path = base_dir / ACTION_COUNTER_FILE
+    counter_path = state_path(base_dir, ACTION_COUNTER_FILE)
     try:
         if counter_path.exists():
             return int(counter_path.read_text().strip())
@@ -35,7 +36,7 @@ def get_action_count(base_dir: Path) -> int:
 
 def reset_action_count(base_dir: Path) -> None:
     """Reset action counter to 0."""
-    counter_path = base_dir / ACTION_COUNTER_FILE
+    counter_path = state_path(base_dir, ACTION_COUNTER_FILE)
     try:
         counter_path.write_text("0")
     except IOError:

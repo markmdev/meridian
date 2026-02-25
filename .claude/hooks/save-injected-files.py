@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     parse_yaml_list,
     get_project_config,
+    state_path,
     WORKSPACE_FILE,
     REQUIRED_CONTEXT_CONFIG,
     ACTIVE_PLAN_FILE,
@@ -48,7 +49,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         files.append(str(workspace_path))
 
     # 4. Active plan
-    active_plan_file = base_dir / ACTIVE_PLAN_FILE
+    active_plan_file = state_path(base_dir, ACTIVE_PLAN_FILE)
     if active_plan_file.exists():
         try:
             plan_path = active_plan_file.read_text().strip()
@@ -64,8 +65,8 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
 
     # 4b. Active plan state files (always include so subagents can check at runtime)
     # These may be populated mid-session after plan approval
-    files.append(str(base_dir / ACTIVE_PLAN_FILE))
-    files.append(str(base_dir / ACTIVE_SUBPLAN_FILE))
+    files.append(str(state_path(base_dir, ACTIVE_PLAN_FILE)))
+    files.append(str(state_path(base_dir, ACTIVE_SUBPLAN_FILE)))
 
     # 5. CODE_GUIDE
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
@@ -102,7 +103,7 @@ def main():
     pebble_enabled = project_config.get('pebble_enabled', False)
 
     # Write to log file
-    log_file = base_dir / INJECTED_FILES_LOG
+    log_file = state_path(base_dir, INJECTED_FILES_LOG)
     log_file.parent.mkdir(parents=True, exist_ok=True)
 
     try:

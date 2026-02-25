@@ -16,11 +16,11 @@ import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import STATE_DIR, WORKSPACE_FILE, scan_project_frontmatter, get_project_config
+from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path
 
-TRANSCRIPT_PATH_STATE = f"{STATE_DIR}/transcript-path"
-WORKSPACE_SYNC_LOCK = f"{STATE_DIR}/workspace-sync.lock"
-LAST_SYNC_FILE = f"{STATE_DIR}/last-workspace-sync"
+TRANSCRIPT_PATH_STATE = "transcript-path"
+WORKSPACE_SYNC_LOCK = "workspace-sync.lock"
+LAST_SYNC_FILE = "last-workspace-sync"
 MIN_ENTRIES_THRESHOLD = 5  # Skip if fewer than this many meaningful entries
 
 
@@ -356,7 +356,7 @@ Use the Write tool (or Read then Edit) to update files.""")
 
 def acquire_lock(project_dir: Path) -> bool:
     """Try to acquire the workspace sync lock. Returns True if acquired."""
-    lock_path = project_dir / WORKSPACE_SYNC_LOCK
+    lock_path = state_path(project_dir, WORKSPACE_SYNC_LOCK)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     if lock_path.exists():
         # Check if lock is stale (older than 5 minutes)
@@ -376,7 +376,7 @@ def acquire_lock(project_dir: Path) -> bool:
 
 def release_lock(project_dir: Path):
     try:
-        (project_dir / WORKSPACE_SYNC_LOCK).unlink(missing_ok=True)
+        state_path(project_dir, WORKSPACE_SYNC_LOCK).unlink(missing_ok=True)
     except OSError:
         pass
 
@@ -384,7 +384,7 @@ def release_lock(project_dir: Path):
 def was_recently_synced(project_dir: Path) -> bool:
     """Check if workspace was synced in the last 30 seconds (dedup for /clear)."""
     import time
-    sync_path = project_dir / LAST_SYNC_FILE
+    sync_path = state_path(project_dir, LAST_SYNC_FILE)
     if sync_path.exists():
         try:
             last_sync = float(sync_path.read_text().strip())
@@ -398,7 +398,7 @@ def was_recently_synced(project_dir: Path) -> bool:
 def mark_synced(project_dir: Path):
     """Record that workspace was just synced."""
     import time
-    sync_path = project_dir / LAST_SYNC_FILE
+    sync_path = state_path(project_dir, LAST_SYNC_FILE)
     try:
         sync_path.parent.mkdir(parents=True, exist_ok=True)
         sync_path.write_text(str(time.time()))
@@ -408,7 +408,7 @@ def mark_synced(project_dir: Path):
 
 def cleanup_docs_to_delete(project_dir: Path):
     """Delete docs marked for deletion by the session learner agent."""
-    delete_list_path = project_dir / STATE_DIR / "docs-to-delete"
+    delete_list_path = state_path(project_dir, "docs-to-delete")
     if not delete_list_path.exists():
         return
 
@@ -482,7 +482,7 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
             env=env,
         )
         # Save agent output for inspection
-        output_path = project_dir / f"{STATE_DIR}/session-learner-output.md"
+        output_path = state_path(project_dir, "session-learner-output.md")
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             from datetime import datetime
@@ -541,7 +541,7 @@ def main():
     try:
         # Determine which transcript to read
         if source == "clear":
-            saved_path = project_dir / TRANSCRIPT_PATH_STATE
+            saved_path = state_path(project_dir, TRANSCRIPT_PATH_STATE)
             if saved_path.exists():
                 transcript_path = saved_path.read_text().strip()
             else:
@@ -578,7 +578,7 @@ def main():
 
         # Save prompt for inspection
         try:
-            prompt_path = project_dir / f"{STATE_DIR}/session-learner-prompt.md"
+            prompt_path = state_path(project_dir, "session-learner-prompt.md")
             prompt_path.parent.mkdir(parents=True, exist_ok=True)
             prompt_path.write_text(prompt)
         except (IOError, OSError):

@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import CURRENT_PLAN_AUTO_FILE, log_hook_output
+from meridian_config import CURRENT_PLAN_AUTO_FILE, log_hook_output, state_path
 
 
 def main():
@@ -66,7 +66,7 @@ def main():
     current_plan_path = home / ".claude" / "plans" / f"{current_slug}.md"
 
     base_dir = Path(claude_project_dir)
-    current_plan_file = base_dir / CURRENT_PLAN_AUTO_FILE
+    current_plan_file = state_path(base_dir, CURRENT_PLAN_AUTO_FILE)
     current_plan_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Check if we have a tracked plan

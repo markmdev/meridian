@@ -230,6 +230,7 @@ The workspace is a library of project knowledge — decisions, lessons, architec
 - Update existing pages when the topic already has a page. Don't duplicate.
 - Create new pages following the project's existing directory conventions (infer from existing file paths).
 - Every new page MUST be linked from `.meridian/WORKSPACE.md`.
+- Every new `.md` file MUST start with YAML frontmatter (`summary` + `read_when`). Files without frontmatter are invisible to context routers.
 - Remove information superseded by this session's work.
 - Be concise — write what a future agent needs to know, not everything that happened."""
     else:
@@ -239,6 +240,7 @@ The workspace is a library of project knowledge — decisions, lessons, architec
 - Update existing pages when the topic already has a page. Don't duplicate.
 - Create new pages in `.meridian/workspace/` for substantial new topics.
 - Every new page MUST be linked from `.meridian/WORKSPACE.md`.
+- Every new `.md` file MUST start with YAML frontmatter (`summary` + `read_when`). Files without frontmatter are invisible to context routers.
 - Remove information superseded by this session's work.
 - Be concise — write what a future agent needs to know, not everything that happened."""
 
@@ -326,7 +328,7 @@ Maintain frontmatter'd docs across the project. Any `.md` file with `summary` an
 
 ### Frontmatter Format
 
-Every doc must start with YAML frontmatter:
+Every `.md` file you create or update MUST start with YAML frontmatter. Files without frontmatter are invisible to context routers — the agent will never see them.
 
 ```
 ---
@@ -336,6 +338,8 @@ read_when:
   - another keyword
 ---
 ```
+
+If an existing file is missing frontmatter, add it.
 
 {docs_rules}
 

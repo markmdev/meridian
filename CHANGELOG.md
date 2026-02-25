@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1] - 2026-02-25
+
+### Changed
+- **Simplified context acknowledgment gate**: No longer prescribes a specific format or checklist. The agent simply acknowledges what it sees in the injected context.
+
+### Added
+- **Worktree setup guide in README**: Documents how to symlink `.meridian/` across git worktrees using the new external state directory.
+
 ## [0.4.0] - 2026-02-25
 
 ### Changed

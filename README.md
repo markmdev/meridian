@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.3.1` (2026-02-23) | [Changelog](CHANGELOG.md)
+**Current version:** `0.4.1` (2026-02-25) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -245,7 +245,7 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
 | `session-cleanup.py` | SessionEnd | Cleans up session state files |
 
-All hooks live in `.claude/hooks/` and share utilities from `.claude/hooks/lib/config.py`.
+All hooks live in `.claude/hooks/` and share utilities from `.claude/hooks/lib/meridian_config.py`.
 
 </details>
 
@@ -425,7 +425,7 @@ your-project/
 ├── .claude/
 │   ├── settings.json          # Hook configuration
 │   ├── hooks/
-│   │   ├── lib/config.py      # Shared utilities
+│   │   ├── lib/meridian_config.py  # Shared utilities
 │   │   ├── context-injector.py       # Injects project context at session start
 │   │   ├── context-acknowledgment-gate.py  # Blocks until agent reads context
 │   │   ├── token-limit-warning.py    # Warns near compaction threshold
@@ -466,7 +466,7 @@ your-project/
 │   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
 │   ├── api-docs/                     # External API documentation
 │   │   └── INDEX.md                  # Index of documented APIs
-│   ├── .state/                       # Ephemeral hook state (gitignored)
+│   # Note: session state lives in ~/.meridian/state/ (not inside .meridian/)
 │   ├── .scratch/                     # Thinking files (gitignored)
 │   └── prompts/
 │       └── agent-operating-manual.md # Agent behavior instructions
@@ -526,6 +526,42 @@ Claude: [Fixes another issue, runs tests, all pass]
 Claude: <complete>All auth tests pass</complete>
 → Hook allows stop: "✅ Completion phrase detected"
 ```
+
+---
+
+## Git Worktrees
+
+Since v0.4.0, Meridian stores session state (counters, flags, locks) in `~/.meridian/state/` instead of inside `.meridian/`. This means you can symlink the entire `.meridian/` directory across worktrees — shared docs, plans, and workspace with isolated session state.
+
+### Setup
+
+```bash
+# Create a worktree as usual
+git worktree add ../my-feature feature-branch
+
+# Symlink .meridian/ from the main worktree
+ln -s /absolute/path/to/main/.meridian ../my-feature/.meridian
+```
+
+That's it. Each worktree gets its own session state automatically (based on its absolute path), while sharing all docs, plans, workspace, and config.
+
+### What's shared vs isolated
+
+| Content | Shared? | Why |
+|---------|---------|-----|
+| `docs/` | Yes | Reference material should be visible everywhere |
+| `plans/` | Yes | Plans are project-wide |
+| `workspace/` | Yes | Accumulated knowledge benefits all sessions |
+| `WORKSPACE.md` | Yes | Project knowledge base |
+| `config.yaml` | Yes | Project settings |
+| `CODE_GUIDE.md` | Yes | Coding standards |
+| Session state | No | Counters, flags, locks are per-session (in `~/.meridian/state/`) |
+
+### Notes
+
+- The session learner updates the shared `WORKSPACE.md` — lessons from any worktree flow to all others
+- Concurrent workspace updates from parallel sessions are rare; Claude Code's file conflict detection handles the edge case
+- `.claude/` (hooks, agents, skills) should also be symlinked or copied to each worktree
 
 ---
 

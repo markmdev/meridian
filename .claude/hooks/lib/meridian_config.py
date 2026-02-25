@@ -2,6 +2,7 @@
 Shared configuration helpers for Meridian hooks.
 """
 
+import hashlib
 import subprocess
 from pathlib import Path
 
@@ -13,18 +14,40 @@ MERIDIAN_CONFIG = ".meridian/config.yaml"
 REQUIRED_CONTEXT_CONFIG = ".meridian/required-context-files.yaml"
 WORKSPACE_FILE = ".meridian/WORKSPACE.md"
 
-# System state files (ephemeral, cleaned up on session start)
-STATE_DIR = ".meridian/.state"
-PLAN_REVIEW_FLAG = f"{STATE_DIR}/plan-review-blocked"
-CONTEXT_ACK_FLAG = f"{STATE_DIR}/context-acknowledgment-pending"
-ACTION_COUNTER_FILE = f"{STATE_DIR}/action-counter"
-PLAN_ACTION_COUNTER_FILE = f"{STATE_DIR}/plan-action-counter"
-PLAN_MODE_STATE = f"{STATE_DIR}/plan-mode-state"
-ACTIVE_PLAN_FILE = f"{STATE_DIR}/active-plan"
-ACTIVE_SUBPLAN_FILE = f"{STATE_DIR}/active-subplan"
-CURRENT_PLAN_AUTO_FILE = f"{STATE_DIR}/current-plan-auto"
-INJECTED_FILES_LOG = f"{STATE_DIR}/injected-files"
-HOOK_LOGS_DIR = f"{STATE_DIR}/hook_logs"
+# State file names (resolved at runtime via get_state_dir())
+# State lives in ~/.meridian/state/<project-hash>/ so .meridian/ can be
+# symlinked across worktrees without sharing ephemeral session state.
+PLAN_REVIEW_FLAG = "plan-review-blocked"
+CONTEXT_ACK_FLAG = "context-acknowledgment-pending"
+ACTION_COUNTER_FILE = "action-counter"
+PLAN_ACTION_COUNTER_FILE = "plan-action-counter"
+PLAN_MODE_STATE = "plan-mode-state"
+ACTIVE_PLAN_FILE = "active-plan"
+ACTIVE_SUBPLAN_FILE = "active-subplan"
+CURRENT_PLAN_AUTO_FILE = "current-plan-auto"
+INJECTED_FILES_LOG = "injected-files"
+HOOK_LOGS_DIR = "hook_logs"
+
+
+# =============================================================================
+# STATE DIRECTORY RESOLUTION
+# =============================================================================
+def get_state_dir(project_dir: Path) -> Path:
+    """Resolve state directory to ~/.meridian/state/<hash>/.
+
+    State is stored per-working-directory in the user's home directory.
+    This enables symlinking the entire .meridian/ folder across worktrees
+    without sharing ephemeral session state (counters, flags, locks).
+    """
+    project_hash = hashlib.md5(str(project_dir.resolve()).encode()).hexdigest()[:12]
+    state_dir = Path.home() / ".meridian" / "state" / project_hash
+    state_dir.mkdir(parents=True, exist_ok=True)
+    return state_dir
+
+
+def state_path(project_dir: Path, filename: str) -> Path:
+    """Get full path to a state file."""
+    return get_state_dir(project_dir) / filename
 
 
 # =============================================================================
@@ -41,7 +64,7 @@ def log_hook_output(base_dir: Path, hook_name: str, output: dict) -> None:
     output_str = json.dumps(output)
 
     # Log readable markdown version
-    log_dir = base_dir / HOOK_LOGS_DIR
+    log_dir = get_state_dir(base_dir) / HOOK_LOGS_DIR
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
 
@@ -199,9 +222,9 @@ def get_additional_review_files(base_dir: Path, absolute: bool = False) -> list[
 # =============================================================================
 # FLAG FILE HELPERS
 # =============================================================================
-def cleanup_flag(base_dir: Path, flag_path: str) -> None:
+def cleanup_flag(base_dir: Path, flag_name: str) -> None:
     """Delete a flag file if it exists."""
-    path = base_dir / flag_path
+    path = state_path(base_dir, flag_name)
     try:
         if path.exists():
             path.unlink()
@@ -209,9 +232,9 @@ def cleanup_flag(base_dir: Path, flag_path: str) -> None:
         pass
 
 
-def create_flag(base_dir: Path, flag_path: str) -> None:
+def create_flag(base_dir: Path, flag_name: str) -> None:
     """Create a flag file."""
-    path = base_dir / flag_path
+    path = state_path(base_dir, flag_name)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
@@ -219,9 +242,9 @@ def create_flag(base_dir: Path, flag_path: str) -> None:
         pass
 
 
-def flag_exists(base_dir: Path, flag_path: str) -> bool:
+def flag_exists(base_dir: Path, flag_name: str) -> bool:
     """Check if a flag file exists."""
-    return (base_dir / flag_path).exists()
+    return state_path(base_dir, flag_name).exists()
 
 
 # =============================================================================
@@ -229,7 +252,7 @@ def flag_exists(base_dir: Path, flag_path: str) -> bool:
 # =============================================================================
 def get_plan_action_counter(base_dir: Path) -> int:
     """Get current plan action counter value."""
-    counter_path = base_dir / PLAN_ACTION_COUNTER_FILE
+    counter_path = state_path(base_dir, PLAN_ACTION_COUNTER_FILE)
     try:
         if counter_path.exists():
             return int(counter_path.read_text().strip())
@@ -240,7 +263,7 @@ def get_plan_action_counter(base_dir: Path) -> int:
 
 def increment_plan_action_counter(base_dir: Path) -> None:
     """Increment plan action counter (only called while in plan mode)."""
-    counter_path = base_dir / PLAN_ACTION_COUNTER_FILE
+    counter_path = state_path(base_dir, PLAN_ACTION_COUNTER_FILE)
     try:
         current = get_plan_action_counter(base_dir)
         counter_path.parent.mkdir(parents=True, exist_ok=True)
@@ -251,7 +274,7 @@ def increment_plan_action_counter(base_dir: Path) -> None:
 
 def clear_plan_action_counter(base_dir: Path) -> None:
     """Reset plan action counter to 0 (called when plan is approved)."""
-    counter_path = base_dir / PLAN_ACTION_COUNTER_FILE
+    counter_path = state_path(base_dir, PLAN_ACTION_COUNTER_FILE)
     try:
         counter_path.parent.mkdir(parents=True, exist_ok=True)
         counter_path.write_text("0")
@@ -445,6 +468,78 @@ def scan_project_frontmatter(project_dir: Path) -> str:
 
 
 # =============================================================================
+# NESTED GIT REPO SCANNING
+# =============================================================================
+def scan_nested_git_repos(base_dir: Path, max_depth: int = 3) -> str:
+    """Scan for nested git repositories and return their recent commits.
+
+    Finds .git directories up to max_depth levels deep (excluding the root).
+    Returns formatted string with recent commits per nested repo.
+    """
+    nested_repos = []
+
+    for git_dir in sorted(base_dir.rglob(".git")):
+        # Skip the root repo's .git
+        if git_dir.parent == base_dir:
+            continue
+
+        # Skip if too deep
+        rel = git_dir.parent.relative_to(base_dir)
+        if len(rel.parts) > max_depth:
+            continue
+
+        # Skip common junk directories
+        skip_dirs = {"node_modules", ".next", "dist", "build", "vendor", ".venv"}
+        if any(part in skip_dirs for part in rel.parts):
+            continue
+
+        # Only include actual directories (not submodule .git files)
+        if not git_dir.is_dir():
+            continue
+
+        nested_repos.append((str(rel), git_dir.parent))
+
+    if not nested_repos:
+        return ""
+
+    parts = ["## Nested Repositories"]
+    parts.append("")
+
+    for rel_path, repo_dir in nested_repos:
+        try:
+            result = subprocess.run(
+                ["git", "log", "--format=%h %s (%cr)", "-10", "--all"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                cwd=str(repo_dir)
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                # Get current branch
+                branch_result = subprocess.run(
+                    ["git", "branch", "--show-current"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    cwd=str(repo_dir)
+                )
+                branch = branch_result.stdout.strip() if branch_result.returncode == 0 else "unknown"
+
+                parts.append(f"### {rel_path}/ (branch: {branch})")
+                parts.append("```")
+                parts.append(result.stdout.strip())
+                parts.append("```")
+                parts.append("")
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            continue
+
+    if len(parts) <= 2:  # Only header, no repos had commits
+        return ""
+
+    return "\n".join(parts)
+
+
+# =============================================================================
 # CONTEXT INJECTION HELPERS
 # =============================================================================
 def build_injected_context(base_dir: Path) -> str:
@@ -521,6 +616,12 @@ def build_injected_context(base_dir: Path) -> str:
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
+    # Nested git repositories
+    nested_context = scan_nested_git_repos(base_dir)
+    if nested_context:
+        parts.append(nested_context)
+        parts.append("")
+
     # Recent PRs (open, with authors)
     try:
         result = subprocess.run(
@@ -576,7 +677,7 @@ def build_injected_context(base_dir: Path) -> str:
                 files_to_inject.append((doc_path, full_path, ""))
 
     # Active plan file (if set)
-    active_plan_file = base_dir / ACTIVE_PLAN_FILE
+    active_plan_file = state_path(base_dir, ACTIVE_PLAN_FILE)
     if active_plan_file.exists():
         try:
             plan_path = active_plan_file.read_text().strip()
@@ -591,7 +692,7 @@ def build_injected_context(base_dir: Path) -> str:
             pass
 
     # Active subplan file (if in an epic)
-    active_subplan_file = base_dir / ACTIVE_SUBPLAN_FILE
+    active_subplan_file = state_path(base_dir, ACTIVE_SUBPLAN_FILE)
     if active_subplan_file.exists():
         try:
             subplan_path = active_subplan_file.read_text().strip()
@@ -702,7 +803,7 @@ def build_injected_context(base_dir: Path) -> str:
             pass
 
     # Active work-until loop (if any)
-    loop_state_path = base_dir / f"{STATE_DIR}/loop-state"
+    loop_state_path = state_path(base_dir, LOOP_STATE_FILE)
     if loop_state_path.exists():
         try:
             loop_content = loop_state_path.read_text().strip()
@@ -738,12 +839,12 @@ def build_injected_context(base_dir: Path) -> str:
 # LOOP STATE HELPERS
 # =============================================================================
 
-LOOP_STATE_FILE = f"{STATE_DIR}/loop-state"
+LOOP_STATE_FILE = "loop-state"
 
 
 def is_loop_active(base_dir: Path) -> bool:
     """Check if a work-until loop is currently active."""
-    loop_state = base_dir / LOOP_STATE_FILE
+    loop_state = state_path(base_dir, LOOP_STATE_FILE)
     if not loop_state.exists():
         return False
     try:
@@ -772,7 +873,7 @@ def get_loop_state(base_dir: Path) -> dict | None:
     The prompt text goes here
     ```
     """
-    loop_state = base_dir / LOOP_STATE_FILE
+    loop_state = state_path(base_dir, LOOP_STATE_FILE)
     if not loop_state.exists():
         return None
     try:
@@ -812,7 +913,7 @@ def get_loop_state(base_dir: Path) -> dict | None:
 
 def update_loop_iteration(base_dir: Path, new_iteration: int) -> bool:
     """Update the iteration count in the loop state file."""
-    loop_state = base_dir / LOOP_STATE_FILE
+    loop_state = state_path(base_dir, LOOP_STATE_FILE)
     if not loop_state.exists():
         return False
     try:
@@ -830,7 +931,7 @@ def update_loop_iteration(base_dir: Path, new_iteration: int) -> bool:
 
 def clear_loop_state(base_dir: Path) -> bool:
     """Remove the loop state file to end the loop."""
-    loop_state = base_dir / LOOP_STATE_FILE
+    loop_state = state_path(base_dir, LOOP_STATE_FILE)
     try:
         if loop_state.exists():
             loop_state.unlink()

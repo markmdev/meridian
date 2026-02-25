@@ -16,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     flag_exists,
     cleanup_flag,
-    get_project_config,
     log_hook_output,
     CONTEXT_ACK_FLAG,
 )
@@ -43,23 +42,11 @@ def main():
     # Flag exists - block and ask for acknowledgment, then remove flag
     cleanup_flag(base_dir, CONTEXT_ACK_FLAG)
 
-    # Check config
-    config = get_project_config(base_dir)
-    pebble_enabled = config.get('pebble_enabled', False)
-
     reason = (
         "**CONTEXT ACKNOWLEDGMENT REQUIRED**\n\n"
         "Project context has been injected into this session. "
-        "Before using any tools, please acknowledge that you have read and understood "
-        "the injected context: workspace, active plans, CODE_GUIDE, and operating manual."
-    )
-
-    if pebble_enabled:
-        reason += " Pebble is enabled — check project state."
-
-    reason += (
-        "\n\nBriefly summarize what you understand about the current project state, "
-        "then ask the user what they'd like to work on.\n\n"
+        "Before using any tools, acknowledge what you see — "
+        "briefly state what you understand about the current project state.\n\n"
         "**IMPORTANT**: After acknowledging, you MUST retry the same action that was just blocked. "
         "Do not skip it or move on to something else."
     )

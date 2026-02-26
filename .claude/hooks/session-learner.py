@@ -140,27 +140,90 @@ def extract_transcript(transcript_path: str, start_line: int, end_line: int) -> 
     return entries
 
 
-def load_workspace(project_dir: Path) -> tuple[str, list[tuple[str, str]]]:
-    """Load workspace root and all pages."""
+def load_workspace(project_dir: Path) -> str:
+    """Load workspace root content."""
     root_path = project_dir / WORKSPACE_FILE
-    root_content = ""
     if root_path.exists():
         try:
-            root_content = root_path.read_text()
+            return root_path.read_text()
         except IOError:
             pass
+    return ""
 
-    pages = []
-    pages_dir = project_dir / ".meridian" / "workspace"
-    if pages_dir.exists():
-        for page_file in sorted(pages_dir.rglob("*.md")):
-            rel = page_file.relative_to(project_dir)
-            try:
-                pages.append((str(rel), page_file.read_text()))
-            except IOError:
-                continue
 
-    return root_content, pages
+def gather_git_context(project_dir: Path) -> str:
+    """Gather recent git commits and PRs for the session learner.
+
+    Gives the learner concrete evidence of what work was done,
+    beyond what's visible in the transcript.
+    """
+    parts = []
+
+    try:
+        # Get current user's email for filtering
+        user_email_result = subprocess.run(
+            ["git", "config", "user.email"],
+            capture_output=True, text=True, timeout=5,
+            cwd=str(project_dir)
+        )
+        user_email = user_email_result.stdout.strip() if user_email_result.returncode == 0 else None
+
+        # Last 20 commits by user
+        cmd = ["git", "log", "--format=%h %s (%cr)", "-20", "--all"]
+        if user_email:
+            cmd.append(f"--author={user_email}")
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10, cwd=str(project_dir))
+        if result.returncode == 0 and result.stdout.strip():
+            parts.append("### Recent Commits")
+            parts.append("```")
+            parts.append(result.stdout.strip())
+            parts.append("```")
+            parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    try:
+        # Last 5 open PRs by user
+        gh_user_result = subprocess.run(
+            ["gh", "api", "user", "--jq", ".login"],
+            capture_output=True, text=True, timeout=10,
+            cwd=str(project_dir)
+        )
+        gh_user = gh_user_result.stdout.strip() if gh_user_result.returncode == 0 else None
+
+        if gh_user:
+            result = subprocess.run(
+                ["gh", "pr", "list", "--state", "open", "--author", gh_user, "--limit", "5",
+                 "--json", "number,title,headRefName,createdAt",
+                 "--template", '{{range .}}#{{.number}} {{.title}} [{{.headRefName}}] (created {{timeago .createdAt}})\n{{end}}'],
+                capture_output=True, text=True, timeout=10,
+                cwd=str(project_dir)
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                parts.append("### Open PRs")
+                parts.append("```")
+                parts.append(result.stdout.strip())
+                parts.append("```")
+                parts.append("")
+
+            result = subprocess.run(
+                ["gh", "pr", "list", "--state", "merged", "--author", gh_user, "--limit", "5",
+                 "--json", "number,title,mergedAt",
+                 "--template", '{{range .}}#{{.number}} {{.title}} (merged {{timeago .mergedAt}})\n{{end}}'],
+                capture_output=True, text=True, timeout=10,
+                cwd=str(project_dir)
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                parts.append("### Recently Merged PRs")
+                parts.append("```")
+                parts.append(result.stdout.strip())
+                parts.append("```")
+                parts.append("")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    return "\n".join(parts)
 
 
 def load_claudemd_files(project_dir: Path) -> tuple[str, str]:
@@ -185,7 +248,7 @@ def load_claudemd_files(project_dir: Path) -> tuple[str, str]:
     return global_content, project_content
 
 
-def build_prompt(entries: list[dict], workspace_root: str, workspace_pages: list[tuple[str, str]], project_dir: Path, mode: str = "project") -> str:
+def build_prompt(entries: list[dict], workspace_root: str, git_context: str, project_dir: Path, mode: str = "project") -> str:
     """Build the prompt for the workspace maintenance agent."""
     assistant_mode = mode == "assistant"
     global_claudemd, project_claudemd = load_claudemd_files(project_dir)
@@ -197,52 +260,92 @@ def build_prompt(entries: list[dict], workspace_root: str, workspace_pages: list
     if assistant_mode:
         job4_desc = "**Maintain docs** — create, update, or delete files across the workspace"
     else:
-        job4_desc = "**Maintain docs** — create, update, or delete `.meridian/docs/` files"
+        job4_desc = "**Maintain docs** — create/update long-term reference docs in `.meridian/docs/`"
 
     parts.append(f"""You are a session maintenance agent with four jobs:
 
-1. **Update the workspace** — persistent knowledge library for the project
+1. **Update the workspace** — maintain WORKSPACE.md as the project's short-term memory
 2. **Learn from corrections** — when the user corrects the agent, save it as a permanent instruction
-3. **Capture next steps** — so the next agent knows what to work on
+3. **Capture next steps** — immediate work for the next session
 4. {job4_desc}
 
 ---
 
 ## Job 1: Workspace
 
-The workspace is a library of project knowledge — decisions, lessons, architecture, gotchas. NOT a session log.
+WORKSPACE.md is the project's **short-term memory** — what's happening now, what was just learned, what needs attention soon. Everything lives in this single file, organized by project sections.
 
-### Current Workspace Root (.meridian/WORKSPACE.md)
+### Current WORKSPACE.md
 """)
     parts.append(workspace_root if workspace_root.strip() else "(empty — create it)")
 
-    if workspace_pages:
-        parts.append("\n### Current Workspace Pages\n")
-        for path, content in workspace_pages:
-            parts.append(f"<page path=\"{path}\">")
-            parts.append(content.rstrip())
-            parts.append("</page>\n")
-
     if assistant_mode:
-        workspace_rules = """### Workspace Rules
+        workspace_rules = """### Structure
+
+Each project gets a section with these standard subsections:
+
+```markdown
+### Project Name
+
+One-line description.
+
+**Architecture:** tech stack summary
+
+(then any of these subsections, as needed:)
+
+**In Progress:** active work items, what's being built right now
+**Known Issues:** bugs, blockers, things that need fixing
+**Key Decisions:** recent decisions that affect upcoming work
+**Lessons Learned:** gotchas discovered, patterns to remember
+**Completed:** recently finished work worth noting for context
+
+**Next Steps:**
+1. Immediate item for next session
+2. Another immediate item
+```
+
+### Rules
 
 - Write clean reference material. No timestamps, no "in this session", no logs.
-- Update existing pages when the topic already has a page. Don't duplicate.
-- Create new pages following the project's existing directory conventions (infer from existing file paths).
-- Every new page MUST be linked from `.meridian/WORKSPACE.md`.
-- Every new `.md` file MUST start with YAML frontmatter (`summary` + `read_when`). Files without frontmatter are invisible to context routers.
-- Remove information superseded by this session's work.
-- Be concise — write what a future agent needs to know, not everything that happened."""
+- Everything goes in WORKSPACE.md — no sub-pages, no separate workspace files.
+- Update existing project sections. Don't create new sections for the same project.
+- Create new sections following the project's existing conventions.
+- Remove information that's no longer relevant (completed work older than a few sessions, resolved issues, superseded decisions).
+- Be concise — write what the next session's agent needs to know.
+- If information will be useful for more than 2 weeks, it belongs in a doc file, not here."""
     else:
-        workspace_rules = """### Workspace Rules
+        workspace_rules = """### Structure
+
+Each project gets a section with these standard subsections:
+
+```markdown
+### Project Name
+
+One-line description.
+
+**Architecture:** tech stack summary
+
+(then any of these subsections, as needed:)
+
+**In Progress:** active work items, what's being built right now
+**Known Issues:** bugs, blockers, things that need fixing
+**Key Decisions:** recent decisions that affect upcoming work
+**Lessons Learned:** gotchas discovered, patterns to remember
+**Completed:** recently finished work worth noting for context
+
+**Next Steps:**
+1. Immediate item for next session
+2. Another immediate item
+```
+
+### Rules
 
 - Write clean reference material. No timestamps, no "in this session", no logs.
-- Update existing pages when the topic already has a page. Don't duplicate.
-- Create new pages in `.meridian/workspace/` for substantial new topics.
-- Every new page MUST be linked from `.meridian/WORKSPACE.md`.
-- Every new `.md` file MUST start with YAML frontmatter (`summary` + `read_when`). Files without frontmatter are invisible to context routers.
-- Remove information superseded by this session's work.
-- Be concise — write what a future agent needs to know, not everything that happened."""
+- Everything goes in WORKSPACE.md — no sub-pages in `.meridian/workspace/`.
+- Update existing project sections. Don't create duplicate sections.
+- Remove information that's no longer relevant (completed work older than a few sessions, resolved issues, superseded decisions).
+- Be concise — write what the next session's agent needs to know.
+- If information will be useful for more than 2 weeks, it belongs in `.meridian/docs/`, not here."""
 
     parts.append(f"""
 {workspace_rules}
@@ -277,15 +380,27 @@ Scan the transcript for moments where the user corrects the agent's behavior, ex
 
 ## Job 3: Next Steps
 
-Maintain a `## Next steps` section at the bottom of `.meridian/WORKSPACE.md`. The agent that picks up after compaction reads this to know what to work on.
+Maintain a per-project `**Next Steps:**` subsection within each project's section in WORKSPACE.md, plus a global `## Next Steps` section at the bottom for cross-project items.
 
 ### Rules
 
-- Write 2-5 concrete, actionable items based on what was in progress or discussed.
-- Include enough context that a fresh agent can act without re-reading the full workspace.
-- Replace the previous "Next steps" section entirely — don't append to it.
-- If the session ended with everything complete and nothing pending, write "No pending work."
+- **Only immediate work for the next 1-2 sessions.** Items that can be acted on right away.
+- Do NOT include: future improvements mentioned in passing, "someday" refactors, nice-to-have ideas, long-term roadmap items, or things the user said they'd do "next week" or "later."
+- Include enough context that a fresh agent can act without reading the full workspace.
+- Replace previous next steps entirely — don't append.
+- If everything is complete and nothing is pending, write "No pending work."
 
+---
+
+## Git Activity
+""")
+
+    if git_context:
+        parts.append(git_context)
+    else:
+        parts.append("*(no git activity available)*")
+
+    parts.append("""
 ---
 
 ## Session Transcript
@@ -301,7 +416,23 @@ Maintain a `## Next steps` section at the bottom of `.meridian/WORKSPACE.md`. Th
 
 ## Job 4: Docs
 
-Maintain frontmatter'd docs across the project. Any `.md` file with `summary` and `read_when` frontmatter is in scope.
+Docs are the project's **long-term memory** — reference material that stays useful for weeks or months. Any `.md` file with `summary` and `read_when` frontmatter is in scope.
+
+### What belongs in docs
+
+- Architecture decisions and design rationale
+- Integration guides (setup, configuration, usage)
+- Debugging discoveries (non-obvious behavior, sharp edges)
+- Patterns and conventions specific to this project
+- Gotchas and pitfalls that future agents will hit
+- Guides for future agents (how to do common tasks in this codebase)
+
+### What does NOT belong in docs
+
+- Current project status (→ WORKSPACE.md)
+- In-progress work tracking (→ WORKSPACE.md)
+- Session-specific notes (→ WORKSPACE.md or discard)
+- Things that will be irrelevant in 2 weeks (→ WORKSPACE.md)
 
 ### Existing Docs
 """)
@@ -318,7 +449,7 @@ Maintain frontmatter'd docs across the project. Any `.md` file with `summary` an
     else:
         docs_rules = """### Rules
 
-**Create** new docs in `.meridian/docs/` for significant new knowledge: architectural decisions, integrations, debugging discoveries, complex workflows, gotchas. Use kebab-case filenames. Skip routine fixes and obvious information.
+**Create** new docs in `.meridian/docs/` when this session produced long-term knowledge (see "What belongs in docs" above). Use kebab-case filenames. Skip routine fixes and obvious information.
 
 **Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md.
 
@@ -432,33 +563,6 @@ def cleanup_docs_to_delete(project_dir: Path):
         print(f"[Meridian] Deleted outdated docs: {', '.join(deleted)}", file=sys.stderr)
 
 
-def cleanup_orphaned_workspace_pages(project_dir: Path):
-    """Delete workspace pages not linked from WORKSPACE.md."""
-    workspace_dir = project_dir / ".meridian" / "workspace"
-    workspace_root_path = project_dir / WORKSPACE_FILE
-
-    if not workspace_dir.exists() or not workspace_root_path.exists():
-        return
-
-    try:
-        root_content = workspace_root_path.read_text()
-    except IOError:
-        return
-
-    deleted = []
-    for page in sorted(workspace_dir.rglob("*.md")):
-        # Check if this page is reachable from WORKSPACE.md by filename or relative path
-        rel = str(page.relative_to(project_dir))
-        if page.name not in root_content and rel not in root_content:
-            try:
-                page.unlink()
-                deleted.append(page.name)
-            except OSError:
-                pass
-
-    if deleted:
-        print(f"[Meridian] Deleted orphaned workspace pages: {', '.join(deleted)}", file=sys.stderr)
-
 
 def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
     """Run headless claude -p to update workspace. Returns True on success."""
@@ -568,13 +672,14 @@ def main():
         if len(meaningful) < MIN_ENTRIES_THRESHOLD:
             return
 
-        # Load workspace and config
-        workspace_root, workspace_pages = load_workspace(project_dir)
+        # Load workspace, config, and git context
+        workspace_root = load_workspace(project_dir)
+        git_context = gather_git_context(project_dir)
         config = get_project_config(project_dir)
         learner_mode = config.get('session_learner_mode', 'project')
 
         # Build prompt and run agent
-        prompt = build_prompt(entries, workspace_root, workspace_pages, project_dir, mode=learner_mode)
+        prompt = build_prompt(entries, workspace_root, git_context, project_dir, mode=learner_mode)
 
         # Save prompt for inspection
         try:
@@ -590,7 +695,6 @@ def main():
         if success:
             print("[Meridian] Workspace updated.", file=sys.stderr)
             cleanup_docs_to_delete(project_dir)
-            cleanup_orphaned_workspace_pages(project_dir)
             mark_synced(project_dir)
         else:
             print("[Meridian] Workspace update failed.", file=sys.stderr)

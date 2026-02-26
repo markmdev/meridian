@@ -78,8 +78,7 @@ def main() -> int:
                 "hookSpecificOutput": {
                     "hookEventName": "PostToolUse",
                     "additionalContext": (
-                        "[SYSTEM]: Plan mode activated. Use `/planning` skill for methodology. "
-                        "Spawn Plan agents for concrete implementation details."
+                        "[SYSTEM]: Plan mode activated. Activate the `/planning` skill NOW — before doing anything else. It defines your planning methodology."
                     )
                 }
             }

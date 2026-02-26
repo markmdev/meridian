@@ -43,7 +43,7 @@ def main():
             config = get_project_config(PROJECT_DIR)
             pebble_enabled = config.get('pebble_enabled', False)
 
-            context = "Plan mode activated. Use `/planning` skill for methodology. Spawn Plan agents for concrete implementation details."
+            context = "Plan mode activated. Activate the `/planning` skill NOW — before doing anything else. It defines your planning methodology."
             if pebble_enabled:
                 context += "\nPebble is enabled — proactively use it to track this work."
 

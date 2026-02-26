@@ -18,7 +18,6 @@ WORKSPACE_FILE = ".meridian/WORKSPACE.md"
 # State lives in ~/.meridian/state/<project-hash>/ so .meridian/ can be
 # symlinked across worktrees without sharing ephemeral session state.
 PLAN_REVIEW_FLAG = "plan-review-blocked"
-CONTEXT_ACK_FLAG = "context-acknowledgment-pending"
 ACTION_COUNTER_FILE = "action-counter"
 PLAN_ACTION_COUNTER_FILE = "plan-action-counter"
 PLAN_MODE_STATE = "plan-mode-state"

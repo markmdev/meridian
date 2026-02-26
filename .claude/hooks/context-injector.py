@@ -16,11 +16,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     build_injected_context,
-    create_flag,
     log_hook_output,
     get_state_dir,
     state_path,
-    CONTEXT_ACK_FLAG,
 )
 
 SYNC_LOCK = "workspace-sync.lock"
@@ -90,9 +88,6 @@ def main() -> int:
     }
 
     log_hook_output(base_dir, "context-injector", output)
-
-    # Create acknowledgment flag - will be checked by context-acknowledgment-gate
-    create_flag(base_dir, CONTEXT_ACK_FLAG)
 
     return 0
 

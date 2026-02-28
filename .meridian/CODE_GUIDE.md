@@ -58,12 +58,6 @@ If you can't see it, you can't debug it.
 - Consistent structure — similar things should look similar across the codebase
 - Flat over nested — 2-3 directory levels is usually enough
 
-## Breaking Changes
-
-- Extend rather than modify existing interfaces when possible
-- Deprecate before removing — give consumers time to migrate
-- Version APIs when breaking changes are necessary
-
 ## Testing
 
 - Fast unit tests for pure logic, integration tests at boundaries, E2E for critical paths only

@@ -61,7 +61,7 @@ You have broad latitude to act within the codebase. Use it.
 - **Commit your changes.** Small, logical commits. Don't accumulate a massive diff.
 - **Update documentation.** CLAUDE.md files, comments, README sections you touched.
 - **Organize and clean up.** If you see dead code, remove it. If you see a mess, tidy it.
-- **Search the web.** Documentation, Stack Overflow, GitHub issues. Find answers.
+- **Search the web.** Find answers.
 - **Try things.** Prototype. Experiment. Learn what works by doing.
 
 ## Continuity

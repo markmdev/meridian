@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.6.0] - 2026-02-28
+
+### Changed
+- **Plugin architecture**: Meridian is now a Claude Code plugin. Hooks, agents, skills, and commands are discovered automatically by the plugin system — no more copying files into `.claude/`.
+- **Install flow**: Two-command update: `meridian-update` for `.meridian/` scaffolding, `/plugin update meridian@markmdev` for hooks/agents/skills.
+- **Utility scripts moved**: `state-dir.sh`, `setup-work-until.sh`, and `learner-log.py` moved from `.claude/hooks/scripts/` to `.meridian/scripts/` for stable agent-accessible paths.
+- **Hook commands**: All hook commands now use `${CLAUDE_PLUGIN_ROOT}/scripts/` instead of `$CLAUDE_PROJECT_DIR/.claude/hooks/`.
+
+### Added
+- **Plugin manifest**: `.claude-plugin/plugin.json` for plugin system registration.
+- **hooks.json**: `hooks/hooks.json` replaces `.claude/settings.json` for hook registration.
+- **Migration support**: Install script detects pre-plugin Meridian and cleans up old `.claude/` files automatically.
+- **Marketplace listing**: Available via `/plugin marketplace add markmdev/claude-plugins` then `/plugin install meridian@markmdev`.
+
+### Removed
+- **`.claude/` directory**: No longer ships with `.claude/settings.json`, `.claude/hooks/`, `.claude/agents/`, `.claude/commands/`, or `.claude/skills/`. All managed by the plugin system.
+- **settings.json merge logic**: The 70-line merge script in `install.sh` is gone — plugin system handles hook registration.
+
+## [0.5.5] - 2026-02-28
+
+### Removed
+- **`required-context-files.yaml`**: Unused feature removed along with `parse_yaml_list()` and all references.
+- **Config flags**: Removed `plan_review_enabled`, `code_review_enabled`, `pebble_scaffolder_enabled` — all were always-on. Pebble scaffolder now triggers on `pebble_enabled` alone.
+
+### Fixed
+- **`stop_hook_min_actions` default**: Code defaults now match shipped config value of 15 (was 10 in code).
+
+### Added
+- **Standardized workspace files**: `.meridian/workspace/preferences.md` and `.meridian/workspace/lessons.md` maintained by session learner.
+
 ## [0.5.0] - 2026-02-28
 
 ### Removed

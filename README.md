@@ -4,7 +4,7 @@
 
 **Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
 
-**Current version:** `0.5.0` (2026-02-28) | [Changelog](CHANGELOG.md)
+**Current version:** `0.6.0` (2026-02-28) | [Changelog](CHANGELOG.md)
 
 > If Meridian helps your work, please **star the repo** and share it.
 > Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
@@ -154,60 +154,33 @@ sequenceDiagram
 
 ## Quick Start
 
-### One-line install (recommended)
+### Install
 
 ```bash
+# 1. Install the plugin
+/plugin marketplace add markmdev/claude-plugins
+/plugin install meridian@markmdev
+
+# 2. Scaffold project files
 cd /path/to/your/project
 curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
 ```
 
-### Install specific version
+### Update
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash -s -- -v 0.0.28
-```
+# Update project scaffolding (.meridian/)
+meridian-update
 
-### Update existing installation
-
-```bash
-# Same command — installer detects existing installation and updates
-# Your workspace and config are preserved
-curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
+# Update hooks, agents, skills
+/plugin update meridian@markmdev
 ```
 
 ### Check installed version
 
 ```bash
-./install.sh --check
-# Or just: cat .meridian/.version
+cat .meridian/.version
 ```
-
-### Manual install
-
-```bash
-git clone https://github.com/markmdev/meridian.git
-cp -R meridian/.claude meridian/.meridian /path/to/your/project
-cd /path/to/your/project
-find .claude -type f -name '*.py' -print0 | xargs -0 chmod +x
-```
-
-Open your project in Claude Code. Hooks activate automatically.
-
-### Running with Auto-Restart
-
-For automatic session restart when context fills up (instead of manual `/clear`):
-
-1. Enable auto-compact-off mode in `.meridian/config.yaml`:
-   ```yaml
-   auto_compact_off: true
-   ```
-
-2. Run Claude through the wrapper:
-   ```bash
-   ./.meridian/bin/meridian-wrapper
-   ```
-
-When context approaches the threshold, the agent saves context and the wrapper automatically restarts with "continue" as the initial prompt. No manual intervention needed.
 
 ---
 
@@ -234,18 +207,14 @@ Hooks are Python scripts triggered at Claude Code lifecycle events. They can inj
 | Hook | Trigger | What it does |
 |------|---------|--------------|
 | `context-injector.py` | SessionStart | Injects workspace, tasks, CODE_GUIDE into context |
-| `context-acknowledgment-gate.py` | PreToolUse | Blocks first tool until agent acknowledges context |
-| `token-limit-warning.py` | PreToolUse | Warns when approaching token limit, prompts context save |
 | `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
 | `action-counter.py` | PostToolUse | Tracks actions for stop hook threshold |
 | `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create Pebble issues (if enabled) |
 | `stop-checklist.py` | Stop | Requires context updates and code review |
-| `permission-auto-approver.py` | PermissionRequest | Auto-approves Meridian operations |
-| `meridian-path-guard.py` | PermissionRequest | Blocks .meridian/.claude writes outside project root |
 | `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
 | `session-cleanup.py` | SessionEnd | Cleans up session state files |
 
-All hooks live in `.claude/hooks/` and share utilities from `.claude/hooks/lib/meridian_config.py`.
+Hooks are managed by the plugin system and share utilities from `lib/meridian_config.py`.
 
 </details>
 
@@ -372,48 +341,25 @@ Precedence: Baseline → Project Type Addon
 
 ```
 your-project/
-├── .claude/
-│   ├── settings.json          # Hook configuration
-│   ├── hooks/
-│   │   ├── lib/meridian_config.py  # Shared utilities
-│   │   ├── context-injector.py       # Injects project context at session start
-│   │   ├── context-acknowledgment-gate.py  # Blocks until agent reads context
-│   │   ├── token-limit-warning.py    # Warns near compaction threshold
-│   │   ├── session-learner.py        # Updates workspace + CLAUDE.md from transcript
-│   │   ├── stop-checklist.py         # Pre-stop checks (review, tests, commits)
-│   │   ├── plan-review.py
-│   │   ├── plan-approval-reminder.py
-│   │   ├── action-counter.py
-│   │   ├── plan-mode-tracker.py
-│   │   └── session-cleanup.py
-│   ├── commands/
-│   │   ├── work-until.md        # Start work-until loop
-│   │   └── coderabbit-review.md # CodeRabbit review cycle handler
-│   ├── skills/
-│   │   ├── planning/SKILL.md
-│   │   └── prompt-writing/SKILL.md
-│   └── agents/
-│       ├── plan-reviewer.md
-│       ├── code-reviewer.md
-│       ├── docs-researcher.md
-│       ├── explore.md
-│       ├── pebble-scaffolder.md
-│       ├── implement.md
-│       ├── architect.md
-│       └── code-health-reviewer.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
 │   ├── WORKSPACE.md                  # Agent's living knowledge base (always injected)
 │   ├── workspace/                    # Workspace sub-pages (linked from WORKSPACE.md)
-│   ├── CODE_GUIDE.md                 # Baseline standards
-│   ├── CODE_GUIDE_ADDON_HACKATHON.md # Relaxed rules for prototypes
-│   ├── CODE_GUIDE_ADDON_PRODUCTION.md # Strict rules for production
+│   ├── CODE_GUIDE.md                 # Coding standards
+│   ├── SOUL.md                       # Agent identity
 │   ├── api-docs/                     # External API documentation
-│   │   └── INDEX.md                  # Index of documented APIs
+│   ├── docs/                         # Project knowledge docs (auto-discovered)
+│   ├── prompts/                      # Injected prompts
+│   │   └── agent-operating-manual.md
+│   ├── scripts/                      # User-facing utilities
+│   │   ├── state-dir.sh              # Resolve state directory
+│   │   ├── setup-work-until.sh       # Work-until loop setup
+│   │   └── learner-log.py            # Session learner log viewer
+│   └── plans/                        # Archived implementation plans
 │   # Note: session state lives in ~/.meridian/state/ (not inside .meridian/)
-│   ├── .scratch/                     # Thinking files (gitignored)
-│   └── prompts/
-│       └── agent-operating-manual.md # Agent behavior instructions
+│
+│   # Plugin files (managed by /plugin — don't edit directly):
+│   # hooks/hooks.json, scripts/*.py, agents/*.md, commands/*.md, skills/*/
 └── your-code/
 ```
 
@@ -454,7 +400,7 @@ The `/work-until` command creates an iterative loop where Claude keeps working o
 - **Workspace preserves history**: Between iterations, Claude writes to its workspace, so it knows what was tried
 - **Normal stop checks still run**: Workspace updates, tests/lint/build — all enforced each iteration
 - **Completion phrase must be TRUE**: Claude cannot lie to escape the loop
-- **Monitor progress**: `cat $(.claude/hooks/scripts/state-dir.sh)/loop-state` shows current iteration
+- **Monitor progress**: `cat $(.meridian/scripts/state-dir.sh)/loop-state` shows current iteration
 
 ### Example Flow
 
@@ -505,7 +451,7 @@ That's it. Each worktree gets its own session state automatically (based on its 
 
 - The session learner updates the shared `WORKSPACE.md` — lessons from any worktree flow to all others
 - Concurrent workspace updates from parallel sessions are rare; Claude Code's file conflict detection handles the edge case
-- `.claude/` (hooks, agents, skills) should also be symlinked or copied to each worktree
+- The plugin handles hooks, agents, and skills automatically — no need to symlink `.claude/` across worktrees
 
 ---
 

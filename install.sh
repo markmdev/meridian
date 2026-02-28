@@ -1,7 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# Meridian Installer
+# Meridian Installer — scaffolding only
+# Hooks, agents, skills, and commands are managed by the Claude Code plugin.
 # Usage: curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
 # Or:    ./install.sh [--version X.X.X] [target-dir]
 
@@ -41,7 +42,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --help|-h)
       cat << 'EOF'
-Meridian Installer
+Meridian Installer (scaffolding only)
+
+Hooks, agents, skills, and commands are managed by the Claude Code plugin.
+This script installs .meridian/ project scaffolding.
 
 Usage: install.sh [OPTIONS] [target-dir]
 
@@ -53,7 +57,7 @@ Options:
 Examples:
   install.sh                        # Install latest to current dir
   install.sh ~/my-project           # Install latest to ~/my-project
-  install.sh -v 0.0.24 .            # Install specific version
+  install.sh -v 0.6.0 .             # Install specific version
   curl -fsSL URL/install.sh | bash  # Install from web
 
 State files preserved on update:
@@ -61,8 +65,10 @@ State files preserved on update:
   - .meridian/workspace/
   - .meridian/config.yaml (merged with new defaults)
   - .meridian/api-docs/
-  - .meridian/tasks/
-  - .claude/plans/
+
+Update flow:
+  Scaffolding:  curl -fsSL URL/install.sh | bash   (or meridian-update)
+  Plugin:       /plugin update meridian@markmdev
 EOF
       exit 0
       ;;
@@ -145,13 +151,13 @@ if [[ -z "$EXTRACT_DIR" || ! -d "$EXTRACT_DIR" ]]; then
   error "Could not find extracted directory"
 fi
 
-# The actual Meridian files are in the meridian/ subdirectory
-if [[ -d "$EXTRACT_DIR/meridian/.claude" ]]; then
+# The actual Meridian scaffolding is in the .meridian/ subdirectory
+if [[ -d "$EXTRACT_DIR/meridian/.meridian" ]]; then
   SOURCE_DIR="$EXTRACT_DIR/meridian"
-elif [[ -d "$EXTRACT_DIR/.claude" ]]; then
+elif [[ -d "$EXTRACT_DIR/.meridian" ]]; then
   SOURCE_DIR="$EXTRACT_DIR"
 else
-  error "Could not find Meridian files (.claude directory) in archive"
+  error "Could not find Meridian files (.meridian directory) in archive"
 fi
 
 # State files/dirs to preserve (never delete or overwrite)
@@ -165,7 +171,6 @@ STATE_PATTERNS=(
   ".meridian/tasks/"
   ".meridian/.manifest"
   ".meridian/.version"
-  ".claude/plans/"
 )
 
 is_state_file() {
@@ -179,13 +184,11 @@ is_state_file() {
     .meridian/plans|.meridian/plans/*) return 0 ;;
     .meridian/.manifest) return 0 ;;
     .meridian/.version) return 0 ;;
-    .claude/plans|.claude/plans/*) return 0 ;;
   esac
   return 1
 }
 
 # Check if this is an update or fresh install
-# Detect existing installation by manifest, version file, or config
 if [[ -f "$TARGET_DIR/$MANIFEST_FILE" ]]; then
   MODE="update"
   HAS_MANIFEST=true
@@ -199,6 +202,114 @@ else
   HAS_MANIFEST=false
   log "Fresh installation..."
 fi
+
+# --- Migration from pre-plugin Meridian ---
+# Old installations put hooks/agents/skills/commands into .claude/.
+# The plugin now manages those. Clean them up.
+migrate_old_installation() {
+  local migrated=false
+
+  # Detect old Meridian: context-injector.py in .claude/hooks/ or .claude/ entries in manifest
+  local has_old_hooks=false
+  if [[ -f "$TARGET_DIR/.claude/hooks/context-injector.py" ]]; then
+    has_old_hooks=true
+  elif [[ -f "$TARGET_DIR/$MANIFEST_FILE" ]] && grep -q '\.claude/' "$TARGET_DIR/$MANIFEST_FILE" 2>/dev/null; then
+    has_old_hooks=true
+  fi
+
+  if [[ "$has_old_hooks" == false ]]; then
+    return
+  fi
+
+  warn "Migrating from pre-plugin Meridian installation..."
+
+  # Remove old Meridian-managed .claude/ directories
+  for dir in hooks agents commands skills; do
+    if [[ -d "$TARGET_DIR/.claude/$dir" ]]; then
+      rm -rf "$TARGET_DIR/.claude/$dir"
+      info "Removed .claude/$dir/"
+      migrated=true
+    fi
+  done
+
+  # Clean settings.json: remove Meridian hook entries, keep user hooks
+  if [[ -f "$TARGET_DIR/.claude/settings.json" ]]; then
+    python3 - "$TARGET_DIR/.claude/settings.json" << 'PYTHON_SCRIPT'
+import json
+import sys
+
+settings_path = sys.argv[1]
+
+try:
+    with open(settings_path, 'r') as f:
+        settings = json.load(f)
+except (json.JSONDecodeError, IOError):
+    sys.exit(0)
+
+# Remove Meridian hooks (identified by .claude/hooks/ in command paths)
+hooks = settings.get('hooks', {})
+cleaned_hooks = {}
+
+for event_type, hook_groups in hooks.items():
+    kept_groups = []
+    for group in hook_groups:
+        kept_hooks = []
+        for hook in group.get('hooks', []):
+            cmd = hook.get('command', '')
+            # Keep hooks that don't reference .claude/hooks/
+            if '/.claude/hooks/' not in cmd:
+                kept_hooks.append(hook)
+        if kept_hooks:
+            group_copy = dict(group)
+            group_copy['hooks'] = kept_hooks
+            kept_groups.append(group_copy)
+    if kept_groups:
+        cleaned_hooks[event_type] = kept_groups
+
+if cleaned_hooks:
+    settings['hooks'] = cleaned_hooks
+else:
+    settings.pop('hooks', None)
+
+# Remove Meridian companyAnnouncements (the ASCII art banner)
+settings.pop('companyAnnouncements', None)
+
+# Check if anything meaningful remains
+has_content = False
+for key, value in settings.items():
+    if key == 'hooks' and value:
+        has_content = True
+    elif key == 'permissions' and value:
+        has_content = True
+    elif key not in ('hooks', 'permissions') and value is not None:
+        has_content = True
+
+if has_content:
+    with open(settings_path, 'w') as f:
+        json.dump(settings, f, indent=2)
+        f.write('\n')
+    print("Cleaned Meridian hooks from settings.json, kept user settings")
+else:
+    import os
+    os.remove(settings_path)
+    print("Removed empty settings.json")
+PYTHON_SCRIPT
+
+    migrated=true
+  fi
+
+  # Rewrite manifest to only contain .meridian/ entries
+  if [[ -f "$TARGET_DIR/$MANIFEST_FILE" ]]; then
+    grep -v '\.claude/' "$TARGET_DIR/$MANIFEST_FILE" > "$TEMP_DIR/cleaned_manifest.txt" 2>/dev/null || true
+    mv "$TEMP_DIR/cleaned_manifest.txt" "$TARGET_DIR/$MANIFEST_FILE"
+  fi
+
+  if [[ "$migrated" == true ]]; then
+    info "Migration complete. Plugin now manages hooks/agents/skills/commands."
+  fi
+}
+
+migrate_old_installation
 
 # If updating with manifest, delete old managed files (except state files)
 if [[ "$MODE" == "update" && "$HAS_MANIFEST" == true ]]; then
@@ -247,94 +358,8 @@ copy_dir() {
   done < <(find "$src_base" -type f -print0)
 }
 
-# Merge settings.json if user has existing one (before copy_dir overwrites it)
-if [[ -f "$TARGET_DIR/.claude/settings.json" && -f "$SOURCE_DIR/.claude/settings.json" ]]; then
-  log "Merging settings.json with existing user hooks..."
-  SETTINGS_BACKUP=$(mktemp)
-  cp "$TARGET_DIR/.claude/settings.json" "$SETTINGS_BACKUP"
-
-  python3 - "$SETTINGS_BACKUP" "$SOURCE_DIR/.claude/settings.json" "$TARGET_DIR/.claude/settings.json" << 'PYTHON_SCRIPT'
-import json
-import sys
-
-def merge_settings(user_path, meridian_path, output_path):
-    """Merge user settings with Meridian settings, preserving user hooks."""
-    try:
-        with open(user_path, 'r') as f:
-            user = json.load(f)
-    except (json.JSONDecodeError, IOError):
-        user = {}
-
-    try:
-        with open(meridian_path, 'r') as f:
-            meridian = json.load(f)
-    except (json.JSONDecodeError, IOError):
-        meridian = {}
-
-    # Start with Meridian settings as base
-    result = meridian.copy()
-
-    # Merge hooks: for each event type, combine hook arrays
-    user_hooks = user.get('hooks', {})
-    meridian_hooks = meridian.get('hooks', {})
-    merged_hooks = meridian_hooks.copy()
-
-    for event_type, user_hook_list in user_hooks.items():
-        if event_type not in merged_hooks:
-            # User has hooks for an event Meridian doesn't use
-            merged_hooks[event_type] = user_hook_list
-        else:
-            # Both have hooks for this event - check for user's custom hooks
-            meridian_commands = set()
-            for hook_group in meridian_hooks.get(event_type, []):
-                for hook in hook_group.get('hooks', []):
-                    cmd = hook.get('command', '')
-                    if '/.claude/hooks/' in cmd:
-                        # Extract just the hook filename
-                        meridian_commands.add(cmd.split('/')[-1].strip('"'))
-
-            # Add user hooks that aren't Meridian hooks
-            for user_hook_group in user_hook_list:
-                is_meridian_hook = False
-                for hook in user_hook_group.get('hooks', []):
-                    cmd = hook.get('command', '')
-                    if cmd:
-                        hook_name = cmd.split('/')[-1].strip('"')
-                        if hook_name in meridian_commands:
-                            is_meridian_hook = True
-                            break
-
-                if not is_meridian_hook:
-                    merged_hooks[event_type].append(user_hook_group)
-
-    result['hooks'] = merged_hooks
-
-    # Preserve user's permissions if they have custom ones
-    if 'permissions' in user and user['permissions'] != meridian.get('permissions'):
-        # Keep user's permissions, but ensure defaultMode is set
-        result['permissions'] = user['permissions']
-
-    # Preserve user's companyAnnouncements preference (use Meridian's by default)
-    # Preserve user's includeCoAuthoredBy preference
-    if 'includeCoAuthoredBy' in user:
-        result['includeCoAuthoredBy'] = user['includeCoAuthoredBy']
-
-    with open(output_path, 'w') as f:
-        json.dump(result, f, indent=2)
-        f.write('\n')
-
-    print("Merged user hooks with Meridian hooks")
-
-if __name__ == '__main__':
-    merge_settings(sys.argv[1], sys.argv[2], sys.argv[3])
-PYTHON_SCRIPT
-
-  rm -f "$SETTINGS_BACKUP"
-fi
-
-# Copy directories
+# Copy .meridian/ scaffolding only
 log "Installing files..."
-copy_dir "$SOURCE_DIR/.claude" "$TARGET_DIR/.claude" ".claude/"
 copy_dir "$SOURCE_DIR/.meridian" "$TARGET_DIR/.meridian" ".meridian/"
 
 info "Copied $COPIED file(s)"
@@ -417,12 +442,18 @@ echo "$VERSION" > "$TARGET_DIR/.meridian/.version"
 
 # Make scripts executable
 log "Setting permissions..."
-find "$TARGET_DIR/.claude" -type f \( -name "*.py" -o -name "*.sh" \) -exec chmod +x {} \; 2>/dev/null || true
+find "$TARGET_DIR/.meridian/scripts" -type f \( -name "*.py" -o -name "*.sh" \) -exec chmod +x {} \; 2>/dev/null || true
 find "$TARGET_DIR/.meridian/bin" -type f -exec chmod +x {} \; 2>/dev/null || true
+
+# Check if plugin is installed
+PLUGIN_INSTALLED=false
+if [[ -d "$HOME/.claude/plugins/cache/markmdev/meridian" ]]; then
+  PLUGIN_INSTALLED=true
+fi
 
 # Success
 echo ""
-echo -e "${GREEN}✓ Meridian v$VERSION installed successfully${NC}"
+echo -e "${GREEN}Meridian v$VERSION installed successfully${NC}"
 echo ""
 echo "  Location: $TARGET_DIR"
 echo "  Mode:     $MODE"
@@ -430,16 +461,27 @@ echo ""
 
 if [[ "$MODE" == "install" ]]; then
   echo "Next steps:"
-  echo "  1. Review .meridian/config.yaml for settings"
-  echo "  2. Add docs to .meridian/docs/ with summary + read_when frontmatter"
-  echo "  3. Open project in Claude Code - hooks activate automatically"
+  if [[ "$PLUGIN_INSTALLED" == false ]]; then
+    echo "  1. Install the plugin:"
+    echo "     /plugin marketplace add markmdev/claude-plugins"
+    echo "     /plugin install meridian@markmdev"
+    echo "  2. Review .meridian/config.yaml for settings"
+    echo "  3. Add docs to .meridian/docs/ with summary + read_when frontmatter"
+    echo "  4. Open project in Claude Code — hooks activate automatically"
+  else
+    echo "  1. Review .meridian/config.yaml for settings"
+    echo "  2. Add docs to .meridian/docs/ with summary + read_when frontmatter"
+    echo "  3. Open project in Claude Code — hooks activate automatically"
+  fi
   echo ""
 fi
 
 if [[ "$MODE" == "update" ]]; then
-  echo "Updated files are ready. State preserved:"
+  echo "Updated .meridian/ scaffolding. State preserved:"
   echo "  - WORKSPACE.md + workspace/"
   echo "  - config.yaml (merged)"
   echo "  - api-docs/"
+  echo ""
+  echo "To update hooks/agents/skills: /plugin update meridian@markmdev"
   echo ""
 fi

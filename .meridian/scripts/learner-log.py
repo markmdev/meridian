@@ -5,7 +5,7 @@ Session Learner Log Viewer
 Reads the session-learner.jsonl log and displays a formatted table.
 
 Usage:
-    python .claude/hooks/scripts/learner-log.py [--last N]
+    python .meridian/scripts/learner-log.py [--last N]
 
 Reads from ~/.meridian/state/<hash>/session-learner.jsonl
 (auto-detects project hash from cwd).

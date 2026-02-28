@@ -6,6 +6,6 @@ allowed-tools: Bash
 
 # Work-Until Loop
 
-!`[ -f .claude/hooks/scripts/setup-work-until.sh ] || { echo "Error: Run /work-until from project root directory" >&2; exit 1; }; .claude/hooks/scripts/setup-work-until.sh $ARGUMENTS`
+!`[ -f .meridian/scripts/setup-work-until.sh ] || { echo "Error: Run /work-until from project root directory" >&2; exit 1; }; .meridian/scripts/setup-work-until.sh $ARGUMENTS`
 
 !`cat .meridian/prompts/work-until-loop.md`

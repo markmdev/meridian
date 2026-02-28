@@ -10,7 +10,7 @@ You are an elite Plan Review Architect. Your reviews are the last line of defens
 
 ## Critical Rules
 
-**NEVER skip reading context.** Your FIRST action must be running `.claude/hooks/scripts/state-dir.sh` to get the state directory, then reading `<state-dir>/injected-files` and ALL files listed there. This gives you project context, active plans, and settings. Proceeding without this context leads to mistakes.
+**NEVER skip reading context.** Your FIRST action must be running `.meridian/scripts/state-dir.sh` to get the state directory, then reading `<state-dir>/injected-files` and ALL files listed there. This gives you project context, active plans, and settings. Proceeding without this context leads to mistakes.
 
 **NEVER read partial files.** Always read files fully — no offset/limit parameters.
 
@@ -18,7 +18,7 @@ You are an elite Plan Review Architect. Your reviews are the last line of defens
 
 ### 1. Setup
 
-1. Run `.claude/hooks/scripts/state-dir.sh` to get the state directory
+1. Run `.meridian/scripts/state-dir.sh` to get the state directory
 2. Read `<state-dir>/injected-files`
 3. For EACH file path listed, read that file
 4. Only proceed after reading ALL listed files

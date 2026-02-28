@@ -155,6 +155,20 @@ def load_workspace(project_dir: Path) -> str:
     return ""
 
 
+def load_workspace_files(project_dir: Path) -> dict[str, str]:
+    """Load standardized workspace files."""
+    workspace_dir = project_dir / ".meridian" / "workspace"
+    files = {}
+    for name in ("preferences.md", "lessons.md"):
+        path = workspace_dir / name
+        if path.exists():
+            try:
+                files[name] = path.read_text()
+            except IOError:
+                pass
+    return files
+
+
 def gather_git_context(project_dir: Path) -> str:
     """Gather recent git commits and PRs for the session learner.
 
@@ -252,7 +266,7 @@ def load_claudemd_files(project_dir: Path) -> tuple[str, str]:
     return global_content, project_content
 
 
-def build_prompt(entries: list[dict], workspace_root: str, git_context: str, project_dir: Path, mode: str = "project") -> str:
+def build_prompt(entries: list[dict], workspace_root: str, git_context: str, project_dir: Path, mode: str = "project", workspace_files: dict[str, str] | None = None) -> str:
     """Build the prompt for the workspace maintenance agent."""
     assistant_mode = mode == "assistant"
     global_claudemd, project_claudemd = load_claudemd_files(project_dir)
@@ -261,11 +275,11 @@ def build_prompt(entries: list[dict], workspace_root: str, git_context: str, pro
 
     if assistant_mode:
         job4_desc = "Maintain docs — create, update, or delete files across the workspace"
-        workspace_location = "WORKSPACE.md — no sub-pages, no separate workspace files."
+        workspace_location = "WORKSPACE.md for status. Preferences go in `.meridian/workspace/preferences.md`, lessons in `.meridian/workspace/lessons.md`."
         doc_location = "anywhere in the project following existing directory conventions"
     else:
         job4_desc = "Maintain docs — create/update long-term reference docs in `.meridian/docs/`"
-        workspace_location = "WORKSPACE.md — no sub-pages in `.meridian/workspace/`."
+        workspace_location = "WORKSPACE.md for per-project status. Preferences go in `.meridian/workspace/preferences.md`, lessons in `.meridian/workspace/lessons.md`."
         doc_location = "`.meridian/docs/`"
 
     if assistant_mode:
@@ -276,6 +290,11 @@ def build_prompt(entries: list[dict], workspace_root: str, git_context: str, pro
         docs_create = f"**Create** new docs in {doc_location} when this session produced long-term knowledge. Use kebab-case filenames. Skip routine fixes and obvious information."
         docs_update = "**Update** any existing frontmatter'd doc when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md."
         docs_delete = f"**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `{{state_path(project_dir, 'docs-to-delete')}}` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish."
+
+    # Build workspace files content
+    wf = workspace_files or {}
+    prefs_content = wf.get("preferences.md", "(empty — create it)")
+    lessons_content = wf.get("lessons.md", "(empty — create it)")
 
     # Scan project for frontmatter'd docs
     doc_index = scan_project_frontmatter(project_dir)
@@ -312,7 +331,6 @@ One-line description.
 **In Progress:** active work items
 **Known Issues:** bugs, blockers
 **Key Decisions:** recent decisions affecting upcoming work
-**Lessons Learned:** gotchas, patterns to remember
 **Completed:** recently finished work worth noting
 **Next Steps:**
 1. Immediate item for next session
@@ -325,6 +343,34 @@ One-line description.
 - Remove information that's no longer relevant (completed work older than a few sessions, resolved issues, superseded decisions).
 - Be concise — write what the next session's agent needs to know.
 - If information will be useful for more than 2 weeks, it belongs in a doc file, not here.
+</rules>
+</job>
+
+<job id="workspace-files">
+<instructions>
+Maintain two standardized files in `.meridian/workspace/`:
+
+**preferences.md** — User preferences for workflow, tools, communication style. Things like "always use bun", "prefers small commits", "wants diagrams for architecture". Write as descriptive observations, not imperative instructions (those go in CLAUDE.md).
+
+**lessons.md** — Lessons learned: debugging insights, gotchas, patterns that worked or failed, mistakes to avoid. Organized by topic, not chronologically.
+</instructions>
+
+<current-files>
+<file path=".meridian/workspace/preferences.md">
+{prefs_content}
+</file>
+
+<file path=".meridian/workspace/lessons.md">
+{lessons_content}
+</file>
+</current-files>
+
+<rules>
+- Only update when the session revealed genuine preferences or lessons.
+- Don't duplicate content already in CLAUDE.md (instructions) or .meridian/docs/ (reference).
+- preferences.md: descriptive ("Mark prefers X"), not imperative ("always do X").
+- lessons.md: organized by topic with headers. Include context on why it matters.
+- Both files must keep their YAML frontmatter intact.
 </rules>
 </job>
 
@@ -706,12 +752,13 @@ def main():
 
         # Load workspace, config, and git context
         workspace_root = load_workspace(project_dir)
+        workspace_files = load_workspace_files(project_dir)
         git_context = gather_git_context(project_dir)
         config = get_project_config(project_dir)
         learner_mode = config.get('session_learner_mode', 'project')
 
         # Build prompt and run agent
-        prompt = build_prompt(entries, workspace_root, git_context, project_dir, mode=learner_mode)
+        prompt = build_prompt(entries, workspace_root, git_context, project_dir, mode=learner_mode, workspace_files=workspace_files)
 
         # Save prompt for inspection
         try:

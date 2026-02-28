@@ -792,6 +792,21 @@ def build_injected_context(base_dir: Path) -> str:
         except IOError:
             pass
 
+    # Workspace files (preferences and lessons)
+    workspace_dir = base_dir / ".meridian" / "workspace"
+    for ws_file in ("preferences.md", "lessons.md"):
+        ws_path = workspace_dir / ws_file
+        if ws_path.exists():
+            try:
+                content = ws_path.read_text()
+                if content.strip():
+                    parts.append(f'<file path=".meridian/workspace/{ws_file}">')
+                    parts.append(content.rstrip())
+                    parts.append('</file>')
+                    parts.append("")
+            except IOError:
+                pass
+
     # Active work-until loop (if any)
     if is_loop_active(base_dir):
         loop_state_path = state_path(base_dir, LOOP_STATE_FILE)

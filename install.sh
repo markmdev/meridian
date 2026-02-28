@@ -158,6 +158,8 @@ fi
 STATE_PATTERNS=(
   ".meridian/WORKSPACE.md"
   ".meridian/workspace/"
+  ".meridian/workspace/preferences.md"
+  ".meridian/workspace/lessons.md"
   ".meridian/config.yaml"
   ".meridian/api-docs/"
   ".meridian/tasks/"

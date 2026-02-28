@@ -344,15 +344,17 @@ Creates Pebble issue hierarchy from plans (when Pebble enabled):
 ### Project Config (`.meridian/config.yaml`)
 
 ```yaml
-# Project type → which CODE_GUIDE addon to load
-project_type: standard  # hackathon | standard | production
+# Plan review behavior
+plan_review_min_actions: 20  # Skip plan review if < N actions (default: 20)
 
-# Context preservation
-pre_compaction_sync_enabled: true
-pre_compaction_sync_threshold: 150000  # tokens
+# Pebble issue tracking
+pebble_enabled: false
 
 # Stop hook behavior
 stop_hook_min_actions: 15  # Skip stop hook if < N actions since last user input
+
+# Session learner
+session_learner_mode: "project"  # "project" (default) or "assistant"
 ```
 
 ### CODE_GUIDE System
@@ -531,8 +533,8 @@ Yes. In `.meridian/config.yaml`:
 ```yaml
 pebble_enabled: false              # Disable Pebble issue tracking integration
 stop_hook_min_actions: 15           # Skip stop hook if < N actions (default: 15)
-plan_review_min_actions: 5          # Skip plan review if < N actions (default: 5)
-session_learner_mode: "workspace"   # "workspace", "both", or "off"
+plan_review_min_actions: 20         # Skip plan review if < N actions (default: 20)
+session_learner_mode: "assistant"   # "project" (default) or "assistant"
 ```
 
 **How is this different from subagents?**

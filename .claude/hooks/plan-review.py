@@ -2,8 +2,8 @@
 """
 Plan Review Hook - PreToolUse ExitPlanMode
 
-Requires plan-reviewer agent before exiting plan mode (configurable).
-Skips enforcement for lightweight plans (fewer than plan_review_min_actions).
+Requires plan-reviewer agent before exiting plan mode.
+Skips enforcement for lightweight plans (fewer than plan_review_min_actions actions).
 """
 
 import json

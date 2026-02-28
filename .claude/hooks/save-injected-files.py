@@ -34,7 +34,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
     if workspace_path.exists():
         files.append(str(workspace_path))
 
-    # 4. Active plan
+    # Active plan
     active_plan = get_active_plan_path(base_dir)
     if active_plan:
         _, plan_full = active_plan
@@ -42,18 +42,18 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         if plan_str not in files:
             files.append(plan_str)
 
-    # 4b. Active plan state file (always include so subagents can check at runtime)
+    # Active plan state file (always include so subagents can check at runtime)
     # May be populated mid-session after plan approval
     files.append(str(state_path(base_dir, ACTIVE_PLAN_FILE)))
 
-    # 5. CODE_GUIDE
+    # CODE_GUIDE
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
     if code_guide_path.exists():
         files.append(str(code_guide_path))
 
     # Note: agent-operating-manual.md is excluded - not needed for reviewer agents
 
-    # 6. Docs index — scan .meridian/docs/ and .meridian/api-docs/ for frontmatter'd files
+    # Docs index — scan .meridian/docs/ and .meridian/api-docs/ for frontmatter'd files
     # Write to a state file so subagents can discover available docs
     docs_index_parts = []
     for dir_rel in (".meridian/docs", ".meridian/api-docs"):

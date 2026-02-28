@@ -259,109 +259,81 @@ def build_prompt(entries: list[dict], workspace_root: str, git_context: str, pro
     global_claudemd_path = str(Path.home() / ".claude" / "CLAUDE.md")
     project_claudemd_path = str(project_dir / "CLAUDE.md")
 
-    parts = []
+    if assistant_mode:
+        job4_desc = "Maintain docs — create, update, or delete files across the workspace"
+        workspace_location = "WORKSPACE.md — no sub-pages, no separate workspace files."
+        doc_location = "anywhere in the project following existing directory conventions"
+    else:
+        job4_desc = "Maintain docs — create/update long-term reference docs in `.meridian/docs/`"
+        workspace_location = "WORKSPACE.md — no sub-pages in `.meridian/workspace/`."
+        doc_location = "`.meridian/docs/`"
 
     if assistant_mode:
-        job4_desc = "**Maintain docs** — create, update, or delete files across the workspace"
+        docs_create = f"**Create** new files {doc_location}. Infer the right location from existing file paths (e.g., daily logs next to other daily logs, people files next to other people files). Every new file must have frontmatter with `summary` and `read_when`."
+        docs_update = "**Update** any existing frontmatter'd doc when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content."
+        docs_delete = f"**Delete** outdated or superseded files. To mark for deletion, append the relative path to `{{state_path(project_dir, 'docs-to-delete')}}` (one path per line). Python will handle the actual file deletion. Never delete core identity or configuration files."
     else:
-        job4_desc = "**Maintain docs** — create/update long-term reference docs in `.meridian/docs/`"
+        docs_create = f"**Create** new docs in {doc_location} when this session produced long-term knowledge. Use kebab-case filenames. Skip routine fixes and obvious information."
+        docs_update = "**Update** any existing frontmatter'd doc when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md."
+        docs_delete = f"**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `{{state_path(project_dir, 'docs-to-delete')}}` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish."
 
-    parts.append(f"""You are a session maintenance agent with four jobs:
+    # Scan project for frontmatter'd docs
+    doc_index = scan_project_frontmatter(project_dir)
 
-1. **Update the workspace** — maintain WORKSPACE.md as the project's short-term memory
-2. **Learn from corrections** — when the user corrects the agent, save it as a permanent instruction
-3. **Capture next steps** — immediate work for the next session
+    transcript_json = json.dumps(entries, indent=2, ensure_ascii=False)
+
+    prompt = f"""<role>
+You are a session maintenance agent. You have four jobs:
+1. Update the workspace — maintain WORKSPACE.md as the project's short-term memory
+2. Learn from corrections — when the user corrects the agent, save it as a permanent instruction
+3. Capture next steps — immediate work for the next session
 4. {job4_desc}
 
----
+Do all four jobs. If nothing worth preserving for a job, skip it.
+Use the Write tool (or Read then Edit) to update files.
+</role>
 
-## Job 1: Workspace
+<job id="workspace">
+<instructions>
+WORKSPACE.md is the project's short-term memory — what's happening now, what was just learned, what needs attention soon. Everything lives in this single file, organized by project sections.
+</instructions>
 
-WORKSPACE.md is the project's **short-term memory** — what's happening now, what was just learned, what needs attention soon. Everything lives in this single file, organized by project sections.
+<current-workspace>
+{workspace_root if workspace_root.strip() else "(empty — create it)"}
+</current-workspace>
 
-### Current WORKSPACE.md
-""")
-    parts.append(workspace_root if workspace_root.strip() else "(empty — create it)")
-
-    if assistant_mode:
-        workspace_rules = """### Structure
-
+<structure>
 Each project gets a section with these standard subsections:
 
-```markdown
 ### Project Name
-
 One-line description.
-
 **Architecture:** tech stack summary
-
 (then any of these subsections, as needed:)
-
-**In Progress:** active work items, what's being built right now
-**Known Issues:** bugs, blockers, things that need fixing
-**Key Decisions:** recent decisions that affect upcoming work
-**Lessons Learned:** gotchas discovered, patterns to remember
-**Completed:** recently finished work worth noting for context
-
+**In Progress:** active work items
+**Known Issues:** bugs, blockers
+**Key Decisions:** recent decisions affecting upcoming work
+**Lessons Learned:** gotchas, patterns to remember
+**Completed:** recently finished work worth noting
 **Next Steps:**
 1. Immediate item for next session
-2. Another immediate item
-```
+</structure>
 
-### Rules
-
+<rules>
 - Write clean reference material. No timestamps, no "in this session", no logs.
-- Everything goes in WORKSPACE.md — no sub-pages, no separate workspace files.
-- Update existing project sections. Don't create new sections for the same project.
-- Create new sections following the project's existing conventions.
-- Remove information that's no longer relevant (completed work older than a few sessions, resolved issues, superseded decisions).
-- Be concise — write what the next session's agent needs to know.
-- If information will be useful for more than 2 weeks, it belongs in a doc file, not here."""
-    else:
-        workspace_rules = """### Structure
-
-Each project gets a section with these standard subsections:
-
-```markdown
-### Project Name
-
-One-line description.
-
-**Architecture:** tech stack summary
-
-(then any of these subsections, as needed:)
-
-**In Progress:** active work items, what's being built right now
-**Known Issues:** bugs, blockers, things that need fixing
-**Key Decisions:** recent decisions that affect upcoming work
-**Lessons Learned:** gotchas discovered, patterns to remember
-**Completed:** recently finished work worth noting for context
-
-**Next Steps:**
-1. Immediate item for next session
-2. Another immediate item
-```
-
-### Rules
-
-- Write clean reference material. No timestamps, no "in this session", no logs.
-- Everything goes in WORKSPACE.md — no sub-pages in `.meridian/workspace/`.
+- Everything goes in {workspace_location}
 - Update existing project sections. Don't create duplicate sections.
 - Remove information that's no longer relevant (completed work older than a few sessions, resolved issues, superseded decisions).
 - Be concise — write what the next session's agent needs to know.
-- If information will be useful for more than 2 weeks, it belongs in `.meridian/docs/`, not here."""
+- If information will be useful for more than 2 weeks, it belongs in a doc file, not here.
+</rules>
+</job>
 
-    parts.append(f"""
-{workspace_rules}
-
----
-
-## Job 2: Learn from Corrections
-
+<job id="corrections">
+<instructions>
 Scan the transcript for moments where the user corrects the agent's behavior, expresses a preference, or teaches something that should apply going forward. Save these as permanent instructions in the appropriate CLAUDE.md file.
+</instructions>
 
-### Current CLAUDE.md Files
-
+<current-claudemd>
 <file path="{global_claudemd_path}">
 {global_claudemd if global_claudemd.strip() else "(empty)"}
 </file>
@@ -369,124 +341,68 @@ Scan the transcript for moments where the user corrects the agent's behavior, ex
 <file path="{project_claudemd_path}">
 {project_claudemd if project_claudemd.strip() else "(empty)"}
 </file>
+</current-claudemd>
 
-### CLAUDE.md Rules
-
+<rules>
 - Write as the user giving instructions to an agent. Direct, imperative voice.
-- **Global** (`{global_claudemd_path}`): preferences that apply to all projects (communication style, workflow habits, general coding preferences).
-- **Project** (`{project_claudemd_path}`): instructions specific to this codebase (architecture decisions, project conventions, tech stack preferences).
+- Global (`{global_claudemd_path}`): preferences that apply to all projects.
+- Project (`{project_claudemd_path}`): instructions specific to this codebase.
 - Don't duplicate instructions already present in either file.
 - Don't add one-time fixes or task-specific instructions. Only lasting preferences.
 - Append new entries. Don't rewrite or reorganize existing content.
 - If no corrections or preferences were expressed, don't touch the CLAUDE.md files.
+</rules>
+</job>
 
----
+<job id="next-steps">
+<instructions>
+Maintain a per-project **Next Steps:** subsection within each project's section in WORKSPACE.md, plus a global ## Next Steps section at the bottom for cross-project items.
+</instructions>
 
-## Job 3: Next Steps
-
-Maintain a per-project `**Next Steps:**` subsection within each project's section in WORKSPACE.md, plus a global `## Next Steps` section at the bottom for cross-project items.
-
-### Rules
-
-- **Only immediate work for the next 1-2 sessions.** Items that can be acted on right away.
+<rules>
+- Only immediate work for the next 1-2 sessions. Items that can be acted on right away.
 - Do NOT include: future improvements mentioned in passing, "someday" refactors, nice-to-have ideas, long-term roadmap items, or things the user said they'd do "next week" or "later."
 - Include enough context that a fresh agent can act without reading the full workspace.
 - Replace previous next steps entirely — don't append.
 - If everything is complete and nothing is pending, write "No pending work."
+</rules>
+</job>
 
----
+<job id="docs">
+<instructions>
+Docs are the project's long-term memory — reference material that stays useful for weeks or months. Any `.md` file with `summary` and `read_when` frontmatter is in scope.
 
-## Git Activity
-""")
+What belongs: architecture decisions, integration guides, debugging discoveries, patterns, gotchas, guides for future agents.
+What does NOT belong: current status (WORKSPACE.md), in-progress tracking, session-specific notes, things irrelevant in 2 weeks.
+</instructions>
 
-    if git_context:
-        parts.append(git_context)
-    else:
-        parts.append("*(no git activity available)*")
+<existing-docs>
+{doc_index if doc_index else "No frontmatter'd docs found in the project."}
+</existing-docs>
 
-    parts.append("""
----
+<rules>
+- {docs_create}
+- {docs_update}
+- {docs_delete}
+- Every `.md` file you create or update MUST start with YAML frontmatter:
+  ---
+  summary: One-line description
+  read_when:
+    - keyword or phrase
+  ---
+- Files without frontmatter are invisible to context routers.
+</rules>
+</job>
 
-## Session Transcript
-""")
-    parts.append("```json")
-    parts.append(json.dumps(entries, indent=2, ensure_ascii=False))
-    parts.append("```")
+<context id="git-activity">
+{git_context if git_context else "(no git activity available)"}
+</context>
 
-    # Scan project for frontmatter'd docs
-    doc_index = scan_project_frontmatter(project_dir)
+<context id="transcript">
+{transcript_json}
+</context>"""
 
-    parts.append("""
-
-## Job 4: Docs
-
-Docs are the project's **long-term memory** — reference material that stays useful for weeks or months. Any `.md` file with `summary` and `read_when` frontmatter is in scope.
-
-### What belongs in docs
-
-- Architecture decisions and design rationale
-- Integration guides (setup, configuration, usage)
-- Debugging discoveries (non-obvious behavior, sharp edges)
-- Patterns and conventions specific to this project
-- Gotchas and pitfalls that future agents will hit
-- Guides for future agents (how to do common tasks in this codebase)
-
-### What does NOT belong in docs
-
-- Current project status (→ WORKSPACE.md)
-- In-progress work tracking (→ WORKSPACE.md)
-- Session-specific notes (→ WORKSPACE.md or discard)
-- Things that will be irrelevant in 2 weeks (→ WORKSPACE.md)
-
-### Existing Docs
-""")
-    parts.append(doc_index if doc_index else "No frontmatter'd docs found in the project.")
-
-    if assistant_mode:
-        docs_rules = """### Rules
-
-**Create** new files anywhere in the project following existing directory conventions. Infer the right location from existing file paths (e.g., daily logs next to other daily logs, people files next to other people files). Every new file must have frontmatter with `summary` and `read_when`.
-
-**Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content.
-
-**Delete** outdated or superseded files. To mark for deletion, append the relative path to `{state_path(project_dir, "docs-to-delete")}` (one path per line). Python will handle the actual file deletion. Never delete core identity or configuration files."""
-    else:
-        docs_rules = """### Rules
-
-**Create** new docs in `.meridian/docs/` when this session produced long-term knowledge (see "What belongs in docs" above). Use kebab-case filenames. Skip routine fixes and obvious information.
-
-**Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md.
-
-**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `{state_path(project_dir, "docs-to-delete")}` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish."""
-
-    parts.append(f"""
-
-### Frontmatter Format
-
-Every `.md` file you create or update MUST start with YAML frontmatter. Files without frontmatter are invisible to context routers — the agent will never see them.
-
-```
----
-summary: One-line description of what this doc covers
-read_when:
-  - keyword or phrase that would make this doc relevant
-  - another keyword
----
-```
-
-If an existing file is missing frontmatter, add it.
-
-{docs_rules}
-
----
-
-## Execute
-
-Do all four jobs. If nothing worth preserving for a job, skip it.
-
-Use the Write tool (or Read then Edit) to update files.""")
-
-    return "\n".join(parts)
+    return prompt
 
 
 def acquire_lock(project_dir: Path) -> bool:

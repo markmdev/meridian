@@ -24,21 +24,31 @@ PLAN_MODE_STATE = "plan-mode-state"
 ACTIVE_PLAN_FILE = "active-plan"
 INJECTED_FILES_LOG = "injected-files"
 HOOK_LOGS_DIR = "hook_logs"
+LOOP_STATE_FILE = "loop-state"
 
 
 # =============================================================================
 # STATE DIRECTORY RESOLUTION
 # =============================================================================
+_state_dir_cache: dict[str, Path] = {}
+
+
 def get_state_dir(project_dir: Path) -> Path:
     """Resolve state directory to ~/.meridian/state/<hash>/.
 
     State is stored per-working-directory in the user's home directory.
     This enables symlinking the entire .meridian/ folder across worktrees
     without sharing ephemeral session state (counters, flags, locks).
+
+    Result is cached per resolved path — safe because hooks are short-lived processes.
     """
-    project_hash = hashlib.md5(str(project_dir.resolve()).encode()).hexdigest()[:12]
+    key = str(project_dir.resolve())
+    if key in _state_dir_cache:
+        return _state_dir_cache[key]
+    project_hash = hashlib.md5(key.encode()).hexdigest()[:12]
     state_dir = Path.home() / ".meridian" / "state" / project_hash
     state_dir.mkdir(parents=True, exist_ok=True)
+    _state_dir_cache[key] = state_dir
     return state_dir
 
 
@@ -136,6 +146,33 @@ def parse_yaml_list(content: str, key: str) -> list[str]:
 # =============================================================================
 # CONFIG FILE HELPERS
 # =============================================================================
+_TRUTHY = frozenset({"true", "yes", "1", "on"})
+_FALSY = frozenset({"false", "no", "0", "off"})
+
+
+def parse_bool(value: str, default: bool) -> bool:
+    """Parse a YAML-style boolean string. Returns default for unrecognized values."""
+    v = value.strip().lower()
+    if v in _TRUTHY:
+        return True
+    if v in _FALSY:
+        return False
+    return default
+
+
+# Config key definitions: (yaml_key, config_key, type, default)
+_BOOL_KEYS = [
+    ('plan_review_enabled', 'plan_review_enabled', True),
+    ('pebble_enabled', 'pebble_enabled', False),
+    ('code_review_enabled', 'code_review_enabled', True),
+    ('pebble_scaffolder_enabled', 'pebble_scaffolder_enabled', True),
+]
+_INT_KEYS = [
+    ('stop_hook_min_actions', 'stop_hook_min_actions', 10),
+    ('plan_review_min_actions', 'plan_review_min_actions', 20),
+]
+
+
 def get_project_config(base_dir: Path) -> dict:
     """Read project config and return as dict with defaults."""
     config = {
@@ -155,43 +192,19 @@ def get_project_config(base_dir: Path) -> dict:
     try:
         content = config_path.read_text()
 
-        # Plan review
-        pr = get_config_value(content, 'plan_review_enabled')
-        if pr:
-            config['plan_review_enabled'] = pr.lower() != 'false'
+        for yaml_key, config_key, default in _BOOL_KEYS:
+            val = get_config_value(content, yaml_key)
+            if val:
+                config[config_key] = parse_bool(val, default)
 
-        # Pebble integration
-        pebble = get_config_value(content, 'pebble_enabled')
-        if pebble:
-            config['pebble_enabled'] = pebble.lower() == 'true'
+        for yaml_key, config_key, default in _INT_KEYS:
+            val = get_config_value(content, yaml_key)
+            if val:
+                try:
+                    config[config_key] = int(val)
+                except ValueError:
+                    pass
 
-        # Stop hook minimum actions threshold
-        min_actions = get_config_value(content, 'stop_hook_min_actions')
-        if min_actions:
-            try:
-                config['stop_hook_min_actions'] = int(min_actions)
-            except ValueError:
-                pass
-
-        # Plan review minimum actions threshold
-        plan_min_actions = get_config_value(content, 'plan_review_min_actions')
-        if plan_min_actions:
-            try:
-                config['plan_review_min_actions'] = int(plan_min_actions)
-            except ValueError:
-                pass
-
-        # Code review
-        cr_enabled = get_config_value(content, 'code_review_enabled')
-        if cr_enabled:
-            config['code_review_enabled'] = cr_enabled.lower() != 'false'
-
-        # Pebble scaffolder auto-invocation
-        ps_enabled = get_config_value(content, 'pebble_scaffolder_enabled')
-        if ps_enabled:
-            config['pebble_scaffolder_enabled'] = ps_enabled.lower() != 'false'
-
-        # Session learner mode: "project" (default) or "assistant"
         sl_mode = get_config_value(content, 'session_learner_mode')
         if sl_mode and sl_mode.lower() in ('project', 'assistant'):
             config['session_learner_mode'] = sl_mode.lower()
@@ -221,10 +234,8 @@ def get_additional_review_files(base_dir: Path, absolute: bool = False) -> list[
 # =============================================================================
 def cleanup_flag(base_dir: Path, flag_name: str) -> None:
     """Delete a flag file if it exists."""
-    path = state_path(base_dir, flag_name)
     try:
-        if path.exists():
-            path.unlink()
+        state_path(base_dir, flag_name).unlink(missing_ok=True)
     except Exception:
         pass
 
@@ -262,8 +273,12 @@ def increment_plan_action_counter(base_dir: Path) -> None:
     """Increment plan action counter (only called while in plan mode)."""
     counter_path = state_path(base_dir, PLAN_ACTION_COUNTER_FILE)
     try:
-        current = get_plan_action_counter(base_dir)
-        counter_path.parent.mkdir(parents=True, exist_ok=True)
+        current = 0
+        if counter_path.exists():
+            current = int(counter_path.read_text().strip())
+    except (ValueError, IOError):
+        current = 0
+    try:
         counter_path.write_text(str(current + 1))
     except IOError:
         pass
@@ -271,16 +286,39 @@ def increment_plan_action_counter(base_dir: Path) -> None:
 
 def clear_plan_action_counter(base_dir: Path) -> None:
     """Reset plan action counter to 0 (called when plan is approved)."""
-    counter_path = state_path(base_dir, PLAN_ACTION_COUNTER_FILE)
     try:
-        counter_path.parent.mkdir(parents=True, exist_ok=True)
-        counter_path.write_text("0")
+        state_path(base_dir, PLAN_ACTION_COUNTER_FILE).write_text("0")
     except IOError:
         pass
 
 
 # =============================================================================
-# FILE TREE HELPERS
+# MAIN ACTION COUNTER HELPERS
+# =============================================================================
+def get_action_counter(base_dir: Path) -> int:
+    """Get current main action counter value."""
+    counter_path = state_path(base_dir, ACTION_COUNTER_FILE)
+    try:
+        if counter_path.exists():
+            return int(counter_path.read_text().strip())
+    except (ValueError, IOError):
+        pass
+    return 0
+
+
+def set_action_counter(base_dir: Path, value: int) -> None:
+    """Set the main action counter to a specific value."""
+    try:
+        state_path(base_dir, ACTION_COUNTER_FILE).write_text(str(value))
+    except IOError:
+        pass
+
+
+def reset_action_counter(base_dir: Path) -> None:
+    """Reset the main action counter to 0."""
+    set_action_counter(base_dir, 0)
+
+
 # =============================================================================
 # PEBBLE INTEGRATION
 # =============================================================================
@@ -342,20 +380,23 @@ def extract_frontmatter(file_path: Path) -> tuple[str, list[str]]:
     """Extract summary and read_when from YAML frontmatter.
 
     Returns (summary, read_when_list). Both empty if no valid frontmatter.
+    Only reads the frontmatter header, not the full file.
     """
     try:
-        content = file_path.read_text()
+        with file_path.open() as f:
+            first_line = f.readline()
+            if not first_line.startswith("---"):
+                return "", []
+            fm_lines = []
+            for line in f:
+                if line.strip() == "---":
+                    break
+                fm_lines.append(line)
+            else:
+                return "", []  # no closing ---
+            frontmatter = "\n".join(fm_lines).strip()
     except IOError:
         return "", []
-
-    if not content.startswith("---"):
-        return "", []
-
-    end_idx = content.find("\n---", 3)
-    if end_idx == -1:
-        return "", []
-
-    frontmatter = content[3:end_idx].strip()
     summary = ""
     read_when: list[str] = []
     collecting_read_when = False
@@ -397,11 +438,10 @@ def scan_docs_directory(dir_path: Path, base_dir: Path) -> str:
     if not dir_path.exists():
         return ""
 
-    skip_names = {"INDEX.md", "README.md"}
     entries = []
 
     for md_file in sorted(dir_path.rglob("*.md")):
-        if md_file.name in skip_names:
+        if md_file.name in SKIP_NAMES:
             continue
         rel_path = md_file.relative_to(base_dir)
         summary, read_when = extract_frontmatter(md_file)
@@ -485,9 +525,7 @@ def scan_nested_git_repos(base_dir: Path, max_depth: int = 3) -> str:
         if len(rel.parts) > max_depth:
             continue
 
-        # Skip common junk directories
-        skip_dirs = {"node_modules", ".next", "dist", "build", "vendor", ".venv"}
-        if any(part in skip_dirs for part in rel.parts):
+        if any(part in SKIP_DIRS for part in rel.parts):
             continue
 
         # Only include actual directories (not submodule .git files)
@@ -539,6 +577,26 @@ def scan_nested_git_repos(base_dir: Path, max_depth: int = 3) -> str:
 # =============================================================================
 # CONTEXT INJECTION HELPERS
 # =============================================================================
+def get_active_plan_path(base_dir: Path) -> tuple[str, Path] | None:
+    """Get the active plan's relative path and resolved Path.
+
+    Returns (rel_path, full_path) or None if no active plan is set.
+    """
+    try:
+        content = state_path(base_dir, ACTIVE_PLAN_FILE).read_text().strip()
+        if not content:
+            return None
+        if content.startswith('/'):
+            full_path = Path(content)
+        else:
+            full_path = base_dir / content
+        if full_path.exists():
+            return content, full_path
+    except IOError:
+        pass
+    return None
+
+
 def build_injected_context(base_dir: Path) -> str:
     """Build the full injected context string with XML-wrapped file contents.
 
@@ -674,19 +732,10 @@ def build_injected_context(base_dir: Path) -> str:
                 files_to_inject.append((doc_path, full_path, ""))
 
     # Active plan file (if set)
-    active_plan_file = state_path(base_dir, ACTIVE_PLAN_FILE)
-    if active_plan_file.exists():
-        try:
-            plan_path = active_plan_file.read_text().strip()
-            if plan_path:
-                if plan_path.startswith('/'):
-                    full_path = Path(plan_path)
-                else:
-                    full_path = base_dir / plan_path
-                if full_path.exists():
-                    files_to_inject.append((plan_path, full_path, "Active implementation plan. Follow this plan during implementation."))
-        except IOError:
-            pass
+    active_plan = get_active_plan_path(base_dir)
+    if active_plan:
+        plan_rel, plan_full = active_plan
+        files_to_inject.append((plan_rel, plan_full, "Active implementation plan. Follow this plan during implementation."))
 
     # CODE_GUIDE and addons
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
@@ -785,19 +834,14 @@ def build_injected_context(base_dir: Path) -> str:
             pass
 
     # Active work-until loop (if any)
-    loop_state_path = state_path(base_dir, LOOP_STATE_FILE)
-    if loop_state_path.exists():
-        try:
-            loop_content = loop_state_path.read_text().strip()
-            if 'active: true' in loop_content:
-                parts.append('<work-until-loop>')
-                parts.append("**A work-until loop is active.** You are in an iterative work loop.")
-                parts.append(f"Read `{loop_state_path}` for your task and current iteration.")
-                parts.append("See `.meridian/prompts/work-until-loop.md` for how the loop works.")
-                parts.append('</work-until-loop>')
-                parts.append("")
-        except IOError:
-            pass
+    if is_loop_active(base_dir):
+        loop_state_path = state_path(base_dir, LOOP_STATE_FILE)
+        parts.append('<work-until-loop>')
+        parts.append("**A work-until loop is active.** You are in an iterative work loop.")
+        parts.append(f"Read `{loop_state_path}` for your task and current iteration.")
+        parts.append("See `.meridian/prompts/work-until-loop.md` for how the loop works.")
+        parts.append('</work-until-loop>')
+        parts.append("")
 
     # Footer with acknowledgment request
     parts.append("You have received the complete project context above.")
@@ -820,10 +864,6 @@ def build_injected_context(base_dir: Path) -> str:
 # =============================================================================
 # LOOP STATE HELPERS
 # =============================================================================
-
-LOOP_STATE_FILE = "loop-state"
-
-
 def is_loop_active(base_dir: Path) -> bool:
     """Check if a work-until loop is currently active."""
     loop_state = state_path(base_dir, LOOP_STATE_FILE)
@@ -875,7 +915,8 @@ def get_loop_state(base_dir: Path) -> dict | None:
             if ':' in line:
                 key, value = line.split(':', 1)
                 key = key.strip()
-                value = value.strip().strip('"')
+                value = value.strip().strip("'\"")
+
                 if key == 'active':
                     state['active'] = value.lower() == 'true'
                 elif key == 'iteration':
@@ -913,10 +954,8 @@ def update_loop_iteration(base_dir: Path, new_iteration: int) -> bool:
 
 def clear_loop_state(base_dir: Path) -> bool:
     """Remove the loop state file to end the loop."""
-    loop_state = state_path(base_dir, LOOP_STATE_FILE)
     try:
-        if loop_state.exists():
-            loop_state.unlink()
+        state_path(base_dir, LOOP_STATE_FILE).unlink(missing_ok=True)
         return True
     except IOError:
         return False

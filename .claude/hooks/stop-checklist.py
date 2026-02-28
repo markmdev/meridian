@@ -18,29 +18,9 @@ from meridian_config import (
     is_loop_active,
     build_stop_prompt,
     log_hook_output,
-    state_path,
-    ACTION_COUNTER_FILE,
+    get_action_counter,
+    reset_action_counter,
 )
-
-
-def get_action_count(base_dir: Path) -> int:
-    """Read current action counter value."""
-    counter_path = state_path(base_dir, ACTION_COUNTER_FILE)
-    try:
-        if counter_path.exists():
-            return int(counter_path.read_text().strip())
-    except (ValueError, IOError):
-        pass
-    return 0
-
-
-def reset_action_count(base_dir: Path) -> None:
-    """Reset action counter to 0."""
-    counter_path = state_path(base_dir, ACTION_COUNTER_FILE)
-    try:
-        counter_path.write_text("0")
-    except IOError:
-        pass
 
 
 def main():
@@ -59,7 +39,7 @@ def main():
 
     # If already prompted, allow stop and reset counter for next task
     if input_data.get("stop_hook_active"):
-        reset_action_count(base_dir)
+        reset_action_counter(base_dir)
         sys.exit(0)
 
     # If work-until loop is active, exit and let loop hook handle it
@@ -71,16 +51,16 @@ def main():
     # Skip stop hook if too few actions (trivial task)
     min_actions = config.get('stop_hook_min_actions', 10)
     if min_actions > 0:
-        action_count = get_action_count(base_dir)
+        action_count = get_action_counter(base_dir)
         if action_count < min_actions:
-            reset_action_count(base_dir)  # Reset so trivial tasks don't accumulate
+            reset_action_counter(base_dir)  # Reset so trivial tasks don't accumulate
             sys.exit(0)  # Allow stop without prompts
 
     # Build the stop prompt using shared helper
     reason = build_stop_prompt(base_dir, config)
 
     # Reset action counter now that stop hook is firing
-    reset_action_count(base_dir)
+    reset_action_counter(base_dir)
 
     output = {
         "decision": "block",

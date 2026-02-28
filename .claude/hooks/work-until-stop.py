@@ -21,18 +21,8 @@ from meridian_config import (
     clear_loop_state,
     build_stop_prompt,
     log_hook_output,
-    state_path,
-    ACTION_COUNTER_FILE,
+    reset_action_counter,
 )
-
-
-def reset_action_count(base_dir: Path) -> None:
-    """Reset action counter to 0."""
-    counter_path = state_path(base_dir, ACTION_COUNTER_FILE)
-    try:
-        counter_path.write_text("0")
-    except IOError:
-        pass
 
 
 def get_last_assistant_output(transcript_path: str) -> str | None:
@@ -164,7 +154,7 @@ def main():
     if max_iterations > 0 and iteration >= max_iterations:
         print(f"🛑 Work-until loop: Max iterations ({max_iterations}) reached.", file=sys.stderr)
         clear_loop_state(base_dir)
-        reset_action_count(base_dir)
+        reset_action_counter(base_dir)
         sys.exit(0)  # Allow stop
 
     # Check for completion phrase in transcript
@@ -174,7 +164,7 @@ def main():
         if output and check_completion_phrase(output, completion_phrase):
             print(f"✅ Work-until loop: Detected <complete>{completion_phrase}</complete>", file=sys.stderr)
             clear_loop_state(base_dir)
-            reset_action_count(base_dir)
+            reset_action_counter(base_dir)
             sys.exit(0)  # Allow stop
 
     # Not complete - continue loop
@@ -186,7 +176,7 @@ def main():
     reason = build_loop_prompt(base_dir, config, state)
 
     # Reset action counter now that loop hook is firing
-    reset_action_count(base_dir)
+    reset_action_counter(base_dir)
 
     # Build system message
     if completion_phrase:

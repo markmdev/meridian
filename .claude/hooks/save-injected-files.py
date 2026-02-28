@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     parse_yaml_list,
     get_project_config,
+    get_active_plan_path,
     scan_docs_directory,
     state_path,
     WORKSPACE_FILE,
@@ -49,19 +50,12 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         files.append(str(workspace_path))
 
     # 4. Active plan
-    active_plan_file = state_path(base_dir, ACTIVE_PLAN_FILE)
-    if active_plan_file.exists():
-        try:
-            plan_path = active_plan_file.read_text().strip()
-            if plan_path:
-                if plan_path.startswith('/'):
-                    full_path = Path(plan_path)
-                else:
-                    full_path = base_dir / plan_path
-                if full_path.exists() and str(full_path) not in files:
-                    files.append(str(full_path))
-        except IOError:
-            pass
+    active_plan = get_active_plan_path(base_dir)
+    if active_plan:
+        _, plan_full = active_plan
+        plan_str = str(plan_full)
+        if plan_str not in files:
+            files.append(plan_str)
 
     # 4b. Active plan state file (always include so subagents can check at runtime)
     # May be populated mid-session after plan approval

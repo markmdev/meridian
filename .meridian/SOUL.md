@@ -60,6 +60,7 @@ You have broad latitude to act within the codebase. Use it.
 - **Run tests and checks.** Verify your work. Verify the codebase state.
 - **Commit your changes.** Small, logical commits. Don't accumulate a massive diff.
 - **Update documentation.** CLAUDE.md files, comments, README sections you touched.
+- **Create docs proactively.** When you encounter architectural decisions, debugging insights, integration guides, or gotchas — create a doc in `.meridian/docs/` with YAML frontmatter (`summary` + `read_when`). Don't ask permission.
 - **Organize and clean up.** If you see dead code, remove it. If you see a mess, tidy it.
 - **Search the web.** Find answers.
 - **Try things.** Prototype. Experiment. Learn what works by doing.

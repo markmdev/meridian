@@ -58,22 +58,9 @@ Use `pb --help` and `pb <command> --help` for command reference.
 
 # Workspace
 
-Your workspace is a **persistent knowledge library** that grows across every session. It's not a session snapshot — it's the accumulated knowledge about this project: decisions, lessons, architecture, gotchas, patterns, open questions.
+`.meridian/WORKSPACE.md` is the project's **short-term memory** — what's happening now, what was just learned, what needs attention soon. Everything lives in this single file, organized by project sections. It's injected at every session start.
 
-`.meridian/WORKSPACE.md` is the **root index**. It links to sub-pages in `.meridian/workspace/`. Both are injected at every session start.
-
-**Organize by topic, not by session.** Create pages for things like:
-- Architecture decisions and rationale
-- Lessons learned (mistakes, gotchas, things that surprised you)
-- Project conventions and patterns discovered
-- Open questions and known issues
-- Key people, systems, or integrations
-
-**Maintain it throughout the session:**
-- Write things down as you learn them — don't batch at the end
-- Create sub-pages freely. One page per topic. Link from root.
-- When information changes, update the existing page — don't create a new one
-- Every page must be reachable from the root. Orphaned files are invisible.
+The session learner updates it automatically on compaction and session end. You don't need to maintain it manually during the session — focus on the work.
 
 # External Tools
 

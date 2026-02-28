@@ -28,7 +28,7 @@
 .claude/hooks/work-until-stop.py
 .claude/settings.json
 .claude/skills/add-frontmatter/SKILL.md
-.claude/skills/docs/SKILL.md
+.claude/skills/create-docs/SKILL.md
 .claude/skills/error-audit/SKILL.md
 .claude/skills/observability-audit/SKILL.md
 .claude/skills/planning/SKILL.md
@@ -40,5 +40,4 @@
 .meridian/prompts/agent-operating-manual.md
 .meridian/prompts/coderabbit-task.md
 .meridian/prompts/work-until-loop.md
-.meridian/SETUP_GUIDE.md
 .meridian/SOUL.md

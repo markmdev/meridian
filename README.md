@@ -261,14 +261,14 @@ Validates plans before implementation:
 - Trusts plan claims about packages/versions (user may have private access)
 - Returns score (must reach 9+ to proceed) + findings
 
-### Code Reviewer (CodeRabbit-style)
+### Code Reviewer
 
-Deep code review with full context analysis:
-1. Loads context (plan, CLAUDE.md, workspace)
-2. Creates detailed walkthrough of each change (forcing function)
-3. Generates sequence diagrams for complex flows (forcing function)
-4. Finds real issues — logic bugs, data flow problems, pattern inconsistencies
-5. Creates issues for findings (Pebble issues or markdown file)
+Deep code review that finds real bugs:
+1. Loads project context (workspace, CODE_GUIDE, active plan)
+2. Gets changes via git diff
+3. For each changed file: reads full file, traces data flow, checks callers/imports
+4. Classifies issues: p0 (crashes/security), p1 (bugs), p2 (minor)
+5. Returns structured findings — the main agent handles issue tracking
 
 Focuses on issues that actually matter, not checklist items or style preferences.
 
@@ -279,15 +279,6 @@ Researches external tools, APIs, and products:
 - Covers current versions, API operations, rate limits, best practices, gotchas
 - Uses relevant MCPs or skills if available for web research
 - Run before using any external library not already documented
-
-### Diff Summarizer
-
-Generates PR descriptions from branch changes:
-- Reads git diff and commit messages
-- Checks for PR template in `.github/PULL_REQUEST_TEMPLATE.md`
-- Categorizes changes: features, fixes, refactoring, docs, tests, deps, config
-- Focuses on user/business value, not implementation details
-- Returns title + body ready for `gh pr create`
 
 ### Implement
 

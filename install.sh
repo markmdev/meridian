@@ -160,19 +160,6 @@ else
   error "Could not find Meridian files (.meridian directory) in archive"
 fi
 
-# State files/dirs to preserve (never delete or overwrite)
-STATE_PATTERNS=(
-  ".meridian/WORKSPACE.md"
-  ".meridian/workspace/"
-  ".meridian/workspace/preferences.md"
-  ".meridian/workspace/lessons.md"
-  ".meridian/config.yaml"
-  ".meridian/api-docs/"
-  ".meridian/tasks/"
-  ".meridian/.manifest"
-  ".meridian/.version"
-)
-
 is_state_file() {
   local file="$1"
   case "$file" in
@@ -180,7 +167,6 @@ is_state_file() {
     .meridian/workspace|.meridian/workspace/*) return 0 ;;
     .meridian/config.yaml) return 0 ;;
     .meridian/api-docs|.meridian/api-docs/*) return 0 ;;
-    .meridian/tasks|.meridian/tasks/*) return 0 ;;
     .meridian/plans|.meridian/plans/*) return 0 ;;
     .meridian/.manifest) return 0 ;;
     .meridian/.version) return 0 ;;
@@ -443,7 +429,6 @@ echo "$VERSION" > "$TARGET_DIR/.meridian/.version"
 # Make scripts executable
 log "Setting permissions..."
 find "$TARGET_DIR/.meridian/scripts" -type f \( -name "*.py" -o -name "*.sh" \) -exec chmod +x {} \; 2>/dev/null || true
-find "$TARGET_DIR/.meridian/bin" -type f -exec chmod +x {} \; 2>/dev/null || true
 
 # Check if plugin is installed
 PLUGIN_INSTALLED=false

@@ -453,10 +453,6 @@ def scan_project_frontmatter(project_dir: Path) -> str:
         if any(part in SKIP_DIRS for part in rel.parts):
             continue
 
-        # Skip old .state directory (state now lives in ~/.meridian/state/<hash>/)
-        if str(rel).startswith(".meridian/.state"):
-            continue
-
         # Skip index/readme/changelog
         if md_file.name in SKIP_NAMES:
             continue

@@ -49,7 +49,7 @@ def main():
     config = get_project_config(base_dir)
 
     # Skip stop hook if too few actions (trivial task)
-    min_actions = config.get('stop_hook_min_actions', 10)
+    min_actions = config.get('stop_hook_min_actions', 15)
     if min_actions > 0:
         action_count = get_action_counter(base_dir)
         if action_count < min_actions:

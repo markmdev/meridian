@@ -38,7 +38,6 @@ def main():
 
     config = get_project_config(base_dir)
     pebble_enabled = config.get('pebble_enabled', False)
-    scaffolder_enabled = config.get('pebble_scaffolder_enabled', True)
 
     # Build plan management instructions (always runs)
     plan_instructions = (
@@ -53,7 +52,7 @@ def main():
     )
 
     # Add Pebble scaffolder instructions if enabled
-    if pebble_enabled and scaffolder_enabled:
+    if pebble_enabled:
         plan_instructions += (
             f"3. **Invoke the `pebble-scaffolder` agent** to document the work.\n\n"
             f"- Scope: `task`, `bug`, or `follow-up`\n"

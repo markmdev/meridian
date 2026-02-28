@@ -11,7 +11,6 @@ from pathlib import Path
 # PATH CONSTANTS
 # =============================================================================
 MERIDIAN_CONFIG = ".meridian/config.yaml"
-REQUIRED_CONTEXT_CONFIG = ".meridian/required-context-files.yaml"
 WORKSPACE_FILE = ".meridian/WORKSPACE.md"
 
 # State file names (resolved at runtime via get_state_dir())
@@ -119,30 +118,6 @@ def get_config_value(content: str, key: str, default: str = "") -> str:
     return default
 
 
-def parse_yaml_list(content: str, key: str) -> list[str]:
-    """Parse a simple YAML list under a key."""
-    lines = content.split('\n')
-    result = []
-    in_section = False
-
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith('#') or not stripped:
-            continue
-
-        if stripped.startswith(f'{key}:'):
-            in_section = True
-            continue
-
-        if in_section and not line.startswith(' ') and not line.startswith('\t') and ':' in stripped:
-            break
-
-        if in_section and stripped.startswith('- '):
-            result.append(stripped[2:].strip())
-
-    return result
-
-
 # =============================================================================
 # CONFIG FILE HELPERS
 # =============================================================================
@@ -162,13 +137,10 @@ def parse_bool(value: str, default: bool) -> bool:
 
 # Config key definitions: (yaml_key, config_key, type, default)
 _BOOL_KEYS = [
-    ('plan_review_enabled', 'plan_review_enabled', True),
     ('pebble_enabled', 'pebble_enabled', False),
-    ('code_review_enabled', 'code_review_enabled', True),
-    ('pebble_scaffolder_enabled', 'pebble_scaffolder_enabled', True),
 ]
 _INT_KEYS = [
-    ('stop_hook_min_actions', 'stop_hook_min_actions', 10),
+    ('stop_hook_min_actions', 'stop_hook_min_actions', 15),
     ('plan_review_min_actions', 'plan_review_min_actions', 20),
 ]
 
@@ -176,12 +148,9 @@ _INT_KEYS = [
 def get_project_config(base_dir: Path) -> dict:
     """Read project config and return as dict with defaults."""
     config = {
-        'plan_review_enabled': True,
         'pebble_enabled': False,
-        'stop_hook_min_actions': 10,
+        'stop_hook_min_actions': 15,
         'plan_review_min_actions': 20,
-        'code_review_enabled': True,
-        'pebble_scaffolder_enabled': True,
         'session_learner_mode': 'project',
     }
 
@@ -721,16 +690,6 @@ def build_injected_context(base_dir: Path) -> str:
     # Description is optional — appears above the file to explain its purpose.
     files_to_inject = []
 
-    # User-provided docs (injected first, before everything else)
-    config_path = base_dir / REQUIRED_CONTEXT_CONFIG
-    if config_path.exists():
-        content = config_path.read_text()
-        user_docs = parse_yaml_list(content, 'user_provided_docs')
-        for doc_path in user_docs:
-            full_path = base_dir / doc_path
-            if full_path.exists():
-                files_to_inject.append((doc_path, full_path, ""))
-
     # Active plan file (if set)
     active_plan = get_active_plan_path(base_dir)
     if active_plan:
@@ -981,16 +940,13 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     """
     from datetime import datetime
     pebble_enabled = config.get('pebble_enabled', False)
-    code_review_enabled = config.get('code_review_enabled', True)
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     parts = [f"**Before stopping** ({now}):\n"]
 
     # Core checklist - agent knows HOW from SOUL.md and operating manual
     parts.append("**Checklist:**")
-
-    if code_review_enabled:
-        parts.append("- Run **code-reviewer** and **code-health-reviewer** in parallel if you made significant code changes")
+    parts.append("- Run **code-reviewer** and **code-health-reviewer** in parallel if you made significant code changes")
 
     if pebble_enabled:
         parts.append("- Close/update Pebble issues for completed work")

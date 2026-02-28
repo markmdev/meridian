@@ -1,17 +1,9 @@
 # Project-level configuration for the Claude workflow
 
-# Plan review: require plan-reviewer agent before exiting plan mode.
-# When false, ExitPlanMode proceeds without review.
-plan_review_enabled: true
-
 # Plan review minimum actions: Skip plan-reviewer if fewer than this many actions
 # occurred since entering plan mode. Prevents heavyweight review for quick plans.
 # Set to 0 to always enforce.
 plan_review_min_actions: 20
-
-# Code review: require code-reviewer agent before stopping.
-# When false, code review is skipped.
-code_review_enabled: true
 
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.
@@ -22,10 +14,6 @@ pebble_enabled: false
 # tool calls occurred since the user's last input. Prevents interruption
 # on quick/simple tasks. Set to 0 to always run stop hook.
 stop_hook_min_actions: 15
-
-# Pebble scaffolder: Auto-invoke pebble-scaffolder after plan approval.
-# When false, you can use Pebble without automatic issue scaffolding.
-pebble_scaffolder_enabled: true
 
 # Session learner mode: "project" (default) or "assistant".
 # project: maintains .meridian/workspace/ and .meridian/docs/ only.

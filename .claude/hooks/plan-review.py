@@ -43,12 +43,8 @@ def main():
     if hook_event != "PreToolUse" or tool_name != "ExitPlanMode":
         sys.exit(0)
 
-    # Check if enabled in config
-    config = get_project_config(base_dir)
-    if not config['plan_review_enabled']:
-        sys.exit(0)
-
     # Check if this is a lightweight plan (fewer actions than threshold)
+    config = get_project_config(base_dir)
     min_actions = config.get('plan_review_min_actions', 20)
     plan_actions = get_plan_action_counter(base_dir)
     if plan_actions < min_actions:

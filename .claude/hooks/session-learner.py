@@ -678,7 +678,7 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> dict:
             [
                 "claude", "-p",
                 "--model", "claude-opus-4-6",
-                "--output-format", "stream-json",
+                "--output-format", "stream-json", "--verbose",
                 "--allowedTools", "Write,Read,Edit",
                 "--dangerously-skip-permissions",
                 "--no-session-persistence",

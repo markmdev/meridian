@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.5.0] - 2026-02-28
+
+### Removed
+- **Refactor and test-writer agents**: The implement agent handles both tasks. Two fewer agents to maintain.
+- **Plan-file-sync hook**: Extra complexity and point of failure. The agent manages plan files directly.
+- **CLAUDE.md writer skill**: Session learner already handles CLAUDE.md updates.
+- **Context acknowledgment gate hook**: Removed in favor of lighter-weight context injection.
+- **Permission auto-approver hook**: Removed — Claude Code's built-in permission handling is sufficient.
+- **Subplan/epic planning system**: Removed `active-subplan` state, epic phase workflow, and subplan references from all hooks, skills, and docs. Plans are simple now — no hierarchy.
+
+### Added
+- **Session learner observability**: JSONL history log (`session-learner.jsonl`) with tool usage, timing, git diffs, and 50-entry rotation. Uses `--output-format stream-json` to parse what tools the learner agent used and which files it changed.
+- **Session learner log viewer**: `python .claude/hooks/scripts/learner-log.py` displays formatted table of recent learner runs with status, duration, tool count, and file changes.
+- **State directory helper**: `.claude/hooks/scripts/state-dir.sh` resolves `~/.meridian/state/<hash>/` so agents and scripts can find state files.
+- **Docs index for subagents**: `save-injected-files.py` writes a `docs-index` state file listing all `.meridian/docs/` and `.meridian/api-docs/` entries with summaries, so subagents can discover available documentation.
+
+### Changed
+- **Reviewer agents return plain text**: Code-reviewer, code-health-reviewer, and architect no longer create Pebble issues. They return findings as structured text — the main agent handles issue tracking.
+- **Docs skill renamed**: `docs` → `create-docs` to better reflect its purpose (creating `.meridian/docs/` knowledge files).
+- **Injected PRs filtered to author**: `gh pr list` commands in context injector now use `--author @me` instead of showing everyone's PRs.
+- **Session learner redesigned**: Workspace as short-term memory, strict next steps, git context injection.
+- **Plan mode hook**: Demands immediate skill activation on plan mode entry.
+
+### Fixed
+- **Stale `.meridian/.state` references**: 22 references across 15 files still pointed to the old state path (moved in v0.4.0). Agents couldn't find `injected-files`, and `setup-work-until.sh` wrote `loop-state` to the wrong location. All references now use `state-dir.sh` helper or compute paths at runtime via `state_path()`.
+
 ## [0.4.1] - 2026-02-25
 
 ### Changed

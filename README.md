@@ -480,7 +480,7 @@ The `/work-until` command creates an iterative loop where Claude keeps working o
 - **Workspace preserves history**: Between iterations, Claude writes to its workspace, so it knows what was tried
 - **Normal stop checks still run**: Workspace updates, tests/lint/build — all enforced each iteration
 - **Completion phrase must be TRUE**: Claude cannot lie to escape the loop
-- **Monitor progress**: `cat .meridian/.state/loop-state` shows current iteration
+- **Monitor progress**: `cat $(.claude/hooks/scripts/state-dir.sh)/loop-state` shows current iteration
 
 ### Example Flow
 

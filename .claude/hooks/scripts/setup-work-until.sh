@@ -45,7 +45,7 @@ STOPPING:
   The phrase must be TRUE - do not lie to exit the loop.
 
 MONITORING:
-  cat .meridian/.state/loop-state
+  cat $(.claude/hooks/scripts/state-dir.sh)/loop-state
 HELP_EOF
   exit 0
 }
@@ -99,11 +99,12 @@ if [[ -z "$PROMPT" ]]; then
   exit 1
 fi
 
-# Create state file
-mkdir -p .meridian/.state
+# Resolve state directory
+STATE_DIR=$(.claude/hooks/scripts/state-dir.sh)
+mkdir -p "$STATE_DIR"
 
 # Write state file with prompt
-cat > .meridian/.state/loop-state <<EOF
+cat > "$STATE_DIR/loop-state" <<EOF
 active: true
 iteration: 1
 max_iterations: $MAX_ITERATIONS

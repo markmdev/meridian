@@ -444,7 +444,7 @@ def scan_project_frontmatter(project_dir: Path) -> str:
         if any(part in SKIP_DIRS for part in rel.parts):
             continue
 
-        # Skip ephemeral state
+        # Skip old .state directory (state now lives in ~/.meridian/state/<hash>/)
         if str(rel).startswith(".meridian/.state"):
             continue
 
@@ -792,7 +792,7 @@ def build_injected_context(base_dir: Path) -> str:
             if 'active: true' in loop_content:
                 parts.append('<work-until-loop>')
                 parts.append("**A work-until loop is active.** You are in an iterative work loop.")
-                parts.append("Read `.meridian/.state/loop-state` for your task and current iteration.")
+                parts.append(f"Read `{loop_state_path}` for your task and current iteration.")
                 parts.append("See `.meridian/prompts/work-until-loop.md` for how the loop works.")
                 parts.append('</work-until-loop>')
                 parts.append("")

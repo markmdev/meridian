@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import get_project_config, cleanup_flag, clear_plan_action_counter, log_hook_output, PLAN_REVIEW_FLAG
+from meridian_config import get_project_config, cleanup_flag, clear_plan_action_counter, log_hook_output, state_path, PLAN_REVIEW_FLAG, ACTIVE_PLAN_FILE
 
 
 def main():
@@ -49,7 +49,7 @@ def main():
         f"   ```\n"
         f"   Examples: `add-user-auth.md`, `refactor-payment-api.md`, `fix-race-condition.md`\n\n"
         f"2. **Update active plan tracking** (use ABSOLUTE path to the renamed file):\n"
-        f"   - Write the absolute plan path to `.meridian/.state/active-plan`\n\n"
+        f"   - Write the absolute plan path to `{state_path(base_dir, ACTIVE_PLAN_FILE)}`\n\n"
     )
 
     # Add Pebble scaffolder instructions if enabled

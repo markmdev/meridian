@@ -22,4 +22,4 @@ Output the completion phrase in XML tags:
 
 ## Now: Start Working
 
-Read `.meridian/.state/loop-state` to see your task and settings, then begin working.
+Find the state directory by running `.claude/hooks/scripts/state-dir.sh`, then read `<state-dir>/loop-state` to see your task and settings. Begin working.

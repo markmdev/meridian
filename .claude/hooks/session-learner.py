@@ -449,7 +449,7 @@ Docs are the project's **long-term memory** — reference material that stays us
 
 **Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content.
 
-**Delete** outdated or superseded files. To mark for deletion, append the relative path to `.meridian/.state/docs-to-delete` (one path per line). Python will handle the actual file deletion. Never delete core identity or configuration files."""
+**Delete** outdated or superseded files. To mark for deletion, append the relative path to `{state_path(project_dir, "docs-to-delete")}` (one path per line). Python will handle the actual file deletion. Never delete core identity or configuration files."""
     else:
         docs_rules = """### Rules
 
@@ -457,7 +457,7 @@ Docs are the project's **long-term memory** — reference material that stays us
 
 **Update** any existing frontmatter'd doc (listed above) when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md.
 
-**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `.meridian/.state/docs-to-delete` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish."""
+**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `{state_path(project_dir, "docs-to-delete")}` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish."""
 
     parts.append(f"""
 

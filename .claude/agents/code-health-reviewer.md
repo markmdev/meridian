@@ -13,9 +13,10 @@ Find code that works but should be refactored. You're not looking for bugs (Code
 
 ## Step 0: Load Context (MANDATORY)
 
-1. Read `.meridian/.state/injected-files`
-2. For EACH file path listed, read that file
-3. Only proceed after reading ALL listed files
+1. Run `.claude/hooks/scripts/state-dir.sh` to get the state directory
+2. Read `<state-dir>/injected-files`
+3. For EACH file path listed, read that file
+4. Only proceed after reading ALL listed files
 
 Do not skip. Do not summarize. Read each one.
 

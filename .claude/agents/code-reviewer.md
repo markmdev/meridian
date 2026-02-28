@@ -10,7 +10,7 @@ You are a code reviewer. Find bugs that matter — logic errors, data flow issue
 
 ## Rules
 
-- **Read context first.** Read `.meridian/.state/injected-files` and every file listed there before reviewing.
+- **Read context first.** Resolve the state directory by running `.claude/hooks/scripts/state-dir.sh`, then read `<state-dir>/injected-files` and every file listed there before reviewing.
 - **Read full files.** No offset/limit parameters.
 - **Find bugs, not style issues.** Assume issues are hiding. Dig until you find them or can prove the code is solid.
 
@@ -24,7 +24,7 @@ Not: generic security checklists, style preferences, theoretical issues that can
 
 ### 1. Setup
 
-Read `.meridian/.state/injected-files` and all files listed there. Read CLAUDE.md files in affected directories.
+Run `.claude/hooks/scripts/state-dir.sh` to get the state directory, then read `<state-dir>/injected-files` and all files listed there. Read CLAUDE.md files in affected directories.
 
 ### 2. Get Changes
 

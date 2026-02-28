@@ -20,7 +20,7 @@
 
 Plans are tracked via state files:
 
-- **`.meridian/.state/active-plan`** — absolute path to current plan
+- **`~/.meridian/state/<project-hash>/active-plan`** — absolute path to current plan
 
 **On plan approval:**
 1. Copy plan from `~/.claude/plans/` to `.meridian/plans/`

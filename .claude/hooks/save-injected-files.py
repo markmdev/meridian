@@ -2,7 +2,7 @@
 """
 Save Injected Files — SessionStart Hook
 
-Saves the list of files injected into context to .meridian/.state/injected-files.
+Saves the list of files injected into context to ~/.meridian/state/<hash>/injected-files.
 Agents read this file to know what context is available.
 """
 

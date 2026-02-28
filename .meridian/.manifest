@@ -21,6 +21,7 @@
 .claude/hooks/save-injected-files.py
 .claude/hooks/scripts/learner-log.py
 .claude/hooks/scripts/setup-work-until.sh
+.claude/hooks/scripts/state-dir.sh
 .claude/hooks/session-cleanup.py
 .claude/hooks/session-learner.py
 .claude/hooks/stop-checklist.py

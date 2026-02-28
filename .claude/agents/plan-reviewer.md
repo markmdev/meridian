@@ -61,7 +61,7 @@ Check: Integration phase exists? Entry points defined? No orphaned modules? Data
 
 **Every phase that modifies code MUST include documentation steps.**
 
-Check: Documentation section per phase? CLAUDE.md planned for new/modified modules? `claudemd-writer` skill referenced? Human docs (README, API docs) for user-visible changes?
+Check: Documentation section per phase? CLAUDE.md planned for new/modified modules? Human docs (README, API docs) for user-visible changes?
 
 **Red flags**: New module without CLAUDE.md step. API changed but no doc update. User-visible feature without README update. Breaking change without migration guide.
 

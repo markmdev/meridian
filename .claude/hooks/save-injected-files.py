@@ -17,11 +17,11 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     parse_yaml_list,
     get_project_config,
+    scan_docs_directory,
     state_path,
     WORKSPACE_FILE,
     REQUIRED_CONTEXT_CONFIG,
     ACTIVE_PLAN_FILE,
-    ACTIVE_SUBPLAN_FILE,
     INJECTED_FILES_LOG,
 )
 
@@ -63,10 +63,9 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
         except IOError:
             pass
 
-    # 4b. Active plan state files (always include so subagents can check at runtime)
-    # These may be populated mid-session after plan approval
+    # 4b. Active plan state file (always include so subagents can check at runtime)
+    # May be populated mid-session after plan approval
     files.append(str(state_path(base_dir, ACTIVE_PLAN_FILE)))
-    files.append(str(state_path(base_dir, ACTIVE_SUBPLAN_FILE)))
 
     # 5. CODE_GUIDE
     code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"

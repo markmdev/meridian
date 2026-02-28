@@ -1,6 +1,6 @@
 ---
-name: docs
-description: Create or update .meridian/docs/ files for a specific module or directory. Use when the user wants to document a part of the codebase for future agent sessions.
+name: create-docs
+description: Create or update .meridian/docs/ knowledge files for a module or directory. Produces reference docs with frontmatter for context routing.
 ---
 
 # Docs

@@ -22,8 +22,6 @@ ACTION_COUNTER_FILE = "action-counter"
 PLAN_ACTION_COUNTER_FILE = "plan-action-counter"
 PLAN_MODE_STATE = "plan-mode-state"
 ACTIVE_PLAN_FILE = "active-plan"
-ACTIVE_SUBPLAN_FILE = "active-subplan"
-CURRENT_PLAN_AUTO_FILE = "current-plan-auto"
 INJECTED_FILES_LOG = "injected-files"
 HOOK_LOGS_DIR = "hook_logs"
 
@@ -624,7 +622,7 @@ def build_injected_context(base_dir: Path) -> str:
     # Recent PRs (open, with authors)
     try:
         result = subprocess.run(
-            ["gh", "pr", "list", "--state", "open", "--limit", "5",
+            ["gh", "pr", "list", "--state", "open", "--author", "@me", "--limit", "5",
              "--json", "number,title,author,headRefName",
              "--template", '{{range .}}#{{.number}} {{.title}} ({{.author.login}}) [{{.headRefName}}]\n{{end}}'],
             capture_output=True,
@@ -644,7 +642,7 @@ def build_injected_context(base_dir: Path) -> str:
     # Recent PRs (merged, with authors)
     try:
         result = subprocess.run(
-            ["gh", "pr", "list", "--state", "merged", "--limit", "5",
+            ["gh", "pr", "list", "--state", "merged", "--author", "@me", "--limit", "5",
              "--json", "number,title,author,mergedAt",
              "--template", '{{range .}}#{{.number}} {{.title}} ({{.author.login}}) merged {{timeago .mergedAt}}\n{{end}}'],
             capture_output=True,
@@ -687,21 +685,6 @@ def build_injected_context(base_dir: Path) -> str:
                     full_path = base_dir / plan_path
                 if full_path.exists():
                     files_to_inject.append((plan_path, full_path, "Active implementation plan. Follow this plan during implementation."))
-        except IOError:
-            pass
-
-    # Active subplan file (if in an epic)
-    active_subplan_file = state_path(base_dir, ACTIVE_SUBPLAN_FILE)
-    if active_subplan_file.exists():
-        try:
-            subplan_path = active_subplan_file.read_text().strip()
-            if subplan_path:
-                if subplan_path.startswith('/'):
-                    full_path = Path(subplan_path)
-                else:
-                    full_path = base_dir / subplan_path
-                if full_path.exists():
-                    files_to_inject.append((subplan_path, full_path, "Active subplan for current epic phase."))
         except IOError:
             pass
 

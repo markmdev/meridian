@@ -51,15 +51,7 @@ Classify each issue:
 - **p1** — Bugs, incorrect behavior
 - **p2** — DRY violations, minor issues
 
-**If `pebble_enabled: true` in `.meridian/config.yaml`:**
-
-Create Pebble issues. The main agent MUST pass `Parent task: <id>` in the prompt. Use that ID as parent for all issues (even if the task is closed). Use `pb --help` for command reference.
-
-Then return a summary listing the Pebble issue IDs you created.
-
-**If `pebble_enabled: false` (or not set):**
-
-Return your findings directly as a structured list. Do not write files.
+Return your findings directly as structured text. The main agent handles issue tracking.
 
 ## Output Format
 

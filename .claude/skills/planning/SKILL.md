@@ -82,10 +82,6 @@ Before presenting the plan, verify against real code:
 
 **External APIs:** Check `.meridian/api-docs/` for existing docs. Not documented? Run `docs-researcher` to research it.
 
-## Epic Planning
-
-For large tasks spanning multiple systems or weeks, propose an epic plan with subplans per phase. Each phase gets a subplan created just-in-time. Subplans go through plan-reviewer before implementing.
-
 ## Integration
 
 If your plan creates modules or touches multiple systems, document how they connect: imports, entry points, configuration. Plans fail when code exists but isn't wired up.

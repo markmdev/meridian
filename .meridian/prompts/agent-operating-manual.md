@@ -21,21 +21,11 @@
 Plans are tracked via state files:
 
 - **`.meridian/.state/active-plan`** — absolute path to current plan
-- **`.meridian/.state/active-subplan`** — absolute path to current subplan (if in an epic)
 
 **On plan approval:**
 1. Copy plan from `~/.claude/plans/` to `.meridian/plans/`
 2. Write the **absolute path** to `active-plan`
 3. Clear the global plan file
-
-## Epic Planning
-
-For large projects spanning multiple systems:
-
-1. Check if active plan has `## Phases` section — if so, you're in an epic
-2. Find the current phase (status: In progress)
-3. Follow the phase's workflow (enter plan mode → create subplan → review → implement)
-4. Mark phase complete when done, move to next phase
 
 # Pebble Issue Tracking
 

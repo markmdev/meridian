@@ -60,14 +60,12 @@ Your scope: recently changed files + one level out (their importers and imports)
 
 ## Output
 
-If Pebble is available (`pb` command works), create Pebble issues for each finding. Otherwise, return findings directly to the main agent.
+Return findings directly as structured text. The main agent handles issue tracking.
 
 **Severity:** p1 (should fix) or p2 (consider fixing)
 
-**Each issue needs:** clear title, why it matters, suggested fix.
-
-**Parent context:** Use the task ID from the prompt.
+**Each finding needs:** clear title, why it matters, suggested fix.
 
 ## Return
 
-Files analyzed, issues created (with IDs), brief overall assessment.
+Files analyzed, findings, brief overall assessment.

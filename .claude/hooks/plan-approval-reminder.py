@@ -47,26 +47,15 @@ def main():
         f"   ```bash\n"
         f"   mkdir -p .meridian/plans && cp ~/.claude/plans/[slug].md .meridian/plans/descriptive-name.md\n"
         f"   ```\n"
-        f"   Examples: `add-user-auth.md`, `refactor-payment-api.md`, `fix-race-condition.md`\n"
-        f"   (Use `.meridian/subplans/` if this is a subplan for an epic phase)\n\n"
-        f"2. **Update active plan tracking** (use ABSOLUTE paths to the renamed file):\n"
-        f"   - Write the absolute plan path to `.meridian/.state/active-plan`\n"
-        f"   - If this is a subplan, also write the absolute path to `.meridian/.state/active-subplan`\n\n"
+        f"   Examples: `add-user-auth.md`, `refactor-payment-api.md`, `fix-race-condition.md`\n\n"
+        f"2. **Update active plan tracking** (use ABSOLUTE path to the renamed file):\n"
+        f"   - Write the absolute plan path to `.meridian/.state/active-plan`\n\n"
     )
 
     # Add Pebble scaffolder instructions if enabled
     if pebble_enabled and scaffolder_enabled:
         plan_instructions += (
             f"3. **Invoke the `pebble-scaffolder` agent** to document the work.\n\n"
-            f"**For epic plans** (new project/feature with phases):\n"
-            f"- Scope: `epic`\n"
-            f"- Creates: epic + phase tasks as children\n\n"
-            f"**For subplans** (planning a specific phase):\n"
-            f"- Scope: `task`\n"
-            f"- Parent: the existing phase task ID (e.g., `MERI-70jfoe`)\n"
-            f"- Creates: step tasks as children of the phase\n"
-            f"- Find the phase task ID with `pb list` or `pb search`\n\n"
-            f"**For standalone tasks** (bug fix, small feature):\n"
             f"- Scope: `task`, `bug`, or `follow-up`\n"
             f"- Parent: epic ID if part of larger work, otherwise none\n\n"
             f"Skip scaffolder only for trivial 5-minute fixes."

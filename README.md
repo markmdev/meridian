@@ -276,13 +276,6 @@ General-purpose guidance for writing effective prompts for any AI system:
 
 Works for Claude Code artifacts (skills, agents, hooks) and any other AI prompts.
 
-### CLAUDE.md Writer Skill
-
-Guidance for writing effective CLAUDE.md files:
-- Hierarchical injection (files at each directory level)
-- "Less is more" principle — every line competes for attention
-- Commands first, then key patterns
-- What/How/Why structure
 
 </details>
 
@@ -317,24 +310,6 @@ Researches external tools, APIs, and products:
 - Covers current versions, API operations, rate limits, best practices, gotchas
 - Uses relevant MCPs or skills if available for web research
 - Run before using any external library not already documented
-
-### Test Writer
-
-Generates comprehensive tests for files/functions:
-- Detects testing framework from package.json and config files
-- Reads existing tests to learn project patterns (imports, setup/teardown, mocking)
-- Generates tests at conventional location following existing patterns
-- Covers happy path, edge cases, error cases
-- Runs tests after generation, fixes failures up to 3 iterations
-
-### Refactor
-
-Performs mechanical refactors with comprehensive symbol search:
-- **Rename**: Change symbol name across codebase (function, class, variable, type)
-- **Extract**: Pull code block into new function/module
-- **Move**: Relocate symbol to different file, update all imports
-- Handles re-exports, barrel files, type-only imports
-- Runs typecheck + tests after changes, flags ambiguous cases for human review
 
 ### Diff Summarizer
 
@@ -434,8 +409,6 @@ your-project/
 │   │   ├── plan-review.py
 │   │   ├── plan-approval-reminder.py
 │   │   ├── action-counter.py
-│   │   ├── permission-auto-approver.py
-│   │   ├── meridian-path-guard.py
 │   │   ├── plan-mode-tracker.py
 │   │   └── session-cleanup.py
 │   ├── commands/
@@ -443,16 +416,13 @@ your-project/
 │   │   └── coderabbit-review.md # CodeRabbit review cycle handler
 │   ├── skills/
 │   │   ├── planning/SKILL.md
-│   │   ├── prompt-writing/SKILL.md
-│   │   └── claudemd-writer/SKILL.md
+│   │   └── prompt-writing/SKILL.md
 │   └── agents/
 │       ├── plan-reviewer.md
 │       ├── code-reviewer.md
 │       ├── docs-researcher.md
 │       ├── explore.md
 │       ├── pebble-scaffolder.md
-│       ├── test-writer.md
-│       ├── refactor.md
 │       ├── implement.md
 │       ├── architect.md
 │       └── code-health-reviewer.md

@@ -178,7 +178,6 @@ is_state_file() {
     .meridian/api-docs|.meridian/api-docs/*) return 0 ;;
     .meridian/tasks|.meridian/tasks/*) return 0 ;;
     .meridian/plans|.meridian/plans/*) return 0 ;;
-    .meridian/subplans|.meridian/subplans/*) return 0 ;;
     .meridian/.manifest) return 0 ;;
     .meridian/.version) return 0 ;;
     .claude/plans|.claude/plans/*) return 0 ;;

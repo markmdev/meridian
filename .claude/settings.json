@@ -84,15 +84,6 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/plan-file-sync.py"
-          }
-        ]
-      },
-      {
         "matcher": "Task",
         "hooks": [
           {

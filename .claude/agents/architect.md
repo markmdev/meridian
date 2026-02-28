@@ -53,18 +53,16 @@ Bugs, security (CodeReviewer). Dead code, duplication (CodeHealthReviewer). Code
 ## Output
 
 **Codebase Review:**
-- If Pebble is available (`pb` command works), create Pebble issues for findings
-- Otherwise, return findings directly to the main agent
-- Each issue: problem statement, why it matters, suggested direction
+- Return findings directly as structured text. The main agent handles issue tracking.
+- Each finding: problem statement, why it matters, suggested direction
 - Severity: p1 (blocking) or p2 (friction)
-- Recommend documenting significant decisions in `.meridian/docs/`
 
 **Plan Review:**
-- Return findings directly to main agent (no Pebble issues — nothing implemented yet)
+- Return findings directly to main agent
 - List architectural concerns with the proposed approach
 - Suggest alternatives if the approach has structural problems
 - Note what fits well with existing architecture
 
 ## Return
 
-Summary of findings, issues created (codebase review) or concerns raised (plan review), and any documentation recommended.
+Summary of findings, concerns raised, brief overall assessment.

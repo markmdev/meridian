@@ -25,8 +25,6 @@ REVIEWER_AGENTS = {
     "architect",
     "pebble-scaffolder",
     "implement",
-    "refactor",
-    "test-writer",
 }
 
 

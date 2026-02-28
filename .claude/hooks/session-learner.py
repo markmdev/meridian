@@ -13,7 +13,9 @@ import json
 import os
 import sys
 import subprocess
+import time
 from pathlib import Path
+from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path
@@ -21,6 +23,8 @@ from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_projec
 TRANSCRIPT_PATH_STATE = "transcript-path"
 WORKSPACE_SYNC_LOCK = "workspace-sync.lock"
 LAST_SYNC_FILE = "last-workspace-sync"
+SESSION_LEARNER_LOG = "session-learner.jsonl"
+MAX_LOG_ENTRIES = 50
 MIN_ENTRIES_THRESHOLD = 5  # Skip if fewer than this many meaningful entries
 
 
@@ -492,7 +496,6 @@ def acquire_lock(project_dir: Path) -> bool:
     if lock_path.exists():
         # Check if lock is stale (older than 5 minutes)
         try:
-            import time
             age = time.time() - lock_path.stat().st_mtime
             if age < 300:
                 return False
@@ -514,7 +517,6 @@ def release_lock(project_dir: Path):
 
 def was_recently_synced(project_dir: Path) -> bool:
     """Check if workspace was synced in the last 30 seconds (dedup for /clear)."""
-    import time
     sync_path = state_path(project_dir, LAST_SYNC_FILE)
     if sync_path.exists():
         try:
@@ -528,7 +530,6 @@ def was_recently_synced(project_dir: Path) -> bool:
 
 def mark_synced(project_dir: Path):
     """Record that workspace was just synced."""
-    import time
     sync_path = state_path(project_dir, LAST_SYNC_FILE)
     try:
         sync_path.parent.mkdir(parents=True, exist_ok=True)
@@ -564,15 +565,120 @@ def cleanup_docs_to_delete(project_dir: Path):
 
 
 
-def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
-    """Run headless claude -p to update workspace. Returns True on success."""
+def parse_stream_json(stdout: str) -> tuple[list[dict], str]:
+    """Parse stream-json output into (tools_used, text_output).
+
+    tools_used: list of {"tool": "Write", "file": ".meridian/WORKSPACE.md"}
+    text_output: concatenated text blocks for the human-readable output file
+    """
+    tools_used = []
+    text_parts = []
+
+    for line in stdout.strip().split('\n'):
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        # Handle assistant messages with content blocks
+        msg = entry.get("message", {})
+        content = msg.get("content", [])
+        if isinstance(content, list):
+            for block in content:
+                btype = block.get("type", "")
+                if btype == "tool_use":
+                    tool_entry = {"tool": block.get("name", "unknown")}
+                    input_data = block.get("input", {})
+                    file_path = input_data.get("file_path") or input_data.get("path") or ""
+                    if file_path:
+                        tool_entry["file"] = file_path
+                    tools_used.append(tool_entry)
+                elif btype == "text":
+                    text = block.get("text", "")
+                    if text.strip():
+                        text_parts.append(text)
+
+        # Handle result entry
+        if entry.get("type") == "result":
+            result_text = entry.get("result", "")
+            if result_text and isinstance(result_text, str):
+                text_parts.append(result_text)
+
+    return tools_used, "\n".join(text_parts)
+
+
+def get_git_diff_after(project_dir: Path) -> tuple[list[str], str]:
+    """Get changed files and diff stat after agent runs."""
+    files_changed = []
+    diff_stat = ""
+
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--name-only"],
+            capture_output=True, text=True, timeout=5,
+            cwd=str(project_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            files_changed = [f.strip() for f in result.stdout.strip().split('\n') if f.strip()]
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--stat"],
+            capture_output=True, text=True, timeout=5,
+            cwd=str(project_dir)
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            lines = result.stdout.strip().split('\n')
+            if lines:
+                diff_stat = lines[-1].strip()
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
+    return files_changed, diff_stat
+
+
+def log_learner_run(project_dir: Path, entry: dict):
+    """Append a run entry to the JSONL log with rotation (keep last MAX_LOG_ENTRIES)."""
+    log_path = state_path(project_dir, SESSION_LEARNER_LOG)
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        existing = []
+        if log_path.exists():
+            for line in log_path.read_text().strip().split('\n'):
+                if line.strip():
+                    try:
+                        existing.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+
+        existing.append(entry)
+        if len(existing) > MAX_LOG_ENTRIES:
+            existing = existing[-MAX_LOG_ENTRIES:]
+
+        log_path.write_text('\n'.join(json.dumps(e) for e in existing) + '\n')
+    except (IOError, OSError):
+        pass
+
+
+def run_workspace_agent(prompt: str, project_dir: Path) -> dict:
+    """Run headless claude -p to update workspace.
+
+    Returns dict with: success, exit_code, tools_used, text_output
+    """
     env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
+    run_info = {"success": False, "exit_code": -1, "tools_used": [], "text_output": ""}
 
     try:
         result = subprocess.run(
             [
                 "claude", "-p",
                 "--model", "claude-opus-4-6",
+                "--output-format", "stream-json",
                 "--allowedTools", "Write,Read,Edit",
                 "--dangerously-skip-permissions",
                 "--no-session-persistence",
@@ -585,13 +691,19 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
             cwd=str(project_dir),
             env=env,
         )
-        # Save agent output for inspection
+        run_info["exit_code"] = result.returncode
+
+        # Parse stream-json output for tool usage and text
+        tools_used, text_output = parse_stream_json(result.stdout or "")
+        run_info["tools_used"] = tools_used
+        run_info["text_output"] = text_output
+
+        # Save human-readable agent output for inspection
         output_path = state_path(project_dir, "session-learner-output.md")
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            from datetime import datetime
             header = f"# Session Learner Output\n**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  \n**Exit code:** {result.returncode}\n\n---\n\n"
-            output_path.write_text(header + (result.stdout or "*(no output)*") + "\n")
+            output_path.write_text(header + (text_output or "*(no output)*") + "\n")
         except (IOError, OSError):
             pass
 
@@ -599,14 +711,18 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> bool:
             print(f"[Meridian] Workspace agent exited with code {result.returncode}", file=sys.stderr)
             if result.stderr:
                 print(f"[Meridian] {result.stderr[:500]}", file=sys.stderr)
-            return False
-        return True
+            return run_info
+
+        run_info["success"] = True
+        return run_info
     except subprocess.TimeoutExpired:
         print("[Meridian] Workspace agent timed out (180s)", file=sys.stderr)
-        return False
+        run_info["exit_code"] = -2
+        return run_info
     except FileNotFoundError:
         print("[Meridian] claude CLI not found", file=sys.stderr)
-        return False
+        run_info["exit_code"] = -3
+        return run_info
 
 
 def main():
@@ -690,14 +806,35 @@ def main():
             pass
 
         print("[Meridian] Updating workspace from session transcript...", file=sys.stderr)
-        success = run_workspace_agent(prompt, project_dir)
+        start_time = time.time()
+        run_info = run_workspace_agent(prompt, project_dir)
+        duration = time.time() - start_time
 
-        if success:
-            print("[Meridian] Workspace updated.", file=sys.stderr)
+        # Capture git diff after agent runs
+        files_changed, diff_stat = get_git_diff_after(project_dir)
+
+        # Log to JSONL
+        log_entry = {
+            "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            "trigger": source if source else "end",
+            "transcript_entries": len(entries),
+            "meaningful_entries": len(meaningful),
+            "duration_seconds": round(duration, 1),
+            "exit_code": run_info["exit_code"],
+            "success": run_info["success"],
+            "tools_used": run_info["tools_used"],
+            "files_changed": files_changed,
+            "diff_stat": diff_stat,
+        }
+        log_learner_run(project_dir, log_entry)
+
+        if run_info["success"]:
+            tool_count = len(run_info["tools_used"])
+            print(f"[Meridian] Workspace updated ({duration:.0f}s, {tool_count} tools).", file=sys.stderr)
             cleanup_docs_to_delete(project_dir)
             mark_synced(project_dir)
         else:
-            print("[Meridian] Workspace update failed.", file=sys.stderr)
+            print(f"[Meridian] Workspace update failed ({duration:.0f}s).", file=sys.stderr)
 
     finally:
         if lock_acquired:

@@ -74,6 +74,25 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
 
     # Note: agent-operating-manual.md is excluded - not needed for reviewer agents
 
+    # 6. Docs index — scan .meridian/docs/ and .meridian/api-docs/ for frontmatter'd files
+    # Write to a state file so subagents can discover available docs
+    docs_index_parts = []
+    for dir_rel in (".meridian/docs", ".meridian/api-docs"):
+        listing = scan_docs_directory(base_dir / dir_rel, base_dir)
+        if listing:
+            docs_index_parts.append(f"## {dir_rel}")
+            docs_index_parts.append(listing)
+            docs_index_parts.append("")
+
+    if docs_index_parts:
+        docs_index_file = state_path(base_dir, "docs-index")
+        try:
+            docs_index_file.parent.mkdir(parents=True, exist_ok=True)
+            docs_index_file.write_text("\n".join(docs_index_parts))
+            files.append(str(docs_index_file))
+        except IOError:
+            pass
+
     return files
 
 

@@ -38,7 +38,7 @@ Meridian uses Claude Code's hooks system to enforce behaviors automatically:
 | **Pre-compaction warning** | Monitors token usage and prompts Claude to save context before compaction happens |
 | **Detailed plans that work** | Planning skill guides Claude through thorough discovery, design, and integration planning |
 | **Quality gates** | Plan-reviewer and code-reviewer agents validate work before proceeding |
-| **Your custom docs injected** | Add your architecture docs, API references, etc. to `required-context-files.yaml` — they're injected every session |
+| **Your custom docs injected** | Add docs to `.meridian/docs/` with `summary` + `read_when` frontmatter — they're auto-discovered and injected when relevant |
 
 **Your behavior doesn't change.** You talk to Claude the same way. Meridian works behind the scenes.
 
@@ -218,7 +218,7 @@ When context approaches the threshold, the agent saves context and the wrapper a
 | **Large context** | Claude forgets prompt details as context grows | Hooks reinforce key behaviors throughout the session |
 | **Task continuity** | None — each session starts fresh | Context files track progress, decisions, next steps |
 | **Quality gates** | None | Plan review + code review before proceeding |
-| **Custom docs** | Must be read manually each session | Injected automatically via `required-context-files.yaml` |
+| **Custom docs** | Must be read manually each session | Docs in `.meridian/docs/` with `read_when` frontmatter hints, auto-discovered and injected |
 
 `CLAUDE.md` is a static prompt. Meridian hooks actively enforce behaviors and inject context throughout the session.
 
@@ -347,40 +347,13 @@ Creates Pebble issue hierarchy from plans (when Pebble enabled):
 # Project type → which CODE_GUIDE addon to load
 project_type: standard  # hackathon | standard | production
 
-# Quality gates
-plan_review_enabled: true
-code_review_enabled: true
-
 # Context preservation
 pre_compaction_sync_enabled: true
 pre_compaction_sync_threshold: 150000  # tokens
 
 # Stop hook behavior
-stop_hook_min_actions: 10  # Skip stop hook if < N actions since last user input
+stop_hook_min_actions: 15  # Skip stop hook if < N actions since last user input
 ```
-
-### Required Context Files (`.meridian/required-context-files.yaml`)
-
-```yaml
-# Always injected
-core:
-  - .meridian/SOUL.md
-  - .meridian/CODE_GUIDE.md
-  - .meridian/prompts/agent-operating-manual.md
-
-# Your custom docs (injected FIRST, before core files)
-# Add architecture docs, API references, design specs — anything Claude should always know
-user_provided_docs:
-  - docs/architecture.md
-  - docs/api-reference.md
-
-# Auto-loaded based on project_type
-project_type_addons:
-  hackathon: .meridian/CODE_GUIDE_ADDON_HACKATHON.md
-  production: .meridian/CODE_GUIDE_ADDON_PRODUCTION.md
-```
-
-**`user_provided_docs`**: Add any project-specific documentation here. These files are injected at the very top of context (before core files), so Claude always has access to your architecture decisions, API contracts, or any other docs you want it to reference.
 
 ### CODE_GUIDE System
 
@@ -428,7 +401,6 @@ your-project/
 │       └── code-health-reviewer.md
 ├── .meridian/
 │   ├── config.yaml                   # Project configuration
-│   ├── required-context-files.yaml   # What gets injected
 │   ├── WORKSPACE.md                  # Agent's living knowledge base (always injected)
 │   ├── workspace/                    # Workspace sub-pages (linked from WORKSPACE.md)
 │   ├── CODE_GUIDE.md                 # Baseline standards
@@ -557,9 +529,10 @@ Yes. Edit `.meridian/CODE_GUIDE.md` to add project-specific rules. It's injected
 
 Yes. In `.meridian/config.yaml`:
 ```yaml
-plan_review_enabled: false
-code_review_enabled: false
-pre_compaction_sync_enabled: false
+pebble_enabled: false              # Disable Pebble issue tracking integration
+stop_hook_min_actions: 15           # Skip stop hook if < N actions (default: 15)
+plan_review_min_actions: 5          # Skip plan review if < N actions (default: 5)
+session_learner_mode: "workspace"   # "workspace", "both", or "off"
 ```
 
 **How is this different from subagents?**

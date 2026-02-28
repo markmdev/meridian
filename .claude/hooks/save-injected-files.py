@@ -15,13 +15,11 @@ from datetime import datetime
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
-    parse_yaml_list,
     get_project_config,
     get_active_plan_path,
     scan_docs_directory,
     state_path,
     WORKSPACE_FILE,
-    REQUIRED_CONTEXT_CONFIG,
     ACTIVE_PLAN_FILE,
     INJECTED_FILES_LOG,
 )
@@ -31,20 +29,7 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
     """Get list of all files that will be injected into context (absolute paths)."""
     files = []
 
-    # 1. User-provided docs
-    config_path = base_dir / REQUIRED_CONTEXT_CONFIG
-    if config_path.exists():
-        try:
-            content = config_path.read_text()
-            user_docs = parse_yaml_list(content, 'user_provided_docs')
-            for doc_path in user_docs:
-                full_path = base_dir / doc_path
-                if full_path.exists():
-                    files.append(str(full_path))
-        except IOError:
-            pass
-
-    # 3. Workspace
+    # Workspace
     workspace_path = base_dir / WORKSPACE_FILE
     if workspace_path.exists():
         files.append(str(workspace_path))

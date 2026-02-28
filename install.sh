@@ -60,7 +60,6 @@ State files preserved on update:
   - .meridian/WORKSPACE.md
   - .meridian/workspace/
   - .meridian/config.yaml (merged with new defaults)
-  - .meridian/required-context-files.yaml
   - .meridian/api-docs/
   - .meridian/tasks/
   - .claude/plans/
@@ -164,7 +163,6 @@ STATE_PATTERNS=(
   ".meridian/tasks/"
   ".meridian/.manifest"
   ".meridian/.version"
-  ".meridian/required-context-files.yaml"
   ".claude/plans/"
 )
 
@@ -174,7 +172,6 @@ is_state_file() {
     .meridian/WORKSPACE.md) return 0 ;;
     .meridian/workspace|.meridian/workspace/*) return 0 ;;
     .meridian/config.yaml) return 0 ;;
-    .meridian/required-context-files.yaml) return 0 ;;
     .meridian/api-docs|.meridian/api-docs/*) return 0 ;;
     .meridian/tasks|.meridian/tasks/*) return 0 ;;
     .meridian/plans|.meridian/plans/*) return 0 ;;
@@ -432,7 +429,7 @@ echo ""
 if [[ "$MODE" == "install" ]]; then
   echo "Next steps:"
   echo "  1. Review .meridian/config.yaml for settings"
-  echo "  2. Add your docs to .meridian/required-context-files.yaml"
+  echo "  2. Add docs to .meridian/docs/ with summary + read_when frontmatter"
   echo "  3. Open project in Claude Code - hooks activate automatically"
   echo ""
 fi
@@ -441,7 +438,6 @@ if [[ "$MODE" == "update" ]]; then
   echo "Updated files are ready. State preserved:"
   echo "  - WORKSPACE.md + workspace/"
   echo "  - config.yaml (merged)"
-  echo "  - required-context-files.yaml"
   echo "  - api-docs/"
   echo ""
 fi

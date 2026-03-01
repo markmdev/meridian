@@ -137,48 +137,77 @@ def format_dialogue(entries: list[dict]) -> str:
     return "# Last Session\n\n" + "\n".join(lines)
 
 
+def log(msg, base_dir=None):
+    """Write debug log to state dir."""
+    from datetime import datetime
+    line = f"[{datetime.now().strftime('%H:%M:%S')}] {msg}\n"
+    try:
+        if base_dir:
+            log_path = state_path(base_dir, "session-transcript-debug.log")
+        else:
+            log_path = Path.home() / ".meridian" / "session-transcript-debug.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(log_path, "a") as f:
+            f.write(line)
+    except Exception:
+        pass
+
+
 def main():
+    log("Script started")
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
-        print("[session-transcript] Failed to parse stdin JSON", file=sys.stderr)
+        log("Failed to parse stdin JSON")
         sys.exit(0)
 
     hook_event = input_data.get("hook_event_name", "")
+    log(f"Event: {hook_event}, keys: {list(input_data.keys())}")
+
     if hook_event != "SessionEnd":
-        print(f"[session-transcript] Skipping: event={hook_event}, not SessionEnd", file=sys.stderr)
+        log(f"Skipping: event={hook_event}")
         sys.exit(0)
 
     transcript_path = input_data.get("transcript_path", "")
+    log(f"transcript_path from input: {transcript_path!r}")
 
     claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
+    log(f"CLAUDE_PROJECT_DIR: {claude_project_dir!r}")
+    log(f"MERIDIAN_HEADLESS: {os.environ.get('MERIDIAN_HEADLESS', 'not set')}")
+
     if not claude_project_dir:
-        print("[session-transcript] No CLAUDE_PROJECT_DIR set", file=sys.stderr)
+        log("No CLAUDE_PROJECT_DIR, exiting")
         sys.exit(0)
 
     base_dir = Path(claude_project_dir)
+    log(f"base_dir: {base_dir}", base_dir)
 
     # Fall back to saved transcript path if not provided
     if not transcript_path:
         saved = state_path(base_dir, TRANSCRIPT_PATH_STATE)
+        log(f"No transcript in input, checking saved: {saved}, exists={saved.exists()}", base_dir)
         if saved.exists():
             transcript_path = saved.read_text().strip()
+            log(f"Using saved transcript path: {transcript_path!r}", base_dir)
 
     if not transcript_path or not Path(transcript_path).exists():
-        print(f"[session-transcript] No transcript: path={transcript_path!r}, exists={Path(transcript_path).exists() if transcript_path else 'N/A'}", file=sys.stderr)
+        exists = Path(transcript_path).exists() if transcript_path else "N/A"
+        log(f"No valid transcript: path={transcript_path!r}, exists={exists}", base_dir)
         sys.exit(0)
 
     # Extract dialogue
     entries = extract_dialogue(transcript_path)
+    log(f"Extracted {len(entries)} dialogue entries", base_dir)
 
     if not entries:
-        print(f"[session-transcript] No dialogue entries found in {transcript_path}", file=sys.stderr)
+        log("No entries, exiting", base_dir)
         sys.exit(0)
 
     # Write to state directory
     output_path = state_path(base_dir, LAST_SESSION_FILE)
     output_path.write_text(format_dialogue(entries))
-    print(f"[session-transcript] Wrote {len(entries)} entries to {output_path}", file=sys.stderr)
+    log(f"Wrote {len(entries)} entries to {output_path}", base_dir)
 
     sys.exit(0)
 

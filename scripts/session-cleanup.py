@@ -30,6 +30,7 @@ STARTUP_DELETE = [
 # Files to delete on clear (user cleared conversation)
 CLEAR_DELETE = [
     "action-counter",
+    "last-session.md",
 
     "plan-mode-state",
     "plan-review-blocked",
@@ -63,7 +64,7 @@ def main():
     # Determine which files to delete based on source
     if source == "startup":
         delete_files(STARTUP_DELETE)
-    elif source == "clear":
+    elif source in ("clear", "compact"):
         delete_files(CLEAR_DELETE)
 
     sys.exit(0)

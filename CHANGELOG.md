@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1] - 2026-02-28
+
+### Added
+- **Session transcript**: Extracts user/assistant dialogue (no thinking, tool calls, or system noise) at session end and injects it at next session start. 30KB cap with recency bias. Shared constants and startup cleanup for stale transcripts.
+
+### Changed
+- **Stop checklist**: Now prompts to update all relevant documentation (docs, workspace) instead of just CLAUDE.md.
+
 ## [0.6.0] - 2026-02-28
 
 ### Changed

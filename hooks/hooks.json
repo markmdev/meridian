@@ -3,29 +3,6 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "compact|clear",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/session-learner.py\"",
-            "timeout": 180
-          },
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/context-injector.py\""
-          },
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/save-injected-files.py\""
-          },
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/session-cleanup.py\""
-          }
-        ]
-      },
-      {
-        "matcher": "startup",
         "hooks": [
           {
             "type": "command",

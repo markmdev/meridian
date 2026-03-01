@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.2] - 2026-02-28
+
+### Changed
+- **Simplified SessionStart hooks**: Merged duplicate matcher entries into one. Session learner removed from SessionStart (runs at SessionEnd only). Hooks skip `resume` events to avoid re-injecting context into resumed sessions.
+- **Cleaned up session-cleanup**: Removed redundant SessionEnd registration and dead code branches (`COMPACT_DELETE`, `SESSION_END_DELETE`).
+
 ## [0.6.1] - 2026-02-28
 
 ### Added

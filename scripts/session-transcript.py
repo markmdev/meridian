@@ -141,16 +141,19 @@ def main():
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:
+        print("[session-transcript] Failed to parse stdin JSON", file=sys.stderr)
         sys.exit(0)
 
     hook_event = input_data.get("hook_event_name", "")
     if hook_event != "SessionEnd":
+        print(f"[session-transcript] Skipping: event={hook_event}, not SessionEnd", file=sys.stderr)
         sys.exit(0)
 
     transcript_path = input_data.get("transcript_path", "")
 
     claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
     if not claude_project_dir:
+        print("[session-transcript] No CLAUDE_PROJECT_DIR set", file=sys.stderr)
         sys.exit(0)
 
     base_dir = Path(claude_project_dir)
@@ -162,17 +165,20 @@ def main():
             transcript_path = saved.read_text().strip()
 
     if not transcript_path or not Path(transcript_path).exists():
+        print(f"[session-transcript] No transcript: path={transcript_path!r}, exists={Path(transcript_path).exists() if transcript_path else 'N/A'}", file=sys.stderr)
         sys.exit(0)
 
     # Extract dialogue
     entries = extract_dialogue(transcript_path)
 
     if not entries:
+        print(f"[session-transcript] No dialogue entries found in {transcript_path}", file=sys.stderr)
         sys.exit(0)
 
     # Write to state directory
     output_path = state_path(base_dir, LAST_SESSION_FILE)
     output_path.write_text(format_dialogue(entries))
+    print(f"[session-transcript] Wrote {len(entries)} entries to {output_path}", file=sys.stderr)
 
     sys.exit(0)
 

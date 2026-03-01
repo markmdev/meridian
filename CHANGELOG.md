@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.4] - 2026-02-28
+
+### Fixed
+- **Session transcript surviving SessionEnd**: The session learner's headless `claude -p` subprocess triggered meridian hooks (installed at user scope), causing `session-cleanup` to delete `last-session.md` right after `session-transcript` wrote it. Headless sessions now set `MERIDIAN_HEADLESS=1` and all hook scripts exit immediately when this is detected.
+
 ## [0.6.3] - 2026-02-28
 
 ### Fixed

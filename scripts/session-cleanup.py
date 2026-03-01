@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Session Cleanup — SessionStart (startup, compact, clear) + SessionEnd Hook
+Session Cleanup — SessionStart Hook
 
-Removes ephemeral state files based on event type. Some files persist
-across certain events (e.g., active-plan is never deleted).
+Removes ephemeral state files based on how the session started.
 """
 
 import json
@@ -36,13 +35,6 @@ CLEAR_DELETE = [
     "plan-review-blocked",
 ]
 
-# Files to delete on compact
-COMPACT_DELETE = []
-
-# Files to delete on SessionEnd
-SESSION_END_DELETE = [
-    "plan-action-counter",
-]
 
 
 def delete_files(files: list[str]) -> None:
@@ -63,19 +55,14 @@ def main():
     except (json.JSONDecodeError, EOFError):
         input_data = {}
 
-    hook_event = input_data.get("hook_event_name", "")
     source = input_data.get("source", "startup")
 
     if not STATE_DIR.exists():
         sys.exit(0)
 
-    # Determine which files to delete based on event
-    if hook_event == "SessionEnd":
-        delete_files(SESSION_END_DELETE)
-    elif source == "startup":
+    # Determine which files to delete based on source
+    if source == "startup":
         delete_files(STARTUP_DELETE)
-    elif source == "compact":
-        delete_files(COMPACT_DELETE)
     elif source == "clear":
         delete_files(CLEAR_DELETE)
 

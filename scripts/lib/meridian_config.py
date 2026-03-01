@@ -24,6 +24,8 @@ ACTIVE_PLAN_FILE = "active-plan"
 INJECTED_FILES_LOG = "injected-files"
 HOOK_LOGS_DIR = "hook_logs"
 LOOP_STATE_FILE = "loop-state"
+LAST_SESSION_FILE = "last-session.md"
+TRANSCRIPT_PATH_STATE = "transcript-path"
 
 
 # =============================================================================
@@ -803,6 +805,20 @@ def build_injected_context(base_dir: Path) -> str:
             except IOError:
                 pass
 
+    # Last session transcript (dialogue from previous session)
+    last_session_path = state_path(base_dir, LAST_SESSION_FILE)
+    if last_session_path.exists():
+        try:
+            content = last_session_path.read_text()
+            if content.strip():
+                parts.append("**Previous session dialogue. Use this to understand what happened last session and pick up where you left off.**")
+                parts.append('<last-session>')
+                parts.append(content.rstrip())
+                parts.append('</last-session>')
+                parts.append("")
+        except IOError:
+            pass
+
     # Active work-until loop (if any)
     if is_loop_active(base_dir):
         loop_state_path = state_path(base_dir, LOOP_STATE_FILE)
@@ -963,7 +979,7 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         parts.append("- Close/update Pebble issues for completed work")
 
     parts.append("- Run tests/lint/build if you made code changes")
-    parts.append("- Consider updating CLAUDE.md if you made architectural changes")
+    parts.append("- Update relevant documentation (CLAUDE.md, docs, workspace) if you made significant changes")
 
     # Check for uncommitted changes
     try:

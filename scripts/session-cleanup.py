@@ -21,6 +21,7 @@ STATE_DIR = get_state_dir(PROJECT_DIR)
 # Files to delete on startup (fresh session)
 STARTUP_DELETE = [
     "action-counter",
+    "last-session.md",
 
     "plan-mode-state",
     "plan-review-blocked",

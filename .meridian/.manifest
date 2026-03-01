@@ -1,5 +1,4 @@
 .meridian/CODE_GUIDE.md
-.meridian/SOUL.md
 .meridian/docs/README.md
 .meridian/prompts/agent-operating-manual.md
 .meridian/prompts/coderabbit-task.md
@@ -7,3 +6,4 @@
 .meridian/scripts/learner-log.py
 .meridian/scripts/setup-work-until.sh
 .meridian/scripts/state-dir.sh
+.meridian/SOUL.md

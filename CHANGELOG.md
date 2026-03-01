@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.3] - 2026-02-28
+
+### Fixed
+- **Session transcript cleanup**: `last-session.md` now deleted on `/clear` and compact, not just fresh startup.
+
 ## [0.6.2] - 2026-02-28
 
 ### Changed

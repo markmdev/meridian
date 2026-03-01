@@ -12,7 +12,10 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import get_state_dir
+from meridian_config import get_state_dir, is_headless
+
+if is_headless():
+    sys.exit(0)
 
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 STATE_DIR = get_state_dir(PROJECT_DIR)

@@ -13,7 +13,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import state_path, LAST_SESSION_FILE, TRANSCRIPT_PATH_STATE
+from meridian_config import state_path, LAST_SESSION_FILE, TRANSCRIPT_PATH_STATE, is_headless
+
+if is_headless():
+    sys.exit(0)
 
 MAX_ENTRY_CHARS = 2000
 MAX_DIALOGUE_CHARS = 30000

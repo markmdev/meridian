@@ -633,6 +633,7 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> dict:
     Returns dict with: success, exit_code, tools_used, text_output
     """
     env = {k: v for k, v in os.environ.items() if k not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")}
+    env["MERIDIAN_HEADLESS"] = "1"
     run_info = {"success": False, "exit_code": -1, "tools_used": [], "text_output": ""}
 
     try:

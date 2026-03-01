@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     build_injected_context,
+    is_headless,
     log_hook_output,
     get_state_dir,
     state_path,
@@ -47,6 +48,9 @@ def wait_for_session_learner(base_dir: Path, source: str) -> None:
 
 
 def main() -> int:
+    if is_headless():
+        return 0
+
     # Read input to get session info
     try:
         input_data = json.load(sys.stdin)

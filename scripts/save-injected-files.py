@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     get_project_config,
     get_active_plan_path,
+    is_headless,
     scan_docs_directory,
     state_path,
     WORKSPACE_FILE,
@@ -76,6 +77,9 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
 
 
 def main():
+    if is_headless():
+        sys.exit(0)
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:

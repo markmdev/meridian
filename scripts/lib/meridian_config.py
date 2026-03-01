@@ -3,8 +3,18 @@ Shared configuration helpers for Meridian hooks.
 """
 
 import hashlib
+import os
 import subprocess
 from pathlib import Path
+
+
+def is_headless():
+    """Check if running inside a headless session (e.g., session learner subprocess).
+
+    When True, hooks should exit immediately — the headless session shouldn't
+    trigger cleanup, context injection, or any other side effects.
+    """
+    return os.environ.get("MERIDIAN_HEADLESS") == "1"
 
 
 # =============================================================================

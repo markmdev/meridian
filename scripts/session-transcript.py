@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Session Transcript — SessionEnd + SessionStart (compact/clear) Hook
+Session Transcript — SessionEnd Hook
 
 Extracts the user/assistant dialogue from the session transcript (no thinking,
 no tool calls, no tool results) and writes it to the state directory as
-last-session.md. The context injector picks this up at next session start
-or immediately after a /clear.
+last-session.md. The context injector picks this up at next session start.
 """
 
 import json
@@ -142,7 +141,7 @@ def main():
         sys.exit(0)
 
     hook_event = input_data.get("hook_event_name", "")
-    if hook_event not in ("SessionEnd", "SessionStart"):
+    if hook_event != "SessionEnd":
         sys.exit(0)
 
     transcript_path = input_data.get("transcript_path", "")

@@ -15,6 +15,7 @@ from pathlib import Path
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
+    LAST_SESSION_FILE,
     build_injected_context,
     is_headless,
     log_hook_output,
@@ -65,8 +66,17 @@ def main() -> int:
     # Wait for session-learner to finish updating workspace before injecting
     wait_for_session_learner(base_dir, source)
 
-    # Build the injected context
+    # Build the injected context (reads last-session.md among other files)
     injected_context = build_injected_context(base_dir)
+
+    # Delete last-session.md after reading — we own its lifecycle now
+    # (session-cleanup can't do it because hooks run in parallel = race condition)
+    last_session = state_path(base_dir, LAST_SESSION_FILE)
+    try:
+        if last_session.exists():
+            last_session.unlink()
+    except OSError:
+        pass
 
     # Save to state for debugging/inspection and session-learner
     sd = get_state_dir(base_dir)

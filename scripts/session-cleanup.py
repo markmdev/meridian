@@ -21,9 +21,9 @@ PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 STATE_DIR = get_state_dir(PROJECT_DIR)
 
 # Files to delete on startup (fresh session)
+# Note: last-session.md is NOT here — context-injector reads then deletes it
 STARTUP_DELETE = [
     "action-counter",
-    "last-session.md",
 
     "plan-mode-state",
     "plan-review-blocked",
@@ -33,7 +33,6 @@ STARTUP_DELETE = [
 # Files to delete on clear (user cleared conversation)
 CLEAR_DELETE = [
     "action-counter",
-    "last-session.md",
 
     "plan-mode-state",
     "plan-review-blocked",

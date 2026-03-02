@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.13] - 2026-03-02
+
+### Fixed
+- **Session learner BrokenPipeError** — `claude -p` subprocess failures (broken pipe, OS errors) are now caught and logged instead of crashing the hook. Debug log captures stderr and last stdout lines on non-zero exit for diagnosis.
+
 ## [0.6.12] - 2026-03-02
 
 ### Fixed

@@ -1,6 +1,6 @@
 {
   "name": "meridian",
-  "version": "0.6.11",
+  "version": "0.6.12",
   "description": "Agent enforcement framework — context injection, planning gates, session learning",
   "author": {
     "name": "Mark Morgan",

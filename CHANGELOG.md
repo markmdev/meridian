@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.12] - 2026-03-02
+
+### Fixed
+- **Hooks firing in subprocesses** — Added `is_headless()` guard to all 7 unguarded hook scripts (stop-checklist, work-until-stop, action-counter, plan-mode-tracker, plan-approval-reminder, plan-review, reviewer-root-guard). Previously, `claude -p` subprocesses loaded the Meridian plugin via `--setting-sources user` and fired these hooks, injecting stop checklists and other noise into headless sessions.
+- **Session learner dedup removed** — Removed `was_recently_synced` 30-second dedup window. The lock file already prevents concurrent runs, and the dedup was silently dropping legitimate SessionEnd events.
+
+### Added
+- **Session learner debug logging** — Step-by-step trace to `session-learner.log` in the state directory, matching the daily-summary logging pattern. Covers every decision point: event check, transcript validation, extraction, prompt build, `claude -p` call, and result.
+
 ## [0.6.11] - 2026-03-02
 
 ### Removed

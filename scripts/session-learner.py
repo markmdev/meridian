@@ -516,10 +516,10 @@ def parse_stream_json(stdout: str) -> tuple[list[dict], str]:
     """Parse stream-json output into (tools_used, text_output).
 
     tools_used: list of {"tool": "Write", "file": ".meridian/WORKSPACE.md"}
-    text_output: concatenated text blocks for the human-readable output file
+    text_output: the final result text (not intermediate narration between tool calls)
     """
     tools_used = []
-    text_parts = []
+    result_text = ""
 
     for line in stdout.strip().split('\n'):
         if not line.strip():
@@ -529,31 +529,26 @@ def parse_stream_json(stdout: str) -> tuple[list[dict], str]:
         except json.JSONDecodeError:
             continue
 
-        # Handle assistant messages with content blocks
+        # Collect tool usage from assistant messages
         msg = entry.get("message", {})
         content = msg.get("content", [])
         if isinstance(content, list):
             for block in content:
-                btype = block.get("type", "")
-                if btype == "tool_use":
+                if block.get("type") == "tool_use":
                     tool_entry = {"tool": block.get("name", "unknown")}
                     input_data = block.get("input", {})
                     file_path = input_data.get("file_path") or input_data.get("path") or ""
                     if file_path:
                         tool_entry["file"] = file_path
                     tools_used.append(tool_entry)
-                elif btype == "text":
-                    text = block.get("text", "")
-                    if text.strip():
-                        text_parts.append(text)
 
-        # Handle result entry
+        # The result entry contains the final response text
         if entry.get("type") == "result":
-            result_text = entry.get("result", "")
-            if result_text and isinstance(result_text, str):
-                text_parts.append(result_text)
+            r = entry.get("result", "")
+            if r and isinstance(r, str):
+                result_text = r
 
-    return tools_used, "\n".join(text_parts)
+    return tools_used, result_text
 
 
 def get_git_diff_after(project_dir: Path) -> tuple[list[str], str]:

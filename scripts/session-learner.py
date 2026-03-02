@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
-Session Learner — SessionStart (compact, clear) + SessionEnd Hook
+Session Learner — SessionEnd Hook
 
 Extracts session transcript and spawns a headless Claude session to:
 1. Update the workspace (persistent knowledge library)
 2. Learn from user corrections (update CLAUDE.md files)
-
-Runs synchronously on SessionStart so workspace is ready before context injection.
 """
 
 import json
@@ -20,7 +18,6 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path
 
-TRANSCRIPT_PATH_STATE = "transcript-path"
 WORKSPACE_SYNC_LOCK = "workspace-sync.lock"
 LAST_SYNC_FILE = "last-workspace-sync"
 SESSION_LEARNER_LOG = "session-learner.jsonl"
@@ -603,6 +600,17 @@ def get_git_diff_after(project_dir: Path) -> tuple[list[str], str]:
     return files_changed, diff_stat
 
 
+def log_skip(project_dir: Path, reason: str, **extra):
+    """Log an early-exit skip to the JSONL session-learner log."""
+    entry = {
+        "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        "skipped": True,
+        "reason": reason,
+        **extra,
+    }
+    log_learner_run(project_dir, entry)
+
+
 def log_learner_run(project_dir: Path, entry: dict):
     """Append a run entry to the JSONL log with rotation (keep last MAX_LOG_ENTRIES)."""
     log_path = state_path(project_dir, SESSION_LEARNER_LOG)
@@ -695,60 +703,40 @@ def main():
         input_data = {}
 
     hook_event = input_data.get("hook_event_name", "")
-    source = input_data.get("source", "")
     transcript_path = input_data.get("transcript_path", "")
 
     project_dir = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 
-    # Determine if this is an event we handle
-    is_compact_clear = hook_event == "SessionStart" and source in ("compact", "clear")
-    is_session_end = hook_event == "SessionEnd"
-
-    if not is_compact_clear and not is_session_end:
+    # Only handle SessionEnd
+    if hook_event != "SessionEnd":
+        log_skip(project_dir, "wrong_event", hook_event=hook_event)
         sys.exit(0)
 
-    # Dedup: /clear fires both SessionEnd and SessionStart:clear on the same transcript.
-    # Skip if we already processed recently.
+    # Dedup: skip if we already processed recently
     if was_recently_synced(project_dir):
+        log_skip(project_dir, "recently_synced")
         sys.exit(0)
 
-    # For compact/clear: acquire lock IMMEDIATELY so context-injector can wait.
-    # Hooks run in parallel — lock must exist before context-injector checks for it.
     lock_acquired = False
-    if is_compact_clear:
-        if not acquire_lock(project_dir):
-            print("[Meridian] Workspace sync already running, skipping", file=sys.stderr)
-            sys.exit(0)
-        lock_acquired = True
-
     try:
-        # Determine which transcript to read
-        if source == "clear":
-            saved_path = state_path(project_dir, TRANSCRIPT_PATH_STATE)
-            if saved_path.exists():
-                transcript_path = saved_path.read_text().strip()
-            else:
-                print("[Meridian] No saved transcript path for clear event, skipping", file=sys.stderr)
-                return
-        # compact and SessionEnd use transcript_path from input_data directly
-
         if not transcript_path or not Path(transcript_path).exists():
+            log_skip(project_dir, "no_transcript")
             return
 
-        # For SessionEnd: acquire lock now (context-injector doesn't run, no rush)
-        if is_session_end:
-            if not acquire_lock(project_dir):
-                print("[Meridian] Workspace sync already running, skipping", file=sys.stderr)
-                return
-            lock_acquired = True
+        if not acquire_lock(project_dir):
+            log_skip(project_dir, "lock_held")
+            print("[Meridian] Workspace sync already running, skipping", file=sys.stderr)
+            return
+        lock_acquired = True
 
         # Extract transcript
-        start_line, end_line = get_extraction_range(transcript_path, source if source else "end")
+        start_line, end_line = get_extraction_range(transcript_path, "end")
         entries = extract_transcript(transcript_path, start_line, end_line)
 
         # Skip if too few meaningful entries
         meaningful = [e for e in entries if e["type"] in ("user", "assistant")]
         if len(meaningful) < MIN_ENTRIES_THRESHOLD:
+            log_skip(project_dir, "below_threshold", entries=len(meaningful))
             return
 
         # Load workspace, config, and git context
@@ -780,7 +768,7 @@ def main():
         # Log to JSONL
         log_entry = {
             "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-            "trigger": source if source else "end",
+            "trigger": "end",
             "transcript_entries": len(entries),
             "meaningful_entries": len(meaningful),
             "duration_seconds": round(duration, 1),

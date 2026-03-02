@@ -616,6 +616,10 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> dict:
         )
         run_info["exit_code"] = result.returncode
 
+        # Log stderr for debugging
+        if result.stderr:
+            log(project_dir, f"claude stderr: {result.stderr[:300]}")
+
         # Parse stream-json output for tool usage and text
         tools_used, text_output = parse_stream_json(result.stdout or "")
         run_info["tools_used"] = tools_used
@@ -631,20 +635,30 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> dict:
             pass
 
         if result.returncode != 0:
-            print(f"[Meridian] Workspace agent exited with code {result.returncode}", file=sys.stderr)
-            if result.stderr:
-                print(f"[Meridian] {result.stderr[:500]}", file=sys.stderr)
+            log(project_dir, f"claude exited with code {result.returncode}")
+            # Log last few lines of stdout for diagnosis
+            stdout_lines = (result.stdout or "").strip().split('\n')
+            for line in stdout_lines[-3:]:
+                log(project_dir, f"  stdout: {line[:300]}")
             return run_info
 
         run_info["success"] = True
         return run_info
     except subprocess.TimeoutExpired:
-        print("[Meridian] Workspace agent timed out (180s)", file=sys.stderr)
+        log(project_dir, "claude timed out (180s)")
         run_info["exit_code"] = -2
         return run_info
+    except BrokenPipeError as e:
+        log(project_dir, f"BrokenPipeError: {e}")
+        run_info["exit_code"] = -4
+        return run_info
     except FileNotFoundError:
-        print("[Meridian] claude CLI not found", file=sys.stderr)
+        log(project_dir, "claude CLI not found")
         run_info["exit_code"] = -3
+        return run_info
+    except OSError as e:
+        log(project_dir, f"OSError: {e}")
+        run_info["exit_code"] = -5
         return run_info
 
 

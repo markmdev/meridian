@@ -182,6 +182,54 @@ _INT_KEYS = [
 ]
 
 
+def _parse_extra_doc_dirs(content: str) -> list[dict]:
+    """Parse extra_doc_dirs list from YAML content (no PyYAML dependency).
+
+    Expects format:
+        extra_doc_dirs:
+          - path: "knowledge/"
+            header: "My docs"
+    """
+    result = []
+    in_section = False
+    current: dict = {}
+
+    for line in content.split('\n'):
+        stripped = line.strip()
+
+        if stripped == 'extra_doc_dirs:':
+            in_section = True
+            continue
+
+        if not in_section:
+            continue
+
+        # Exit section on non-indented, non-empty line
+        if stripped and not line[0].isspace():
+            break
+
+        if stripped.startswith('- path:'):
+            if current and 'path' in current:
+                result.append(current)
+            current = {'path': stripped.split(':', 1)[1].strip().strip('"\'') }
+        elif stripped.startswith('header:') and current:
+            current['header'] = stripped.split(':', 1)[1].strip().strip('"\'')
+
+    if current and 'path' in current:
+        result.append(current)
+
+    return result
+
+
+def get_extra_doc_dirs(project_config: dict) -> list[tuple[str, str]]:
+    """Extract (path, header) tuples from extra_doc_dirs config."""
+    result = []
+    for extra in project_config.get('extra_doc_dirs', []):
+        if isinstance(extra, dict) and 'path' in extra:
+            result.append((extra['path'], extra.get('header', f"Additional docs from {extra['path']}")))
+    return result
+
+
 def get_project_config(base_dir: Path) -> dict:
     """Read project config and return as dict with defaults."""
     config = {
@@ -189,6 +237,7 @@ def get_project_config(base_dir: Path) -> dict:
         'stop_hook_min_actions': 15,
         'plan_review_min_actions': 20,
         'session_learner_mode': 'project',
+        'extra_doc_dirs': [],
     }
 
     config_path = base_dir / MERIDIAN_CONFIG
@@ -214,6 +263,8 @@ def get_project_config(base_dir: Path) -> dict:
         sl_mode = get_config_value(content, 'session_learner_mode')
         if sl_mode and sl_mode.lower() in ('project', 'assistant'):
             config['session_learner_mode'] = sl_mode.lower()
+
+        config['extra_doc_dirs'] = _parse_extra_doc_dirs(content)
 
     except IOError:
         pass
@@ -763,9 +814,7 @@ def build_injected_context(base_dir: Path) -> str:
     ]
 
     # Add extra doc dirs from config
-    for extra in project_config.get('extra_doc_dirs', []):
-        if isinstance(extra, dict) and 'path' in extra:
-            doc_dirs.append((extra['path'], extra.get('header', f"Additional docs from {extra['path']}")))
+    doc_dirs.extend(get_extra_doc_dirs(project_config))
 
     any_docs = False
     for dir_rel, header in doc_dirs:
@@ -1088,11 +1137,12 @@ def build_headless_env() -> dict:
     """Build an environment dict for spawning isolated claude -p subprocesses.
 
     Sets MERIDIAN_HEADLESS=1 so hooks exit immediately in the subprocess,
-    and removes CLAUDECODE to avoid session interference.
+    and removes CLAUDECODE and CLAUDE_CODE_ENTRYPOINT to avoid session interference.
     """
     env = os.environ.copy()
     env["MERIDIAN_HEADLESS"] = "1"
     env.pop("CLAUDECODE", None)
+    env.pop("CLAUDE_CODE_ENTRYPOINT", None)
     return env
 
 

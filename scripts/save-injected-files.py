@@ -16,6 +16,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     get_project_config,
+    get_extra_doc_dirs,
     get_active_plan_path,
     is_headless,
     scan_docs_directory,
@@ -26,7 +27,7 @@ from meridian_config import (
 )
 
 
-def get_injected_file_paths(base_dir: Path) -> list[str]:
+def get_injected_file_paths(base_dir: Path, project_config: dict) -> list[str]:
     """Get list of all files that will be injected into context (absolute paths)."""
     files = []
 
@@ -57,10 +58,8 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
     # Docs index — scan .meridian/docs/ and .meridian/api-docs/ for frontmatter'd files
     # Write to a state file so subagents can discover available docs
     doc_scan_dirs = [".meridian/docs", ".meridian/api-docs"]
-    project_config = get_project_config(base_dir)
-    for extra in project_config.get('extra_doc_dirs', []):
-        if isinstance(extra, dict) and 'path' in extra:
-            doc_scan_dirs.append(extra['path'])
+    for path, _header in get_extra_doc_dirs(project_config):
+        doc_scan_dirs.append(path)
 
     docs_index_parts = []
     for dir_rel in doc_scan_dirs:
@@ -102,11 +101,9 @@ def main():
 
     base_dir = Path(claude_project_dir)
 
-    # Get list of injected files
-    injected_files = get_injected_file_paths(base_dir)
-
-    # Get pebble_enabled setting
+    # Get config and list of injected files
     project_config = get_project_config(base_dir)
+    injected_files = get_injected_file_paths(base_dir, project_config)
     pebble_enabled = project_config.get('pebble_enabled', False)
 
     # Write to log file

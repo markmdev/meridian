@@ -16,7 +16,7 @@ from pathlib import Path
 from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path, is_system_noise
+from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path, is_system_noise, build_headless_env, build_headless_args
 
 WORKSPACE_SYNC_LOCK = "workspace-sync.lock"
 LAST_SYNC_FILE = "last-workspace-sync"
@@ -44,25 +44,14 @@ def count_lines(path: str) -> int:
         return sum(1 for _ in f)
 
 
-def get_extraction_range(transcript_path: str, source: str) -> tuple[int, int]:
-    """Determine start/end lines for extraction based on event source."""
+def get_extraction_range(transcript_path: str) -> tuple[int, int]:
+    """Determine start/end lines for extraction (everything since last compact boundary)."""
     boundaries = find_compact_boundaries(transcript_path)
     total = count_lines(transcript_path)
 
-    if source == "compact":
-        # Current compaction is the last boundary — extract entries before it
-        if len(boundaries) >= 2:
-            return boundaries[-2], boundaries[-1]
-        elif len(boundaries) == 1:
-            return 0, boundaries[0]
-        else:
-            return 0, total
-    else:
-        # clear / SessionEnd: everything since last boundary to end
-        if boundaries:
-            return boundaries[-1], total
-        else:
-            return 0, total
+    if boundaries:
+        return boundaries[-1], total
+    return 0, total
 
 
 def extract_tool_input_summary(input_dict: dict) -> dict:
@@ -639,21 +628,12 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> dict:
 
     Returns dict with: success, exit_code, tools_used, text_output
     """
-    env = {k: v for k, v in os.environ.items() if k not in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")}
-    env["MERIDIAN_HEADLESS"] = "1"
+    env = build_headless_env()
     run_info = {"success": False, "exit_code": -1, "tools_used": [], "text_output": ""}
 
     try:
         result = subprocess.run(
-            [
-                "claude", "-p",
-                "--model", "claude-opus-4-6",
-                "--output-format", "stream-json", "--verbose",
-                "--allowedTools", "Write,Read,Edit",
-                "--dangerously-skip-permissions",
-                "--no-session-persistence",
-                "--setting-sources", "user",
-            ],
+            build_headless_args(),
             input=prompt,
             capture_output=True,
             text=True,
@@ -729,7 +709,7 @@ def main():
         lock_acquired = True
 
         # Extract transcript
-        start_line, end_line = get_extraction_range(transcript_path, "end")
+        start_line, end_line = get_extraction_range(transcript_path)
         entries = extract_transcript(transcript_path, start_line, end_line)
 
         # Skip if too few meaningful entries

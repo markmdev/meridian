@@ -463,7 +463,7 @@ def release_lock(project_dir: Path):
 
 
 def was_recently_synced(project_dir: Path) -> bool:
-    """Check if workspace was synced in the last 30 seconds (dedup for /clear)."""
+    """Check if workspace was synced in the last 30 seconds (dedup for repeated SessionEnd fires)."""
     sync_path = state_path(project_dir, LAST_SYNC_FILE)
     if sync_path.exists():
         try:

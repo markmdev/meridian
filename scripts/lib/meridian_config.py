@@ -1093,44 +1093,6 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
 
 # =============================================================================
-# HOOK DEDUPLICATION
-# =============================================================================
-def is_duplicate_run(project_dir: Path, hook_name: str, transcript_path: str) -> bool:
-    """Check if this hook has already run for the given transcript.
-
-    SessionEnd fires multiple times per session. This helper prevents hooks
-    from running redundant work by storing an MD5 hash of the transcript path
-    in a dedup state file.
-
-    Returns True if this is a duplicate (same transcript path seen before).
-    """
-    dedup_path = state_path(project_dir, f"{hook_name}.dedup")
-    current_hash = hashlib.md5(transcript_path.encode()).hexdigest()
-
-    if dedup_path.exists():
-        try:
-            if dedup_path.read_text().strip() == current_hash:
-                return True
-        except IOError:
-            pass
-
-    try:
-        dedup_path.write_text(current_hash)
-    except IOError:
-        pass
-
-    return False
-
-
-def clear_dedup(project_dir: Path, hook_name: str) -> None:
-    """Remove the dedup file for a hook (useful for session cleanup)."""
-    try:
-        state_path(project_dir, f"{hook_name}.dedup").unlink(missing_ok=True)
-    except Exception:
-        pass
-
-
-# =============================================================================
 # SUBPROCESS ISOLATION (headless claude -p)
 # =============================================================================
 def build_headless_env() -> dict:

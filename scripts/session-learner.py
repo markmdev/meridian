@@ -16,7 +16,10 @@ from pathlib import Path
 from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path, is_system_noise, build_headless_env, build_headless_args
+from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path, is_system_noise, is_headless, build_headless_env, build_headless_args
+
+if is_headless():
+    sys.exit(0)
 
 WORKSPACE_SYNC_LOCK = "workspace-sync.lock"
 SESSION_LEARNER_LOG = "session-learner.jsonl"

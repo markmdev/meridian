@@ -56,8 +56,14 @@ def get_injected_file_paths(base_dir: Path) -> list[str]:
 
     # Docs index — scan .meridian/docs/ and .meridian/api-docs/ for frontmatter'd files
     # Write to a state file so subagents can discover available docs
+    doc_scan_dirs = [".meridian/docs", ".meridian/api-docs"]
+    project_config = get_project_config(base_dir)
+    for extra in project_config.get('extra_doc_dirs', []):
+        if isinstance(extra, dict) and 'path' in extra:
+            doc_scan_dirs.append(extra['path'])
+
     docs_index_parts = []
-    for dir_rel in (".meridian/docs", ".meridian/api-docs"):
+    for dir_rel in doc_scan_dirs:
         listing = scan_docs_directory(base_dir / dir_rel, base_dir)
         if listing:
             docs_index_parts.append(f"## {dir_rel}")

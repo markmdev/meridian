@@ -23,6 +23,31 @@ def is_headless():
 MERIDIAN_CONFIG = ".meridian/config.yaml"
 WORKSPACE_FILE = ".meridian/WORKSPACE.md"
 
+# Markers that identify system/hook noise rather than real user messages.
+# Used by session-transcript and session-learner to filter injected context.
+SYSTEM_NOISE_MARKERS = (
+    "<system-reminder>",
+    "<injected-project-context>",
+    "<local-command-caveat>",
+    "<command-name>",
+    "<command-message>",
+    "<command-args>",
+    "Stop hook feedback:",
+    "Base directory for this skill:",
+    "SessionStart:clear hook",
+    "SessionStart hook additional context:",
+    "UserPromptSubmit hook",
+)
+
+
+def is_system_noise(text: str) -> bool:
+    """Check if a message is system/hook noise rather than real dialogue."""
+    for marker in SYSTEM_NOISE_MARKERS:
+        if marker in text:
+            return True
+    return False
+
+
 # State file names (resolved at runtime via get_state_dir())
 # State lives in ~/.meridian/state/<project-hash>/ so .meridian/ can be
 # symlinked across worktrees without sharing ephemeral session state.
@@ -736,6 +761,12 @@ def build_injected_context(base_dir: Path) -> str:
         (".meridian/api-docs", "External API docs. Read the relevant doc before using any listed API."),
         (".meridian/docs", "Project documentation. Read relevant docs when your task matches a hint below."),
     ]
+
+    # Add extra doc dirs from config
+    for extra in project_config.get('extra_doc_dirs', []):
+        if isinstance(extra, dict) and 'path' in extra:
+            doc_dirs.append((extra['path'], extra.get('header', f"Additional docs from {extra['path']}")))
+
     any_docs = False
     for dir_rel, header in doc_dirs:
         listing = scan_docs_directory(base_dir / dir_rel, base_dir)
@@ -1010,3 +1041,73 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     parts.append("Skip items you already did this session. Then continue with your stop.")
 
     return "\n".join(parts)
+
+
+# =============================================================================
+# HOOK DEDUPLICATION
+# =============================================================================
+def is_duplicate_run(project_dir: Path, hook_name: str, transcript_path: str) -> bool:
+    """Check if this hook has already run for the given transcript.
+
+    SessionEnd fires multiple times per session. This helper prevents hooks
+    from running redundant work by storing an MD5 hash of the transcript path
+    in a dedup state file.
+
+    Returns True if this is a duplicate (same transcript path seen before).
+    """
+    dedup_path = state_path(project_dir, f"{hook_name}.dedup")
+    current_hash = hashlib.md5(transcript_path.encode()).hexdigest()
+
+    if dedup_path.exists():
+        try:
+            if dedup_path.read_text().strip() == current_hash:
+                return True
+        except IOError:
+            pass
+
+    try:
+        dedup_path.write_text(current_hash)
+    except IOError:
+        pass
+
+    return False
+
+
+def clear_dedup(project_dir: Path, hook_name: str) -> None:
+    """Remove the dedup file for a hook (useful for session cleanup)."""
+    try:
+        state_path(project_dir, f"{hook_name}.dedup").unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+# =============================================================================
+# SUBPROCESS ISOLATION (headless claude -p)
+# =============================================================================
+def build_headless_env() -> dict:
+    """Build an environment dict for spawning isolated claude -p subprocesses.
+
+    Sets MERIDIAN_HEADLESS=1 so hooks exit immediately in the subprocess,
+    and removes CLAUDECODE to avoid session interference.
+    """
+    env = os.environ.copy()
+    env["MERIDIAN_HEADLESS"] = "1"
+    env.pop("CLAUDECODE", None)
+    return env
+
+
+def build_headless_args(model: str = "claude-opus-4-6", allowed_tools: str = "Write,Read,Edit") -> list[str]:
+    """Build the argument list for spawning an isolated claude -p subprocess.
+
+    Returns a command list suitable for subprocess.run() or subprocess.Popen().
+    """
+    return [
+        "claude", "-p",
+        "--model", model,
+        "--output-format", "stream-json",
+        "--verbose",
+        "--allowedTools", allowed_tools,
+        "--dangerously-skip-permissions",
+        "--no-session-persistence",
+        "--setting-sources", "user",
+    ]

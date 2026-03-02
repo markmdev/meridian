@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.9] - 2026-03-02
+
+### Added
+- **`extra_doc_dirs` config**: New config.yaml key to scan additional doc directories beyond `.meridian/docs/` and `.meridian/api-docs/`. Context injector and save-injected-files both support it.
+- **Skip observability**: Session learner logs early-exit reasons (wrong event, dedup, no transcript, lock held, below threshold) to JSONL via `log_skip()`.
+- **Subprocess isolation helpers**: `build_headless_env()` and `build_headless_args()` in meridian_config for spawning isolated `claude -p` subprocesses.
+
+### Changed
+- **Shared noise markers**: `SYSTEM_NOISE_MARKERS` and `is_system_noise()` extracted to meridian_config.py — session-learner and session-transcript both import from the shared source.
+- **Session learner simplified**: Dead SessionStart/compact/clear code paths removed. Only handles SessionEnd. `get_extraction_range()` simplified to a single code path. `run_workspace_agent()` uses shared helpers.
+- **Context injector streamlined**: Removed 5-second `wait_for_session_learner` sleep (waiting for a lock that never appears after SessionStart removal). Uses `TRANSCRIPT_PATH_STATE` constant instead of hardcoded string.
+
 ## [0.6.4] - 2026-02-28
 
 ### Fixed

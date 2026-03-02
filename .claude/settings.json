@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/daily-summary.py",
+            "timeout": 60000,
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

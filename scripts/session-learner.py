@@ -469,7 +469,7 @@ def cleanup_docs_to_delete(project_dir: Path):
             pass
 
     if deleted:
-        print(f"[Meridian] Deleted outdated docs: {', '.join(deleted)}", file=sys.stderr)
+        log(project_dir, f"deleted docs: {', '.join(deleted)}")
 
 
 
@@ -686,7 +686,6 @@ def main():
         if not acquire_lock(project_dir):
             log(project_dir, "SKIP lock held by another run")
             log_skip(project_dir, "lock_held")
-            print("[Meridian] Workspace sync already running, skipping", file=sys.stderr)
             return
         lock_acquired = True
         log(project_dir, "lock acquired")
@@ -723,7 +722,6 @@ def main():
             pass
 
         log(project_dir, "calling claude -p...")
-        print("[Meridian] Updating workspace from session transcript...", file=sys.stderr)
         start_time = time.time()
         run_info = run_workspace_agent(prompt, project_dir)
         duration = time.time() - start_time
@@ -750,11 +748,9 @@ def main():
         if run_info["success"]:
             tool_count = len(run_info["tools_used"])
             log(project_dir, f"DONE files_changed={files_changed}")
-            print(f"[Meridian] Workspace updated ({duration:.0f}s, {tool_count} tools).", file=sys.stderr)
             cleanup_docs_to_delete(project_dir)
         else:
             log(project_dir, f"FAILED exit_code={run_info['exit_code']}")
-            print(f"[Meridian] Workspace update failed ({duration:.0f}s).", file=sys.stderr)
 
     finally:
         if lock_acquired:

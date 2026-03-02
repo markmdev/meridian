@@ -15,6 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     get_project_config,
+    is_headless,
     is_loop_active,
     build_stop_prompt,
     log_hook_output,
@@ -24,6 +25,9 @@ from meridian_config import (
 
 
 def main():
+    if is_headless():
+        sys.exit(0)
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:

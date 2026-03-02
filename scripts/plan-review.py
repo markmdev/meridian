@@ -19,6 +19,7 @@ from meridian_config import (
     flag_exists,
     create_flag,
     get_plan_action_counter,
+    is_headless,
     log_hook_output,
     PLAN_REVIEW_FLAG,
 )
@@ -27,6 +28,9 @@ REQUIRED_SCORE = 9
 
 
 def main():
+    if is_headless():
+        sys.exit(0)
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:

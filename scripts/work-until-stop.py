@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     get_project_config,
     get_loop_state,
+    is_headless,
     update_loop_iteration,
     clear_loop_state,
     build_stop_prompt,
@@ -127,6 +128,9 @@ def build_loop_prompt(base_dir: Path, config: dict, state: dict) -> str:
 
 
 def main():
+    if is_headless():
+        sys.exit(0)
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:

@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import log_hook_output
+from meridian_config import is_headless, log_hook_output
 
 
 # Agents that require being in project root
@@ -29,6 +29,9 @@ REVIEWER_AGENTS = {
 
 
 def main():
+    if is_headless():
+        sys.exit(0)
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:

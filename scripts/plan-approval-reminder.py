@@ -12,10 +12,13 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import get_project_config, cleanup_flag, clear_plan_action_counter, log_hook_output, state_path, PLAN_REVIEW_FLAG, ACTIVE_PLAN_FILE
+from meridian_config import get_project_config, cleanup_flag, clear_plan_action_counter, is_headless, log_hook_output, state_path, PLAN_REVIEW_FLAG, ACTIVE_PLAN_FILE
 
 
 def main():
+    if is_headless():
+        sys.exit(0)
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:

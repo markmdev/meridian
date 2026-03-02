@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     PLAN_MODE_STATE,
     get_action_counter,
+    is_headless,
     set_action_counter,
     increment_plan_action_counter,
     log_hook_output,
@@ -32,6 +33,9 @@ from meridian_config import (
 
 
 def main() -> int:
+    if is_headless():
+        return 0
+
     try:
         input_data = json.load(sys.stdin)
     except json.JSONDecodeError:

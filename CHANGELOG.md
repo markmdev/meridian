@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.11] - 2026-03-02
+
+### Removed
+- **skill-creator and prompt-writing skills** — General-purpose skills moved to personal skills directory (`~/.claude/skills/`). They don't belong in the plugin.
+
 ## [0.6.10] - 2026-03-02
 
 ### Fixed

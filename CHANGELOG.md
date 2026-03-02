@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.14] - 2026-03-02
+
+### Fixed
+- **BrokenPipeError on session teardown** — Replaced all `print(..., file=sys.stderr)` with debug log file writes. Claude Code closes the stderr pipe during session teardown, causing BrokenPipeError when the hook tried to print status messages after completing work.
+- **Session learner firing twice** — Added `is_headless()` guard to session-learner itself. The `claude -p` subprocess's SessionEnd was triggering a recursive session-learner run.
+
+### Changed
+- **Full transcript extraction** — Removed all message truncation (previously 3000 chars for user/assistant, 2000 for thinking, 200 for tool inputs). Thinking blocks excluded entirely. Tool inputs passed through as-is.
+
 ## [0.6.13] - 2026-03-02
 
 ### Fixed

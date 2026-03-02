@@ -21,6 +21,7 @@ from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_projec
 WORKSPACE_SYNC_LOCK = "workspace-sync.lock"
 LAST_SYNC_FILE = "last-workspace-sync"
 SESSION_LEARNER_LOG = "session-learner.jsonl"
+SESSION_LEARNER_DEBUG_LOG = "session-learner.log"
 MAX_LOG_ENTRIES = 50
 MIN_ENTRIES_THRESHOLD = 5  # Skip if fewer than this many meaningful entries
 
@@ -670,6 +671,18 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> dict:
         return run_info
 
 
+def log(project_dir: Path, message: str):
+    """Append a debug line to the session-learner log."""
+    log_path = state_path(project_dir, SESSION_LEARNER_DEBUG_LOG)
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        with open(log_path, "a") as f:
+            f.write(f"[{timestamp}] {message}\n")
+    except (IOError, OSError):
+        pass
+
+
 def main():
     try:
         input_data = json.load(sys.stdin)
@@ -681,27 +694,34 @@ def main():
 
     project_dir = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 
+    log(project_dir, f"START event={hook_event} transcript={Path(transcript_path).name if transcript_path else 'none'}")
+
     # Only handle SessionEnd
     if hook_event != "SessionEnd":
+        log(project_dir, f"SKIP wrong event: {hook_event}")
         log_skip(project_dir, "wrong_event", hook_event=hook_event)
         sys.exit(0)
 
     # Dedup: skip if we already processed recently
     if was_recently_synced(project_dir):
+        log(project_dir, "SKIP recently synced")
         log_skip(project_dir, "recently_synced")
         sys.exit(0)
 
     lock_acquired = False
     try:
         if not transcript_path or not Path(transcript_path).exists():
+            log(project_dir, f"SKIP no transcript (path={'empty' if not transcript_path else 'file missing'})")
             log_skip(project_dir, "no_transcript")
             return
 
         if not acquire_lock(project_dir):
+            log(project_dir, "SKIP lock held by another run")
             log_skip(project_dir, "lock_held")
             print("[Meridian] Workspace sync already running, skipping", file=sys.stderr)
             return
         lock_acquired = True
+        log(project_dir, "lock acquired")
 
         # Extract transcript
         start_line, end_line = get_extraction_range(transcript_path)
@@ -709,7 +729,9 @@ def main():
 
         # Skip if too few meaningful entries
         meaningful = [e for e in entries if e["type"] in ("user", "assistant")]
+        log(project_dir, f"extracted entries={len(entries)} meaningful={len(meaningful)}")
         if len(meaningful) < MIN_ENTRIES_THRESHOLD:
+            log(project_dir, f"SKIP below threshold ({len(meaningful)} < {MIN_ENTRIES_THRESHOLD})")
             log_skip(project_dir, "below_threshold", entries=len(meaningful))
             return
 
@@ -722,6 +744,7 @@ def main():
 
         # Build prompt and run agent
         prompt = build_prompt(entries, workspace_root, git_context, project_dir, mode=learner_mode, workspace_files=workspace_files)
+        log(project_dir, f"prompt built chars={len(prompt)} mode={learner_mode}")
 
         # Save prompt for inspection
         try:
@@ -731,10 +754,12 @@ def main():
         except (IOError, OSError):
             pass
 
+        log(project_dir, "calling claude -p...")
         print("[Meridian] Updating workspace from session transcript...", file=sys.stderr)
         start_time = time.time()
         run_info = run_workspace_agent(prompt, project_dir)
         duration = time.time() - start_time
+        log(project_dir, f"claude -p done exit_code={run_info['exit_code']} duration={duration:.0f}s tools={len(run_info['tools_used'])}")
 
         # Capture git diff after agent runs
         files_changed, diff_stat = get_git_diff_after(project_dir)
@@ -756,18 +781,30 @@ def main():
 
         if run_info["success"]:
             tool_count = len(run_info["tools_used"])
+            log(project_dir, f"DONE files_changed={files_changed}")
             print(f"[Meridian] Workspace updated ({duration:.0f}s, {tool_count} tools).", file=sys.stderr)
             cleanup_docs_to_delete(project_dir)
             mark_synced(project_dir)
         else:
+            log(project_dir, f"FAILED exit_code={run_info['exit_code']}")
             print(f"[Meridian] Workspace update failed ({duration:.0f}s).", file=sys.stderr)
 
     finally:
         if lock_acquired:
             release_lock(project_dir)
+            log(project_dir, "lock released")
 
     sys.exit(0)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        # Last-resort logging — write to state dir if possible
+        try:
+            project_dir = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
+            log(project_dir, f"CRASH {type(e).__name__}: {e}")
+        except Exception:
+            pass
+        raise

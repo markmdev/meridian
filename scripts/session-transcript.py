@@ -13,36 +13,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import state_path, LAST_SESSION_FILE, TRANSCRIPT_PATH_STATE, is_headless
+from meridian_config import state_path, LAST_SESSION_FILE, TRANSCRIPT_PATH_STATE, is_headless, is_system_noise
 
 if is_headless():
     sys.exit(0)
 
 MAX_ENTRY_CHARS = 2000
 MAX_DIALOGUE_CHARS = 30000
-
-# Markers that identify system/hook noise rather than real user messages
-SYSTEM_NOISE_MARKERS = [
-    "<system-reminder>",
-    "<injected-project-context>",
-    "<local-command-caveat>",
-    "<command-name>",
-    "<command-message>",
-    "<command-args>",
-    "Stop hook feedback:",
-    "Base directory for this skill:",
-    "SessionStart:clear hook",
-    "SessionStart hook additional context:",
-    "UserPromptSubmit hook",
-]
-
-
-def is_system_noise(text: str) -> bool:
-    """Check if a message is system/hook noise rather than real dialogue."""
-    for marker in SYSTEM_NOISE_MARKERS:
-        if marker in text:
-            return True
-    return False
 
 
 def extract_dialogue(transcript_path: str) -> list[dict]:

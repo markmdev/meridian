@@ -16,7 +16,7 @@ from pathlib import Path
 from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path
+from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path, is_system_noise
 
 WORKSPACE_SYNC_LOCK = "workspace-sync.lock"
 LAST_SYNC_FILE = "last-workspace-sync"
@@ -107,8 +107,7 @@ def extract_transcript(transcript_path: str, start_line: int, end_line: int) -> 
 
             # User text message
             if entry_type == "user" and role == "user" and isinstance(content, str) and content.strip():
-                # Skip if it looks like injected hook context (very long system messages)
-                if len(content) > 5000 and ("<injected-project-context>" in content or "<system-reminder>" in content):
+                if is_system_noise(content):
                     continue
                 entries.append({"type": "user", "text": content[:3000]})
 
@@ -120,7 +119,7 @@ def extract_transcript(transcript_path: str, start_line: int, end_line: int) -> 
                 for block in content:
                     if block.get("type") == "text" and block.get("text", "").strip():
                         text = block["text"]
-                        if len(text) > 5000 and ("<injected-project-context>" in text or "<system-reminder>" in text):
+                        if is_system_noise(text):
                             continue
                         entries.append({"type": "user", "text": text[:3000]})
 

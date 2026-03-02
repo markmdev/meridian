@@ -54,23 +54,8 @@ def get_extraction_range(transcript_path: str) -> tuple[int, int]:
     return 0, total
 
 
-def extract_tool_input_summary(input_dict: dict) -> dict:
-    """Extract key identifiers from tool input, skipping large content."""
-    SKIP_KEYS = {"content", "old_string", "new_string", "new_source"}
-    MAX_LEN = 200
-    summary = {}
-    for key, value in input_dict.items():
-        if key in SKIP_KEYS:
-            continue
-        if isinstance(value, str) and len(value) > MAX_LEN:
-            summary[key] = value[:MAX_LEN] + "..."
-        else:
-            summary[key] = value
-    return summary
-
-
 def extract_transcript(transcript_path: str, start_line: int, end_line: int) -> list[dict]:
-    """Extract meaningful entries from transcript range."""
+    """Extract meaningful entries from transcript range. No truncation — full content preserved."""
     entries = []
     with open(transcript_path) as f:
         for i, line in enumerate(f):
@@ -98,7 +83,7 @@ def extract_transcript(transcript_path: str, start_line: int, end_line: int) -> 
             if entry_type == "user" and role == "user" and isinstance(content, str) and content.strip():
                 if is_system_noise(content):
                     continue
-                entries.append({"type": "user", "text": content[:3000]})
+                entries.append({"type": "user", "text": content})
 
             # User text from content blocks (non-tool-result)
             elif entry_type == "user" and role == "user" and isinstance(content, list):
@@ -110,20 +95,18 @@ def extract_transcript(transcript_path: str, start_line: int, end_line: int) -> 
                         text = block["text"]
                         if is_system_noise(text):
                             continue
-                        entries.append({"type": "user", "text": text[:3000]})
+                        entries.append({"type": "user", "text": text})
 
-            # Assistant messages
+            # Assistant messages (skip thinking blocks)
             elif entry_type == "assistant" and role == "assistant" and isinstance(content, list):
                 for block in content:
                     btype = block.get("type", "")
                     if btype == "text" and block.get("text", "").strip():
-                        entries.append({"type": "assistant", "text": block["text"][:3000]})
-                    elif btype == "thinking" and block.get("thinking", "").strip():
-                        entries.append({"type": "thinking", "text": block["thinking"][:2000]})
+                        entries.append({"type": "assistant", "text": block["text"]})
                     elif btype == "tool_use":
                         tool_entry = {"type": "tool_use", "tool": block.get("name", "unknown")}
                         if isinstance(block.get("input"), dict):
-                            tool_entry["input"] = extract_tool_input_summary(block["input"])
+                            tool_entry["input"] = block["input"]
                         entries.append(tool_entry)
 
     return entries

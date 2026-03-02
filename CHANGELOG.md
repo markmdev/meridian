@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.10] - 2026-03-02
+
+### Fixed
+- **Session learner output** — Output file now shows only the final summary, not intermediate narration between tool calls ("Now let me update..."). The `parse_stream_json` function was collecting all text blocks from the `stream-json` output; now it only captures the `result` entry.
+
 ## [0.6.9] - 2026-03-02
 
 ### Added

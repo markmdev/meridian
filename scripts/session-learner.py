@@ -19,7 +19,6 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path, is_system_noise, build_headless_env, build_headless_args
 
 WORKSPACE_SYNC_LOCK = "workspace-sync.lock"
-LAST_SYNC_FILE = "last-workspace-sync"
 SESSION_LEARNER_LOG = "session-learner.jsonl"
 SESSION_LEARNER_DEBUG_LOG = "session-learner.log"
 MAX_LOG_ENTRIES = 50
@@ -463,28 +462,6 @@ def release_lock(project_dir: Path):
         pass
 
 
-def was_recently_synced(project_dir: Path) -> bool:
-    """Check if workspace was synced in the last 30 seconds (dedup for repeated SessionEnd fires)."""
-    sync_path = state_path(project_dir, LAST_SYNC_FILE)
-    if sync_path.exists():
-        try:
-            last_sync = float(sync_path.read_text().strip())
-            if time.time() - last_sync < 30:
-                return True
-        except (ValueError, IOError):
-            pass
-    return False
-
-
-def mark_synced(project_dir: Path):
-    """Record that workspace was just synced."""
-    sync_path = state_path(project_dir, LAST_SYNC_FILE)
-    try:
-        sync_path.parent.mkdir(parents=True, exist_ok=True)
-        sync_path.write_text(str(time.time()))
-    except IOError:
-        pass
-
 
 def cleanup_docs_to_delete(project_dir: Path):
     """Delete docs marked for deletion by the session learner agent."""
@@ -702,12 +679,6 @@ def main():
         log_skip(project_dir, "wrong_event", hook_event=hook_event)
         sys.exit(0)
 
-    # Dedup: skip if we already processed recently
-    if was_recently_synced(project_dir):
-        log(project_dir, "SKIP recently synced")
-        log_skip(project_dir, "recently_synced")
-        sys.exit(0)
-
     lock_acquired = False
     try:
         if not transcript_path or not Path(transcript_path).exists():
@@ -784,7 +755,6 @@ def main():
             log(project_dir, f"DONE files_changed={files_changed}")
             print(f"[Meridian] Workspace updated ({duration:.0f}s, {tool_count} tools).", file=sys.stderr)
             cleanup_docs_to_delete(project_dir)
-            mark_synced(project_dir)
         else:
             log(project_dir, f"FAILED exit_code={run_info['exit_code']}")
             print(f"[Meridian] Workspace update failed ({duration:.0f}s).", file=sys.stderr)

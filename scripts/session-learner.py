@@ -17,7 +17,7 @@ from pathlib import Path
 from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, get_state_dir, state_path, is_system_noise, is_headless, build_headless_env, build_headless_args
+from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, state_path, is_system_noise, is_headless, build_headless_env, build_headless_args
 
 if is_headless():
     sys.exit(0)
@@ -239,14 +239,16 @@ def build_prompt(entries: list[dict], workspace_root: str, git_context: str, pro
         job4_desc = "Maintain docs — create/update long-term reference docs in `.meridian/docs/`"
         doc_location = "`.meridian/docs/`"
 
+    delete_list_path = str(state_path(project_dir, "docs-to-delete"))
+
     if assistant_mode:
         docs_create = f"**Create** new files {doc_location}. Infer the right location from existing file paths (e.g., daily logs next to other daily logs, people files next to other people files). Every new file must have frontmatter with `summary` and `read_when`."
         docs_update = "**Update** any existing frontmatter'd doc when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content."
-        docs_delete = f"**Delete** outdated or superseded files. To mark for deletion, append the relative path to `{{state_path(project_dir, 'docs-to-delete')}}` (one path per line). Python will handle the actual file deletion. Never delete core identity or configuration files."
+        docs_delete = f"**Delete** outdated or superseded files. To mark for deletion, append the relative path to `{delete_list_path}` (one path per line). Python will handle the actual file deletion. Never delete core identity or configuration files."
     else:
         docs_create = f"**Create** new docs in {doc_location} when this session produced long-term knowledge. Use kebab-case filenames. Skip routine fixes and obvious information."
         docs_update = "**Update** any existing frontmatter'd doc when this session changed what it describes. Read the existing doc first, then rewrite with current accurate content. This includes files outside `.meridian/docs/` like IDENTITY.md or SOUL.md."
-        docs_delete = f"**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `{{state_path(project_dir, 'docs-to-delete')}}` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish."
+        docs_delete = f"**Delete** only `.meridian/docs/` files — never delete docs outside that directory. To mark for deletion, append the relative path to `{delete_list_path}` (e.g. `.meridian/docs/old-auth.md`), one path per line. Python will handle the actual file deletion after you finish."
 
     # Scan project for frontmatter'd docs
     doc_index = scan_project_frontmatter(project_dir)
@@ -686,7 +688,7 @@ def main():
 
         if run_info["success"]:
             tool_count = len(run_info["tools_used"])
-            log(project_dir, f"DONE files_changed={files_changed}")
+            log(project_dir, f"DONE tools={tool_count} files_changed={files_changed}")
             cleanup_docs_to_delete(project_dir)
         else:
             log(project_dir, f"FAILED exit_code={run_info['exit_code']}")

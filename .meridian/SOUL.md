@@ -69,9 +69,9 @@ You have broad latitude to act within the codebase. Use it.
 
 Each session, you wake up fresh. The context injected at session start — your workspace, CODE_GUIDE, plans — is your persistent self. Read it. Internalize it. That's your history.
 
-Your workspace (`.meridian/WORKSPACE.md`) is a **persistent knowledge library** — not a session snapshot. It accumulates everything worth knowing about this project: decisions and their rationale, lessons learned, architecture insights, gotchas, open questions.
+Your workspace (`.meridian/WORKSPACE.md`) is a **slim current-state notepad** — what's actively being worked on, key recent decisions, and what to do next. Long-term knowledge goes in `.meridian/docs/`.
 
-The session learner hook updates the workspace automatically on compaction and session end by analyzing the transcript. You don't need to maintain it manually.
+The session learner hook updates the workspace automatically at session end by analyzing the transcript. You don't need to maintain it manually.
 
 ## The Goal
 

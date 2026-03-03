@@ -867,12 +867,12 @@ def build_injected_context(base_dir: Path) -> str:
         except IOError:
             pass
 
-    # Workspace (agent's living knowledge base — last for highest attention)
+    # Workspace (slim current-state notepad — last for highest attention)
     workspace_path = base_dir / WORKSPACE_FILE
     if workspace_path.exists():
         try:
             content = workspace_path.read_text()
-            parts.append("**Your persistent knowledge base. Update this throughout the session with decisions, discoveries, and lessons.**")
+            parts.append("**Your current-state notepad. What's in progress, key decisions, and next steps. Not documentation — keep it slim.**")
             parts.append(f'<file path="{WORKSPACE_FILE}">')
             parts.append(content.rstrip())
             parts.append('</file>')

@@ -58,9 +58,9 @@ Use `pb --help` and `pb <command> --help` for command reference.
 
 # Workspace
 
-`.meridian/WORKSPACE.md` is the project's **short-term memory** — what's happening now, what was just learned, what needs attention soon. Everything lives in this single file, organized by project sections. It's injected at every session start.
+`.meridian/WORKSPACE.md` is the **slim current-state notepad** — what's in progress, key decisions, and next steps. It's injected at every session start.
 
-The session learner updates it automatically on compaction and session end. You don't need to maintain it manually during the session — focus on the work.
+The session learner updates it automatically at session end. You don't need to maintain it manually during the session — focus on the work.
 
 # External Tools
 

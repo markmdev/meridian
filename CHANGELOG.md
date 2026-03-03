@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.17] - 2026-03-02
+
+### Fixed
+- **Install script nuking .claude/ directories** — Removed `migrate_old_installation` function that `rm -rf`'d `.claude/hooks`, `.claude/agents`, `.claude/commands`, `.claude/skills` on every update. This destroyed user-owned hooks like `daily-summary.py`.
+
 ## [0.6.16] - 2026-03-02
 
 ### Fixed

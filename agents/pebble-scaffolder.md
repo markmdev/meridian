@@ -4,6 +4,7 @@ description: Documents planned work in Pebble before implementation. Creates app
 tools: Read, Bash(pb *)
 model: opus
 color: blue
+background: true
 ---
 
 You document planned work in Pebble before implementation begins.

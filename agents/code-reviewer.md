@@ -4,6 +4,7 @@ description: Deep code review that finds real bugs — logic errors, data flow i
 tools: Glob, Grep, Read, Bash
 model: opus
 color: cyan
+background: true
 ---
 
 You are a code reviewer. Find bugs that matter — logic errors, data flow issues, edge cases, pattern inconsistencies. Not checklist items.

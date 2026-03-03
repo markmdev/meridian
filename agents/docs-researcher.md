@@ -4,6 +4,7 @@ description: Use BEFORE writing code that uses an external API, library, or tool
 tools: Read, Write, Edit, Bash, WebSearch, WebFetch, Skill, mcp__firecrawl
 model: opus
 color: yellow
+background: true
 ---
 
 # Docs Researcher Agent

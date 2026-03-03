@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.16] - 2026-03-02
+
+### Fixed
+- **Workspace framing consistency** — Context injector, SOUL.md, and agent operating manual now all describe WORKSPACE.md as a "slim current-state notepad" instead of "persistent knowledge base" / "short-term memory." Prevents agents from re-bloating workspace content that the session learner trims.
+- **Stale compaction references** — Removed "on compaction" from session learner firing description. It only fires at session end.
+- **Docs deletion path** — Resolved `state_path()` before injecting into prompt so the LLM agent can actually write to the docs-to-delete file.
+- **Dead variable** — `tool_count` now included in success log message.
+- **Unused import** — Removed `get_state_dir` from session-learner imports.
+
 ## [0.6.15] - 2026-03-02
 
 ### Changed

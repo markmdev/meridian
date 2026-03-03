@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.1] - 2026-03-03
+
+### Added
+- **Terminal injection summary** — Context injector now outputs a `systemMessage` shown directly in the user's terminal at session start. Shows what was injected (workspace, docs count, last session, plan, pebble, manual, soul, nested repos) and error count. Not visible to the agent.
+
 ## [0.7.0] - 2026-03-03
 
 ### Changed

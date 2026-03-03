@@ -602,16 +602,30 @@ def get_active_plan_path(base_dir: Path) -> tuple[str, Path] | None:
     return None
 
 
-def build_injected_context(base_dir: Path) -> str:
+def build_injected_context(base_dir: Path) -> tuple[str, dict]:
     """Build the full injected context string with XML-wrapped file contents.
 
     Args:
         base_dir: Base directory of the project
 
     Returns:
-        Full context string ready for additionalContext injection
+        Tuple of (context_string, metadata_dict) where metadata tracks what was injected.
+        Metadata keys: workspace, docs, api_docs, last_session, plan, pebble,
+        manual, soul, nested_repos, errors.
     """
     parts = []
+    meta: dict = {
+        "workspace": False,
+        "docs": 0,
+        "api_docs": 0,
+        "last_session": False,
+        "plan": False,
+        "pebble": False,
+        "manual": False,
+        "soul": False,
+        "nested_repos": 0,
+        "errors": [],
+    }
 
     # Header
     parts.append("<injected-project-context>")
@@ -679,6 +693,8 @@ def build_injected_context(base_dir: Path) -> str:
     # Nested git repositories
     nested_context = scan_nested_git_repos(base_dir)
     if nested_context:
+        # Count repos by counting "### " headers in the output
+        meta["nested_repos"] = nested_context.count("### ")
         parts.append(nested_context)
         parts.append("")
 
@@ -729,6 +745,7 @@ def build_injected_context(base_dir: Path) -> str:
     # Active plan file (if set)
     active_plan = get_active_plan_path(base_dir)
     if active_plan:
+        meta["plan"] = True
         plan_rel, plan_full = active_plan
         files_to_inject.append((plan_rel, plan_full, "Active implementation plan. Follow this plan during implementation."))
 
@@ -750,7 +767,8 @@ def build_injected_context(base_dir: Path) -> str:
             parts.append(content.rstrip())
             parts.append('</file>')
             parts.append("")
-        except IOError:
+        except IOError as e:
+            meta["errors"].append(f"Could not read {rel_path}: {e}")
             parts.append(f'<file path="{rel_path}" error="Could not read file" />')
             parts.append("")
 
@@ -768,6 +786,12 @@ def build_injected_context(base_dir: Path) -> str:
         listing = scan_docs_directory(base_dir / dir_rel, base_dir)
         if listing:
             any_docs = True
+            # Count docs in this listing (each doc starts with "- **")
+            doc_count = listing.count("\n- **") + (1 if listing.startswith("- **") else 0)
+            if dir_rel == ".meridian/api-docs":
+                meta["api_docs"] += doc_count
+            else:
+                meta["docs"] += doc_count
             parts.append(f"**{header}**")
             parts.append(f"<docs-index dir=\"{dir_rel}\">")
             parts.append(listing)
@@ -782,6 +806,7 @@ def build_injected_context(base_dir: Path) -> str:
         # Get live Pebble context (in-progress, ready issues)
         pebble_context = get_pebble_context(base_dir)
         if pebble_context:
+            meta["pebble"] = True
             parts.append('<pebble-context>')
             parts.append(pebble_context.rstrip())
             parts.append('</pebble-context>')
@@ -792,12 +817,14 @@ def build_injected_context(base_dir: Path) -> str:
     if manual_path.exists():
         try:
             content = manual_path.read_text()
+            meta["manual"] = True
             parts.append("**Agent operating manual. This is authoritative — follow these procedures at all times.**")
             parts.append(f'<file path=".meridian/prompts/agent-operating-manual.md">')
             parts.append(content.rstrip())
             parts.append('</file>')
             parts.append("")
-        except IOError:
+        except IOError as e:
+            meta["errors"].append(f"Could not read agent-operating-manual.md: {e}")
             parts.append(f'<file path=".meridian/prompts/agent-operating-manual.md" error="Could not read file" />')
             parts.append("")
 
@@ -806,12 +833,14 @@ def build_injected_context(base_dir: Path) -> str:
     if soul_path.exists():
         try:
             content = soul_path.read_text()
+            meta["soul"] = True
             parts.append("**Agent identity and principles. This defines who you are and how you work.**")
             parts.append(f'<file path=".meridian/SOUL.md">')
             parts.append(content.rstrip())
             parts.append('</file>')
             parts.append("")
-        except IOError:
+        except IOError as e:
+            meta["errors"].append(f"Could not read SOUL.md: {e}")
             pass
 
     # Workspace (slim current-state notepad — last for highest attention)
@@ -819,12 +848,14 @@ def build_injected_context(base_dir: Path) -> str:
     if workspace_path.exists():
         try:
             content = workspace_path.read_text()
+            meta["workspace"] = True
             parts.append("**Your current-state notepad. What's in progress, key decisions, and next steps. Not documentation — keep it slim.**")
             parts.append(f'<file path="{WORKSPACE_FILE}">')
             parts.append(content.rstrip())
             parts.append('</file>')
             parts.append("")
-        except IOError:
+        except IOError as e:
+            meta["errors"].append(f"Could not read WORKSPACE.md: {e}")
             pass
 
     # Last session transcript (dialogue from previous session)
@@ -833,12 +864,14 @@ def build_injected_context(base_dir: Path) -> str:
         try:
             content = last_session_path.read_text()
             if content.strip():
+                meta["last_session"] = True
                 parts.append("**Previous session dialogue. Use this to understand what happened last session and pick up where you left off.**")
                 parts.append('<last-session>')
                 parts.append(content.rstrip())
                 parts.append('</last-session>')
                 parts.append("")
-        except IOError:
+        except IOError as e:
+            meta["errors"].append(f"Could not read last-session.md: {e}")
             pass
 
     # Active work-until loop (if any)
@@ -866,7 +899,7 @@ def build_injected_context(base_dir: Path) -> str:
     parts.append("")
     parts.append("</injected-project-context>")
 
-    return "\n".join(parts)
+    return "\n".join(parts), meta
 
 
 # =============================================================================

@@ -58,7 +58,7 @@ Use `pb --help` and `pb <command> --help` for command reference.
 
 # Workspace
 
-`.meridian/WORKSPACE.md` is the **slim current-state notepad** — what's in progress, key decisions, and next steps. It's injected at every session start.
+`.meridian/WORKSPACE.md` is a **slim current-state notepad** — what's in progress, key decisions, and next steps. Not documentation — keep it slim.
 
 The session learner updates it automatically at session end. You don't need to maintain it manually during the session — focus on the work.
 

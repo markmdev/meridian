@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.3] - 2026-03-03
+
+### Added
+- **`.meridian/.gitignore`** — Install artifacts (`.version`, `.manifest`, `workspace/`) are now gitignored by default.
+
 ## [0.7.2] - 2026-03-03
 
 ### Removed

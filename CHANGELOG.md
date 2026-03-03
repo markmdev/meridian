@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.15] - 2026-03-02
+
+### Changed
+- **Session learner slimmed to 3 jobs** — Removed the workspace-files job (preferences.md + lessons.md). Preferences belong in CLAUDE.md via the corrections job; lessons belong in domain docs via the docs job. Merged the next-steps job into the workspace job.
+- **Workspace scope tightened** — WORKSPACE.md instructions now enforce a slim "current state notepad" — active work, key decisions, next steps only. No architecture descriptions, tech stack summaries, or implementation details.
+- **Context injection simplified** — Stopped injecting preferences.md and lessons.md at session start. Only WORKSPACE.md is injected.
+
+### Removed
+- **Scaffolding templates** — Removed default preferences.md and lessons.md from `.meridian/workspace/`. Directory preserved via .gitkeep.
+
+### Added
+- **Background subagents** — 6 agent definitions now run in the background (explore, implement, code-reviewer, code-health-reviewer, docs-researcher, pebble-scaffolder).
+
 ## [0.6.14] - 2026-03-02
 
 ### Fixed

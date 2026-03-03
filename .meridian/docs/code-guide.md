@@ -1,3 +1,16 @@
+---
+summary: Universal coding conventions — type safety, error handling, security, reliability, testing
+read_when:
+  - writing code
+  - coding standards
+  - code conventions
+  - TypeScript
+  - frontend
+  - backend
+  - error handling patterns
+  - security practices
+---
+
 # Code Guide
 
 Universal principles for writing maintainable code. Stack-specific details should live in project CLAUDE.md files.

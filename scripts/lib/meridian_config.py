@@ -51,9 +51,7 @@ def is_system_noise(text: str) -> bool:
 # State file names (resolved at runtime via get_state_dir())
 # State lives in ~/.meridian/state/<project-hash>/ so .meridian/ can be
 # symlinked across worktrees without sharing ephemeral session state.
-PLAN_REVIEW_FLAG = "plan-review-blocked"
 ACTION_COUNTER_FILE = "action-counter"
-PLAN_ACTION_COUNTER_FILE = "plan-action-counter"
 PLAN_MODE_STATE = "plan-mode-state"
 ACTIVE_PLAN_FILE = "active-plan"
 INJECTED_FILES_LOG = "injected-files"
@@ -178,7 +176,6 @@ _BOOL_KEYS = [
 ]
 _INT_KEYS = [
     ('stop_hook_min_actions', 'stop_hook_min_actions', 15),
-    ('plan_review_min_actions', 'plan_review_min_actions', 20),
 ]
 
 
@@ -235,7 +232,6 @@ def get_project_config(base_dir: Path) -> dict:
     config = {
         'pebble_enabled': False,
         'stop_hook_min_actions': 15,
-        'plan_review_min_actions': 20,
         'session_learner_mode': 'project',
         'extra_doc_dirs': [],
     }
@@ -279,7 +275,7 @@ def get_additional_review_files(base_dir: Path, absolute: bool = False) -> list[
         base_dir: Base directory of the project
         absolute: If True, return absolute paths; otherwise relative paths
     """
-    files = [".meridian/CODE_GUIDE.md", ".meridian/WORKSPACE.md"]
+    files = [".meridian/docs/code-guide.md", ".meridian/WORKSPACE.md"]
 
     if absolute:
         return [str(base_dir / f) for f in files]
@@ -315,43 +311,6 @@ def flag_exists(base_dir: Path, flag_name: str) -> bool:
 # =============================================================================
 # ACTION COUNTER HELPERS
 # =============================================================================
-def get_plan_action_counter(base_dir: Path) -> int:
-    """Get current plan action counter value."""
-    counter_path = state_path(base_dir, PLAN_ACTION_COUNTER_FILE)
-    try:
-        if counter_path.exists():
-            return int(counter_path.read_text().strip())
-    except (ValueError, IOError):
-        pass
-    return 0
-
-
-def increment_plan_action_counter(base_dir: Path) -> None:
-    """Increment plan action counter (only called while in plan mode)."""
-    counter_path = state_path(base_dir, PLAN_ACTION_COUNTER_FILE)
-    try:
-        current = 0
-        if counter_path.exists():
-            current = int(counter_path.read_text().strip())
-    except (ValueError, IOError):
-        current = 0
-    try:
-        counter_path.write_text(str(current + 1))
-    except IOError:
-        pass
-
-
-def clear_plan_action_counter(base_dir: Path) -> None:
-    """Reset plan action counter to 0 (called when plan is approved)."""
-    try:
-        state_path(base_dir, PLAN_ACTION_COUNTER_FILE).write_text("0")
-    except IOError:
-        pass
-
-
-# =============================================================================
-# MAIN ACTION COUNTER HELPERS
-# =============================================================================
 def get_action_counter(base_dir: Path) -> int:
     """Get current main action counter value."""
     counter_path = state_path(base_dir, ACTION_COUNTER_FILE)
@@ -382,10 +341,9 @@ def reset_action_counter(base_dir: Path) -> None:
 
 
 def get_pebble_context(base_dir: Path) -> str:
-    """Get Pebble context for injection: epics overview, in-progress work, ready issues.
+    """Get Pebble context for injection: in-progress work and ready issues.
 
     Runs pb commands to get:
-    - Epic summary (open epics, progress)
     - Currently in-progress issues
     - Ready issues (unblocked, can be picked up)
 
@@ -394,35 +352,29 @@ def get_pebble_context(base_dir: Path) -> str:
     parts = []
 
     try:
-        # Get epic summary (big picture: what epics exist, progress)
         result = subprocess.run(
-            ["pb", "summary", "--pretty"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            cwd=str(base_dir)
+            ["pb", "list", "--status", "in_progress", "--pretty"],
+            capture_output=True, text=True, timeout=10, cwd=str(base_dir)
         )
-        if result.returncode == 0 and result.stdout.strip():
-            parts.append("## Epics Overview")
+        output = result.stdout.strip()
+        if result.returncode == 0 and output and "No issues found" not in output:
+            parts.append("## In Progress")
             parts.append("")
-            parts.append(result.stdout.strip())
+            parts.append(output)
             parts.append("")
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
     try:
-        # Get in-progress issues (what's being worked on now)
         result = subprocess.run(
-            ["pb", "list", "--status", "in_progress", "--pretty"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            cwd=str(base_dir)
+            ["pb", "ready", "--pretty"],
+            capture_output=True, text=True, timeout=10, cwd=str(base_dir)
         )
-        if result.returncode == 0 and result.stdout.strip():
-            parts.append("## In Progress")
+        output = result.stdout.strip()
+        if result.returncode == 0 and output and "No issues found" not in output and "No ready issues" not in output:
+            parts.append("## Ready")
             parts.append("")
-            parts.append(result.stdout.strip())
+            parts.append(output)
             parts.append("")
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
@@ -780,11 +732,6 @@ def build_injected_context(base_dir: Path) -> str:
         plan_rel, plan_full = active_plan
         files_to_inject.append((plan_rel, plan_full, "Active implementation plan. Follow this plan during implementation."))
 
-    # CODE_GUIDE and addons
-    code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
-    if code_guide_path.exists():
-        files_to_inject.append((".meridian/CODE_GUIDE.md", code_guide_path, "Project coding conventions. Follow these standards in all code you write."))
-
     # Get project config for addons and pebble
     project_config = get_project_config(base_dir)
 
@@ -832,7 +779,7 @@ def build_injected_context(base_dir: Path) -> str:
 
     # Pebble live context (if enabled)
     if project_config.get('pebble_enabled', False):
-        # Get live Pebble context (epics, recent activity)
+        # Get live Pebble context (in-progress, ready issues)
         pebble_context = get_pebble_context(base_dir)
         if pebble_context:
             parts.append('<pebble-context>')

@@ -49,7 +49,7 @@ def get_injected_file_paths(base_dir: Path, project_config: dict) -> list[str]:
     files.append(str(state_path(base_dir, ACTIVE_PLAN_FILE)))
 
     # CODE_GUIDE
-    code_guide_path = base_dir / ".meridian" / "CODE_GUIDE.md"
+    code_guide_path = base_dir / ".meridian" / "docs" / "code-guide.md"
     if code_guide_path.exists():
         files.append(str(code_guide_path))
 

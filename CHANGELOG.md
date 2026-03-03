@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.2] - 2026-03-03
+
+### Removed
+- **Terminal injection summary** — The `systemMessage` showing injection details in the terminal was noisy and showing incorrect info. Context injection continues to work via `additionalContext`.
+
 ## [0.7.1] - 2026-03-03
 
 ### Added

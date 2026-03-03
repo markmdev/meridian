@@ -40,20 +40,20 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/plan-approval-reminder.py\""
-          }
-        ]
-      },
-      {
         "matcher": "*",
         "hooks": [
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/action-counter.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/plan-approval-reminder.py\""
           }
         ]
       }
@@ -67,15 +67,6 @@
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/reviewer-root-guard.py\""
           }
         ]
-      },
-      {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/plan-review.py\""
-          }
-        ]
       }
     ],
     "UserPromptSubmit": [
@@ -83,11 +74,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/plan-mode-tracker.py\""
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/action-counter.py\""
           },
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/action-counter.py\""
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/plan-mode-tracker.py\""
           }
         ]
       }

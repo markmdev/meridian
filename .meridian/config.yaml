@@ -1,10 +1,5 @@
 # Project-level configuration for the Claude workflow
 
-# Plan review minimum actions: Skip plan-reviewer if fewer than this many actions
-# occurred since entering plan mode. Prevents heavyweight review for quick plans.
-# Set to 0 to always enforce.
-plan_review_min_actions: 20
-
 # Pebble integration: Git-backed graph issue tracker for AI agents.
 # When enabled, agent MUST actively use Pebble to manage work.
 # See agent-operating-manual.md for Pebble rules and workflow.

@@ -26,8 +26,6 @@ STARTUP_DELETE = [
     "action-counter",
 
     "plan-mode-state",
-    "plan-review-blocked",
-    "plan-action-counter",
 ]
 
 # Files to delete on clear (user cleared conversation)
@@ -35,7 +33,6 @@ CLEAR_DELETE = [
     "action-counter",
 
     "plan-mode-state",
-    "plan-review-blocked",
 ]
 
 

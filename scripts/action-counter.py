@@ -1,98 +1,36 @@
 #!/usr/bin/env python3
 """
-Action Counter Hook - Tracks tool calls for stop hook threshold.
+PostToolUse / UserPromptSubmit hook to increment the general action counter.
 
-Handles:
-- PostToolUse: Increment counter, track file edits, track plan mode transitions
-- PreToolUse: Detect code-reviewer spawn
-
-Counter is reset by stop hooks (stop-checklist.py, work-until-stop.py)
-when they actually fire. This ensures actions accumulate across user
-interruptions until the agent sees the stop message.
-
-Plan mode is tracked via EnterPlanMode/ExitPlanMode tool usage for immediate
-state updates (rather than waiting for next UserPromptSubmit).
+The action counter tracks how many actions have occurred in the current session.
+Used by the stop hook to determine if enough work has been done before triggering
+the stop checklist.
 """
 
 import json
-import os
 import sys
 from pathlib import Path
+import os
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import (
-    PLAN_MODE_STATE,
-    get_action_counter,
-    is_headless,
-    set_action_counter,
-    increment_plan_action_counter,
-    log_hook_output,
-    state_path,
-)
+from meridian_config import get_action_counter, is_headless, set_action_counter
+
+PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 
 
-def main() -> int:
+def main():
     if is_headless():
-        return 0
+        sys.exit(0)
 
     try:
-        input_data = json.load(sys.stdin)
+        json.load(sys.stdin)
     except json.JSONDecodeError:
-        return 0
+        sys.exit(0)
 
-    claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
-    if not claude_project_dir:
-        return 0
-    base_dir = Path(claude_project_dir)
-
-    hook_event = input_data.get("hook_event_name", "")
-    tool_name = input_data.get("tool_name", "")
-
-    # PostToolUse: Increment counters and track plan mode
-    if hook_event == "PostToolUse":
-        # Track plan mode transitions from tool usage
-        plan_mode_file = state_path(base_dir, PLAN_MODE_STATE)
-        plan_mode_file.parent.mkdir(parents=True, exist_ok=True)
-
-        if tool_name == "EnterPlanMode":
-            plan_mode_file.write_text("plan")
-            # Inject reminder about planning resources
-            output = {
-                "hookSpecificOutput": {
-                    "hookEventName": "PostToolUse",
-                    "additionalContext": (
-                        "[SYSTEM]: Plan mode activated. Activate the `/planning` skill NOW — before doing anything else. It defines your planning methodology."
-                    )
-                }
-            }
-            log_hook_output(base_dir, "action-counter", output)
-        elif tool_name == "ExitPlanMode":
-            plan_mode_file.write_text("other")
-
-        # Increment main action counter
-        current = get_action_counter(base_dir)
-        set_action_counter(base_dir, current + 1)
-
-        # Also increment plan action counter if in plan mode
-        if plan_mode_file.exists():
-            mode = plan_mode_file.read_text().strip()
-            if mode == "plan":
-                increment_plan_action_counter(base_dir)
-
-    # UserPromptSubmit: Just increment main counter
-    if hook_event == "UserPromptSubmit":
-        current = get_action_counter(base_dir)
-        set_action_counter(base_dir, current + 1)
-
-        plan_mode_file = state_path(base_dir, PLAN_MODE_STATE)
-        if plan_mode_file.exists():
-            mode = plan_mode_file.read_text().strip()
-            if mode == "plan":
-                increment_plan_action_counter(base_dir)
-
-    return 0
+    set_action_counter(PROJECT_DIR, get_action_counter(PROJECT_DIR) + 1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

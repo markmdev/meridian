@@ -2,7 +2,7 @@
 """
 Plan Approval Reminder Hook - PostToolUse ExitPlanMode
 
-Clears plan-review-blocked flag and reminds Claude to create Pebble issues after plan is approved.
+Reminds Claude to archive the plan and create Pebble issues after plan is approved.
 """
 
 import json
@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import get_project_config, cleanup_flag, clear_plan_action_counter, is_headless, log_hook_output, state_path, PLAN_REVIEW_FLAG, ACTIVE_PLAN_FILE
+from meridian_config import get_project_config, is_headless, log_hook_output, state_path, ACTIVE_PLAN_FILE
 
 
 def main():
@@ -34,10 +34,6 @@ def main():
         sys.exit(0)
 
     base_dir = Path(claude_project_dir)
-
-    # Clear state files (ExitPlanMode succeeded = plan approved)
-    cleanup_flag(base_dir, PLAN_REVIEW_FLAG)
-    clear_plan_action_counter(base_dir)
 
     config = get_project_config(base_dir)
     pebble_enabled = config.get('pebble_enabled', False)

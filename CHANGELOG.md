@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.5] - 2026-03-03
+
+### Fixed
+- **Missing noise markers** — Added `<local-command-stdout>` and `<task-notification>` to `SYSTEM_NOISE_MARKERS`. Session learner and session transcript were including these as real dialogue.
+
 ## [0.7.4] - 2026-03-03
 
 ### Added

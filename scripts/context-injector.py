@@ -66,37 +66,8 @@ def main() -> int:
         except IOError:
             pass
 
-    # Build concise systemMessage from injection metadata
-    labels = []
-    if injection_meta.get("workspace"):
-        labels.append("workspace")
-    if injection_meta.get("docs"):
-        count = injection_meta["docs"]
-        labels.append(f"{count} doc{'s' if count != 1 else ''}")
-    if injection_meta.get("api_docs"):
-        count = injection_meta["api_docs"]
-        labels.append(f"{count} api-doc{'s' if count != 1 else ''}")
-    if injection_meta.get("last_session"):
-        labels.append("last session")
-    if injection_meta.get("plan"):
-        labels.append("plan")
-    if injection_meta.get("pebble"):
-        labels.append("pebble")
-    if injection_meta.get("manual"):
-        labels.append("manual")
-    if injection_meta.get("soul"):
-        labels.append("soul")
-    if injection_meta.get("nested_repos"):
-        count = injection_meta["nested_repos"]
-        labels.append(f"{count} nested repo{'s' if count != 1 else ''}")
-
-    error_count = len(injection_meta.get("errors", []))
-    error_suffix = "No errors" if error_count == 0 else f"{error_count} error{'s' if error_count != 1 else ''}"
-    system_msg = f"Meridian: {' \u00b7 '.join(labels)} | {error_suffix}" if labels else f"Meridian: (nothing injected) | {error_suffix}"
-
     # Output JSON with additionalContext
     output = {
-        "systemMessage": system_msg,
         "hookSpecificOutput": {
             "hookEventName": "SessionStart",
             "additionalContext": injected_context

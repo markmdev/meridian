@@ -1,6 +1,6 @@
 # UX State Patterns Reference
 
-What to look for when auditing loading, empty, and error states. Organized by framework with detection patterns and fix examples.
+What to look for when auditing loading, empty, and error states. Organized by framework with structural descriptions and fix examples.
 
 ## React / Next.js
 
@@ -8,9 +8,12 @@ What to look for when auditing loading, empty, and error states. Organized by fr
 
 #### 1. Data hook without loading check
 
-**Detection pattern:** `useQuery|useSWR|useFetch` used but the component never checks `isLoading`, `isPending`, or `status === 'loading'`.
+**What to look for:** A component that destructures a data-fetching hook but never handles the pending state. The component renders the data value directly, which is `undefined` on first mount before the fetch resolves.
 
-**Grep:** `useQuery|useSWR` in a file that does NOT contain `isLoading|isPending|isFetching`
+Common shapes:
+- Data hook destructured without `isLoading` or `isPending` — the component renders `data` which is undefined on first mount
+- Component immediately passes hook result into child components with no guard for the not-yet-loaded case
+- Status field exists on the hook but is never read or branched on
 
 **Bad:**
 ```tsx
@@ -31,9 +34,12 @@ return <UserList users={data} />
 
 #### 2. useState + async useEffect with no loading flag
 
-**Detection pattern:** `useState` holding fetched data, `useEffect` calling an async function, but no companion `isLoading` state variable.
+**What to look for:** A component that uses `useState` to hold fetched data and `useEffect` to trigger the fetch, but has no companion loading state. The state variable starts as `null` or `undefined`, and nothing tells the user that data is on its way.
 
-**Grep:** `useState.*null\)` near `useEffect` with `fetch|axios` but no `Loading|loading|pending` state
+Common shapes:
+- `useState(null)` paired with a `useEffect` that fetches and calls the setter, but no second `useState` for loading
+- The component renders the null initial state directly (blank screen, missing content) until the effect resolves
+- Sometimes a conditional like `if (!data) return null` hides the gap, but this is indistinguishable from "no data exists"
 
 **Bad:**
 ```tsx
@@ -61,9 +67,12 @@ return <UserList users={users} />
 
 #### 3. Form submission with no pending state
 
-**Detection pattern:** `onSubmit` or `handleSubmit` handler that calls an API but never sets `isSubmitting` or disables the button.
+**What to look for:** A submit handler that calls an API but provides no feedback while the request is in flight. The button stays clickable, the form stays interactive, and nothing indicates the operation is processing.
 
-**Grep:** `onSubmit|handleSubmit` calling `fetch|mutate|axios` without `disabled|isSubmitting|isPending`
+Common shapes:
+- An async click/submit handler that awaits an API call, but the button has no disabled state and no text change
+- The handler sets no state before the `await` — the UI looks identical during the request
+- Double-click risk: the button can be clicked multiple times, firing duplicate requests
 
 **Bad:**
 ```tsx
@@ -92,9 +101,12 @@ return <button onClick={handleSubmit} disabled={isSubmitting}>
 
 #### 4. Route transition with no loading indicator
 
-**Detection pattern:** `router.push` or `<Link>` navigation to data-heavy pages with no loading UI during the transition.
+**What to look for:** Navigation to a data-heavy page with no loading UI during the transition. The user clicks a link and the screen either freezes (while the new page loads server-side) or flashes blank content before the new page hydrates.
 
-**Grep:** `router.push|useRouter` without `useTransition|loading.tsx|Suspense`
+Common shapes:
+- Links to dynamic routes that fetch data, but no `loading.tsx` file in the target route segment
+- `router.push` calls with no transition wrapper — the current page stays frozen until the new one is ready
+- App Router pages that do server-side fetching without a sibling `loading.tsx` to show during the Suspense boundary
 
 **Bad:**
 ```tsx
@@ -116,9 +128,12 @@ export default function Loading() {
 
 #### 5. Mutation hook without pending feedback
 
-**Detection pattern:** `useMutation` called without using `isPending` to show inline feedback.
+**What to look for:** A mutation hook wired to a button or action, but the component never reads the pending state from the hook. The trigger element looks identical before, during, and after the mutation.
 
-**Grep:** `useMutation` without `isPending|isLoading` referenced in JSX
+Common shapes:
+- Mutation hook is created but only `.mutate()` is called — `isPending` is never destructured or referenced in JSX
+- The button that triggers the mutation has no disabled prop and no text/icon change during the request
+- Destructive actions (delete, archive) with no visual confirmation that the operation is in progress
 
 **Bad:**
 ```tsx
@@ -144,9 +159,12 @@ return (
 
 #### 6. Array `.map()` with no empty check
 
-**Detection pattern:** `.map()` called on a data array with no preceding `length === 0` or `!data.length` guard.
+**What to look for:** A data array from a fetch/query rendered via `.map()` with no guard for the zero-length case. The component renders an empty container element (blank `<ul>`, empty grid) when there's no data.
 
-**Grep:** `\.map\(` on a variable that came from a query/fetch, without `.length` check nearby
+Common shapes:
+- `.map()` on a data array inside JSX with no preceding length check — renders an empty wrapper element
+- The empty wrapper is styled with padding/borders, making the blank space look broken rather than intentional
+- Array comes from a hook or state that can legitimately be empty (search results, filtered lists, new accounts)
 
 **Bad:**
 ```tsx
@@ -175,9 +193,12 @@ return (
 
 #### 7. Conditional rendering that shows nothing
 
-**Detection pattern:** `data && <Component />` or `data?.length > 0 && <List />` that renders nothing when the condition is false.
+**What to look for:** A short-circuit conditional (`data && <Component />`) that renders content when data exists but shows absolutely nothing when it doesn't. The user sees blank space with no explanation.
 
-**Grep:** `&&\s*<` with data or array checks, no else/fallback branch
+Common shapes:
+- `{data && <Component />}` with no else/fallback — the falsy branch renders nothing
+- `{items.length > 0 && <List />}` that hides the entire section when empty instead of explaining why it's empty
+- Nested conditionals where the else branches all return null, leaving the user with a blank area
 
 **Bad:**
 ```tsx
@@ -202,9 +223,12 @@ return (
 
 #### 8. Table or grid with no "no results" row
 
-**Detection pattern:** `<table>` or `<DataTable>` component with a body that maps rows but no fallback for zero rows.
+**What to look for:** A table component where the body maps over rows but has no fallback for when the row array is empty. The user sees table headers with an empty body below them.
 
-**Grep:** `<table|<Table|<DataTable` with `.map` in tbody but no empty/fallback
+Common shapes:
+- `<tbody>` that contains only a `.map()` call — renders zero `<tr>` elements when data is empty
+- Table or DataTable component that receives an array prop and iterates it without an empty-state slot
+- The empty table looks broken: headers are visible but the body area is collapsed or awkwardly spaced
 
 **Bad:**
 ```tsx
@@ -233,9 +257,12 @@ return (
 
 #### 9. Dashboard widget with no empty content
 
-**Detection pattern:** Dashboard card or widget that renders a chart or stat but has no handling for when the underlying data is empty or zero.
+**What to look for:** A dashboard card or widget that renders a chart or statistic but has no handling for when the underlying data is empty or all zeros. The chart renders blank or with misleading axes.
 
-**Grep:** Chart components (`<BarChart|<LineChart|<PieChart`) that don't check `data.length`
+Common shapes:
+- A chart component receives a data array that can be empty — the chart renders with axes but no data points, looking broken
+- A stat card shows "0" or "NaN" when there's no data, instead of a contextual message
+- The widget has no conditional: it always renders the visualization regardless of whether there's meaningful data
 
 **Bad:**
 ```tsx
@@ -263,9 +290,12 @@ return (
 
 #### 10. Data hook without error check
 
-**Detection pattern:** `useQuery|useSWR` used but the component never checks `error`, `isError`, or `failureReason`.
+**What to look for:** A component that uses a data-fetching hook but never reads or handles the error state. If the fetch fails, the component either renders with undefined data (crashing or showing blank content) or stays in the loading state forever.
 
-**Grep:** `useQuery|useSWR` in a file that does NOT contain `isError|error\b|failureReason`
+Common shapes:
+- Data hook destructured with `data` and `isLoading` but `error`/`isError` is never read
+- The component has loading and success states but no branch for the failure case
+- On fetch failure, the component falls through to rendering `data` which is undefined, causing either a blank screen or a runtime error
 
 **Bad:**
 ```tsx
@@ -288,9 +318,12 @@ return <UserList users={data} />
 
 #### 11. try/catch that swallows the error
 
-**Detection pattern:** `try/catch` around a data fetch where the catch block returns null, logs to console, or does nothing visible.
+**What to look for:** A `try/catch` around a data operation where the catch block does nothing visible to the user. The error is logged to console or silently discarded, and the UI stays in whatever state it was in — no feedback, no recovery option.
 
-**Grep:** `catch.*\{` followed by `console\.|return null|return;|\}` with no toast/setState/throw
+Common shapes:
+- Catch block that only has `console.error(e)` — the user sees the form/page freeze with no explanation
+- Catch block that returns null or early-returns without setting any error state or showing a notification
+- Empty catch block `catch (e) {}` that completely swallows the failure
 
 **Bad:**
 ```tsx
@@ -319,9 +352,12 @@ try {
 
 #### 12. Mutation with no error handling in UI
 
-**Detection pattern:** `useMutation` or direct API call in event handler with no `onError` callback and no error state shown to the user.
+**What to look for:** A mutation (via hook or direct API call in an event handler) with no error callback and no error state shown to the user. If the mutation fails, the UI provides zero feedback — the user doesn't know if their action succeeded or failed.
 
-**Grep:** `useMutation` without `onError|isError|error` in the same component
+Common shapes:
+- Mutation hook created without an `onError` callback, and `isError`/`error` never referenced in the component
+- Direct `await fetch()` in a handler wrapped in try/catch that only logs, or not wrapped at all
+- The component has success handling (redirect, toast, close modal) but no corresponding failure handling
 
 **Bad:**
 ```tsx
@@ -349,9 +385,12 @@ const handleSave = () => mutation.mutate(formData)
 
 #### 13. Handler returns without writing error response
 
-**Detection pattern:** HTTP handler checks an error condition but returns without calling `http.Error`, `json.NewEncoder`, or the framework's error response method.
+**What to look for:** An HTTP handler that detects an error condition (failed DB query, bad input, missing resource) but returns from the handler without writing an error response to the client. The client receives an empty 200 OK.
 
-**Grep:** `if err != nil \{` followed by `return` without `http\.Error|w\.Write|json\.NewEncoder|c\.JSON|RespondWith`
+Common shapes:
+- `if err != nil` block that logs the error and returns, but never calls an error response function — the handler exits and the default 200 status is sent
+- Early return after a validation failure with no response written — the response body is empty
+- Multiple error checks where some write responses and others silently return
 
 **Bad:**
 ```go
@@ -378,9 +417,12 @@ if err != nil {
 
 #### 14. json.Encode error not handled
 
-**Detection pattern:** `json.NewEncoder(w).Encode(data)` called without checking the returned error.
+**What to look for:** A response encoding call where the returned error is silently discarded. If encoding fails (rare but possible with broken writers or circular references), the client gets a partial or corrupt response with no logging.
 
-**Grep:** `json\.NewEncoder.*\.Encode\(` not assigned to an error variable or checked
+Common shapes:
+- `json.NewEncoder(w).Encode(data)` called as a statement with the return value ignored
+- The encode call is the last line of the handler — if it fails, nothing catches it
+- Similar pattern with `xml.NewEncoder`, `yaml.NewEncoder`, or manual `w.Write(jsonBytes)` without checking the error
 
 **Bad:**
 ```go
@@ -402,9 +444,12 @@ if err := json.NewEncoder(w).Encode(response); err != nil {
 
 #### 15. Middleware continues after auth failure
 
-**Detection pattern:** Auth middleware checks credentials but doesn't return after writing the 401/403 — execution falls through to the next handler.
+**What to look for:** Auth middleware that writes an error response (401/403) when authentication fails but doesn't return afterward. Execution falls through to the next handler, which runs with an unauthenticated request and writes a second response to the already-responded writer.
 
-**Grep:** `Unauthorized|Forbidden|401|403` followed by handler chain without `return`
+Common shapes:
+- The error response is written inside an `if` block but there's no `return` after it — the next handler runs unconditionally
+- The `if !authenticated` branch writes the 401 and the code continues past the closing brace to `next.ServeHTTP`
+- Similar pattern in authorization middleware: writes 403 but falls through to the protected handler
 
 **Bad:**
 ```go

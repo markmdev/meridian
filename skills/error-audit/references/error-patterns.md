@@ -1,6 +1,6 @@
 # Error Anti-Patterns Reference
 
-Concrete patterns to search for when auditing error handling. Each section includes grep-able patterns, examples of bad code, and the correct fix. When a pattern is sometimes legitimate, the "OK when" note prevents false positives.
+Patterns to identify when auditing error handling. Each section describes the anti-pattern structurally — what the code does, not what keywords to grep for. Code examples show the bad pattern and the correct fix. "OK when" notes prevent false positives.
 
 ## Table of Contents
 
@@ -17,9 +17,11 @@ Concrete patterns to search for when auditing error handling. Each section inclu
 
 ### 1. Empty catch blocks
 
-**Search (JS/TS):** `catch\s*\([^)]*\)\s*\{\s*\}` or `\.catch\(\s*\(\)\s*=>\s*\{\s*\}\s*\)`
-**Search (Python):** `except.*:\s*\n\s*(pass|\.\.\.)\s*$`
-**Search (Go):** `if err != nil \{\s*\}` or lines with `err` on LHS but no check
+**Grep (JS/TS):** `catch\s*\([^)]*\)\s*\{\s*\}` or `\.catch\(\s*\(\)\s*=>\s*\{\s*\}\s*\)`
+**Grep (Python):** `except.*:\s*\n\s*(pass|\.\.\.)\s*$`
+**Grep (Go):** `, _ :?=` or `if err != nil \{\s*\}`
+
+**What to look for:** A try/catch, except, or error return where the error path is completely empty — no logging, no re-throw, no return, nothing. In Go, this shows up as assigning the error to `_` or having an empty `if err != nil` block. The error is caught and silently discarded.
 
 Bad (JS):
 ```js
@@ -73,9 +75,7 @@ if err != nil {
 
 ### 2. Log-and-continue
 
-**Search (JS/TS):** `catch\s*\([^)]*\)\s*\{[^}]*console\.(log|error|warn)` (without a subsequent `throw`)
-**Search (Python):** `except.*:\s*\n\s*(logging\.|logger\.|print\()` (without a subsequent `raise`)
-**Search (Go):** `log\.(Print|Fatal|Error).*\n[^}]*\}` inside an `if err != nil` block that doesn't return
+**What to look for:** A catch block that logs the error (console.error, logger.error, log.Print) but then lets execution continue as if nothing happened. The logging creates a false sense of "we handled it" — but the caller never learns the operation failed. Look for catch blocks where the only action is a log/print call with no throw, raise, or return after it.
 
 Bad (JS):
 ```js
@@ -103,9 +103,7 @@ try {
 
 ### 3. Return null/undefined/empty on failure
 
-**Search (JS/TS):** `catch\s*\([^)]*\)\s*\{[^}]*(return\s+(null|undefined|void 0|\[\]|\{\}|""|''))` or `\.catch\(\s*\(\)\s*=>\s*(null|\[\]|\{\})`
-**Search (Python):** `except.*:\s*\n\s*return\s+(None|\[\]|\{\}|"")`
-**Search (Go):** `if err != nil \{[^}]*return\s+(nil|""|0|\[\])`
+**What to look for:** A function that wraps its core logic in try/catch and returns a neutral value (null, undefined, empty array, empty object, empty string, zero) from the catch block. The caller receives what looks like a valid "not found" or "empty" response, but the real cause was an error — a database timeout, a network failure, a permission issue. The error is converted into a silent non-result.
 
 Bad (JS):
 ```js
@@ -148,8 +146,9 @@ def get_user(user_id):
 
 ### 4. Promise .catch with no-op
 
-**Search (JS/TS):** `\.catch\(\s*\(\)\s*=>` or `\.catch\(\s*\(_\)\s*=>` or `\.catch\(\(\)\s*=>\s*\{\}\)`
-**Search (broader):** `\.catch\(` then check the handler body
+**Grep (JS/TS):** `\.catch\(\s*\(\)\s*=>` or `\.catch\(\s*\(_\)\s*=>`
+
+**What to look for:** A promise chain ending with `.catch(() => {})` or `.catch(() => undefined)` — an explicit decision to swallow the rejection. Often appears on fire-and-forget calls where the developer didn't want an unhandled rejection warning but also didn't bother handling the error at all.
 
 Bad:
 ```js
@@ -171,9 +170,9 @@ sendAnalytics(event).catch((e) => {
 
 ### 5. Bare except / broad exception catch
 
-**Search (Python):** `except\s*:` (bare except) or `except\s+Exception\s*:`
-**Search (JS/TS):** Generally all `catch(e)` are broad, but look for catches that handle different error types identically
-**Search (Go):** N/A (Go uses typed errors)
+**Grep (Python):** `except\s*:` (bare except) or `except\s+Exception\s*:`
+
+**What to look for:** A catch-all that handles every possible error type with the same recovery path. In Python, this is bare `except:` or `except Exception:`. In JS/TS, all `catch(e)` are technically broad, but the issue is when a single handler treats network errors, validation errors, and programming bugs identically — usually by returning a default value or logging and continuing.
 
 Bad (Python):
 ```python
@@ -199,8 +198,9 @@ process(result)
 
 ### 6. Error variable assigned but unused (Go)
 
-**Search (Go):** `err\s*:?=` then check the next lines don't reference `err`
-**Search (Go, underscore):** `, _ :?=` or `_ = .*\(` (explicit discard of error)
+**Grep (Go):** `, _ :?=` or `_ = .*\(`
+
+**What to look for:** A function call that returns an error, but the error is assigned to `_` (explicit discard) or assigned to `err` and never checked on subsequent lines. Two or more consecutive calls discarding errors is a strong signal — if the first call fails, the second will likely produce garbage results from the nil/zero input.
 
 Bad (Go):
 ```go
@@ -228,8 +228,7 @@ if err != nil {
 
 ### 7. Silent model/API downgrade on failure
 
-**Search:** `catch.*=.*fallback|catch.*=.*default|\.catch\(\(\).*=>` combined with model/API identifiers
-**Search (broader):** Look for try/catch around API calls where the catch uses a different endpoint, model, or service
+**What to look for:** A try/catch around an API or service call where the catch block retries with a different provider, model, endpoint, or tier — and the caller has no way to know a downgrade happened. The telltale structure: a mutable variable is assigned in the try block from service A, then reassigned in the catch block from service B. The downstream code uses the result identically regardless of which path produced it.
 
 Bad:
 ```js
@@ -264,8 +263,7 @@ try {
 
 ### 8. Stale cache without indication
 
-**Search:** `catch.*(cache|stale|cached|getCache|readCache)` or `catch.*localStorage` or `catch.*sessionStorage`
-**Search (broader):** Error handlers that return cached/previous values
+**What to look for:** A catch block that returns previously-fetched data from a cache, local storage, or an in-memory variable — without any signal to the caller that the data is stale. The structure: try block fetches fresh data and updates a cache; catch block reads from that same cache and returns it as if it were a normal response. The returned shape is identical in both paths, so the caller cannot distinguish fresh from stale.
 
 Bad:
 ```js
@@ -302,8 +300,7 @@ async function fetchPrices() {
 
 ### 9. Offline/degraded mode with no UI indication
 
-**Search:** `catch.*(offline|degraded|fallback)` or `navigator\.onLine` or `catch.*mode\s*=`
-**Search (broader):** State variables set inside catch blocks
+**What to look for:** A catch block that switches to a local or offline behavior path — saving locally instead of syncing, queuing instead of sending, using an in-memory store instead of the database — without any notification to the user. The user performs an action, sees no error, and assumes it completed normally. The key signal: a catch block that calls a different storage/transport mechanism than the try block, with no UI feedback (no toast, no banner, no status change).
 
 Bad:
 ```js
@@ -332,9 +329,10 @@ try {
 
 ### 10. Required env var with fallback value
 
-**Search (JS/TS):** `process\.env\.\w+\s*\|\|\s*['"]` or `process\.env\.\w+\s*\?\?\s*['"]`
-**Search (Python):** `os\.environ\.get\(\s*['"][^'"]+['"]\s*,\s*['"]` or `os\.getenv\(\s*['"][^'"]+['"]\s*,\s*['"]`
-**Search (Go):** `os\.Getenv\(` followed by `if.*==\s*""\s*\{` with a default assignment
+**Grep (JS/TS):** `process\.env\.\w+\s*\|\|` or `process\.env\.\w+\s*\?\?`
+**Grep (Python):** `os\.environ\.get\(.*,` or `os\.getenv\(.*,`
+
+**What to look for:** An environment variable read with a hardcoded fallback value, where the variable holds something that MUST be explicitly configured — API keys, database URLs, secrets, service endpoints. The fallback means a missing or misconfigured deployment silently connects to the wrong database, uses a test API key in production, or talks to the wrong service. The danger is not the `||` operator itself but what it defaults: `PORT || 3000` is fine; `DATABASE_URL || "postgres://localhost/dev"` is not.
 
 Bad (JS):
 ```js
@@ -369,8 +367,7 @@ if not DB_URL:
 
 ### 11. Optional config that should be required
 
-**Search (JS/TS):** `process\.env\.\w+` used without validation
-**Search (broader):** Environment variables read deep in the code (not at startup) without any check
+**What to look for:** An environment variable read deep inside a handler, service, or utility function — far from application startup — without any validation. The variable is used directly (passed to an API client, used in a URL, etc.) and if it's undefined, the failure happens at runtime with a cryptic error from the downstream library rather than a clear startup-time message. The structural signal: `process.env.X` or `os.getenv("X")` appearing inside a function body rather than in a centralized config module.
 
 Bad:
 ```js
@@ -402,8 +399,7 @@ async function sendEmail(to, body) {
 
 ### 12. Legacy format branches
 
-**Search:** `if.*legacy|if.*deprecated|if.*old_|if.*v1[^.]|if.*oldFormat|if.*previousVersion`
-**Search (broader):** `TODO.*remove|HACK|COMPAT|backwards.*compat`
+**What to look for:** A conditional branch that handles an old data format, protocol version, or schema shape alongside the current one. The function checks a version field, tests for the presence/absence of old field names, or inspects the shape of the input to decide which parsing path to take. Often accompanied by comments mentioning dates, old version numbers, or migration context. The risk: these branches accumulate silently and never get removed because no one tracks whether old-format data still exists.
 
 Bad:
 ```js
@@ -434,8 +430,7 @@ Or just delete the branch if v1 data no longer exists.
 
 ### 13. Deprecated fields still populated
 
-**Search:** `deprecated|@deprecated|DEPRECATED` or field names with `old_`, `legacy_`, `prev_`
-**Search (broader):** Assignments to two fields that seem to carry the same data
+**What to look for:** An API response, data model, or event payload that assigns the same value to multiple fields with different naming conventions — camelCase and snake_case variants, fields prefixed with `old_` or `legacy_`, or simply two field names that carry identical data. The duplication exists because old consumers read the old field name and no one has coordinated removal. Look for object literals or serialization code where two or more keys are assigned from the same source value.
 
 Bad:
 ```js
@@ -461,8 +456,7 @@ return {
 
 ### 14. Dual code paths
 
-**Search:** `if.*new.*\{|if.*feature.*flag|if.*useNew|if.*enableV2`
-**Search (broader):** Feature flags or toggles that have both branches fully implemented
+**What to look for:** A conditional that picks between two fully-implemented code paths based on a feature flag, toggle, or configuration value. Both branches do the same thing (process an order, render a page, handle a request) but through different implementations. The structural signal: an if/else or ternary where each branch calls a different module, pipeline, or service to accomplish the same task. If the flag has been at 100% for more than a release cycle, the old branch is dead code waiting to cause confusion.
 
 Bad:
 ```js
@@ -490,8 +484,7 @@ function processOrder(order) {
 
 ### 15. Defensive access on core entity fields
 
-**Search (JS/TS):** `\?\.\w+` combined with core entity names (user, order, session, account, etc.)
-**Search (broader):** Optional chaining on fields that are required by the database schema or type definition
+**What to look for:** Optional chaining (`?.`) or null checks on fields that the database schema defines as NOT NULL, or that the type system marks as required. The code treats guaranteed-present data as if it might be missing, often pairing `?.` with a fallback like `?? "Unknown"` or `?? ""`. This hides bugs: if the data IS missing, it means something upstream broke (a bad query, a corrupted record, a type mismatch) and the code should fail loudly, not silently substitute a placeholder. Cross-reference the field access with the schema or type definition to determine whether the chaining is warranted.
 
 Bad:
 ```js
@@ -513,8 +506,7 @@ const email = user.email;
 
 ### 16. Chaining through always-present nested objects
 
-**Search (JS/TS):** `\?\.\w+\?\.\w+` (double optional chain) or `\?\.\w+\?\.\w+\?\.\w+` (triple)
-**Search (broader):** Chains of 3+ optional accesses on a single expression
+**What to look for:** Multiple optional chaining operators stacked on a single property access path (`a?.b?.c?.d`). When the nesting represents a required relationship (an order's shipping address, a user's account settings), each `?.` is a silent null check that suppresses what should be a hard failure. The deeper the chain, the more likely it is masking a missing validation or a broken invariant upstream. Check the data model: if the relationship is required, the chaining should be replaced with an explicit existence check and a thrown error.
 
 Bad:
 ```js
@@ -536,8 +528,7 @@ const city = order.shipping.address.city;
 
 ### 17. Nullish coalescing default on required field
 
-**Search (JS/TS):** `\?\?\s*['"]` (nullish coalescing to string default) or `\?\?\s*0` or `\?\?\s*\[\]` or `\?\?\s*\{\}`
-**Search (Python):** `or\s*['"]` or `if.*is None.*=` (defaulting on None)
+**What to look for:** A nullish coalescing operator (`??`) or Python `or` providing a default value for a field that should never be null according to the data model. The default masks a broken invariant — if `session.userId` is null, there's an authentication bug; substituting `"anonymous"` hides it. The structural signal: `??` followed by a string literal, zero, empty array, or empty object on a field that the schema or type says is required. Compare the defaulted field against its type definition or schema constraint.
 
 Bad:
 ```js
@@ -562,9 +553,7 @@ const role = user.role; // role is required in the User schema
 
 ### 18. Fetch error renders blank/empty
 
-**Search (JS/TS):** `catch.*return\s*\{` in data fetching functions, then check if the component has error state rendering
-**Search (React):** `useQuery|useSWR|fetch\(` without corresponding error UI
-**Search (broader):** Components that destructure data with defaults: `const { items = [] } = data`
+**What to look for:** A component that fetches data and initializes its state to an empty array or null, but has no separate error state. When the fetch fails, the component renders its "empty" state — an empty list, a blank area, no items — which is indistinguishable from "the data loaded and there's genuinely nothing there." Look for components using `useState([])` or `useState(null)` with a fetch in `useEffect` or a data hook, where the error path either swallows the error or doesn't exist. Also check for destructuring with defaults (`const { items = [] } = data`) that silently convert undefined (error) into empty (no data).
 
 Bad:
 ```jsx
@@ -597,8 +586,7 @@ function UserList() {
 
 ### 19. Error boundary with generic message and no recovery
 
-**Search (React):** `ErrorBoundary|componentDidCatch|getDerivedStateFromError`
-**Search (broader):** Check what the fallback UI renders — does it offer retry, navigation, or context?
+**What to look for:** An error boundary (React class with `componentDidCatch` or `getDerivedStateFromError`, or a library wrapper) whose fallback UI is a dead end — a generic "Something went wrong" message with no retry button, no navigation link, no context about what failed. The user's only option is to refresh the entire page or leave. Check the fallback render: does it offer any action (retry, go home, contact support)? Does it say what went wrong?
 
 Bad:
 ```jsx
@@ -634,8 +622,7 @@ render() {
 
 ### 20. Async operation with no loading or error state
 
-**Search (React):** `useState.*loading|isLoading|isPending` — check that corresponding error state exists too
-**Search (broader):** `onClick.*await|onSubmit.*await` handlers without try/catch or error state
+**What to look for:** A button click handler, form submit handler, or other user-initiated action that calls an async function (API request, mutation, delete) without try/catch and without any loading/pending state. When the operation fails, nothing happens — the button stays enabled, no error appears, the user clicks again. When it's slow, there's no indication that anything is in progress. The structural signal: an `async` function called from `onClick` or `onSubmit` with a bare `await` and no surrounding try/catch, no loading boolean, and no error state variable.
 
 Bad:
 ```jsx
@@ -676,8 +663,7 @@ function DeleteButton({ id }) {
 
 ### 21. Toast/notification on error without context
 
-**Search:** `toast\.(error|warn)|notification\.(error|warn)|showError|alert\(` — check the message content
-**Search (broader):** Error messages that are generic strings: "Error", "Something went wrong", "An error occurred"
+**What to look for:** A catch block that shows a user-facing notification (toast, alert, modal) with a generic message like "An error occurred", "Something went wrong", or just "Error" — with no indication of what operation failed or what the user can do about it. The user sees a red notification and has no idea whether their save failed, their payment bounced, or their upload timed out. Check catch blocks that call toast/notification/alert functions and inspect the message string: does it name the failed operation?
 
 Bad:
 ```js

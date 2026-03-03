@@ -51,7 +51,7 @@ Before fixing anything, identify how this app surfaces errors to users — toast
 - When unsure if a fallback was intentional, flag it in your report rather than guessing
 
 ## Reference files
-- `references/error-patterns.md` — Concrete anti-patterns with grep patterns, bad/good code examples, and false positive notes. Read this before starting the audit.
+- `references/error-patterns.md` — Concrete anti-patterns with structural descriptions, bad/good code examples, and false positive notes. Read this before starting the audit.
 
 ## Report
 

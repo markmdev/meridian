@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0] - 2026-03-03
+
+### Changed
+- **WORKSPACE.md scope tightened** — SOUL.md and agent-operating-manual now consistently describe workspace as "slim current-state notepad." Verification in SOUL.md trimmed to one-liner deferring to manual.
+- **CODE_GUIDE.md moved to docs** — No longer force-injected at every session. Now lives at `.meridian/docs/code-guide.md` with frontmatter, discoverable via docs-index when task matches `read_when` hints.
+- **Pebble context slimmed** — Replaced `pb summary` (4 sections, 20 closed issues) with targeted `pb list --status in_progress` + `pb ready`. Empty results produce no pebble-context tag.
+- **Plan review hook removed** — Agents follow planning skill instructions to run plan-reviewer. The blocking hook was redundant and couldn't detect if the reviewer already ran.
+- **Action counter simplified** — Removed plan-specific action counting. General action counter preserved for stop hook threshold.
+
+### Removed
+- `scripts/plan-review.py` — ExitPlanMode blocking hook
+- `.claude/settings.json` — stale daily-summary hook registration
+- `plan_review_min_actions` config key
+- Plan action counter helpers from meridian_config.py
+
 ## [0.6.17] - 2026-03-02
 
 ### Fixed

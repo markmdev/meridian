@@ -17,7 +17,8 @@ from pathlib import Path
 from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, state_path, is_system_noise, is_headless, build_headless_env, build_headless_args
+from meridian_config import WORKSPACE_FILE, scan_project_frontmatter, get_project_config, state_path, is_system_noise, is_headless
+import claude_runner
 
 if is_headless():
     sys.exit(0)
@@ -415,45 +416,6 @@ def cleanup_docs_to_delete(project_dir: Path):
 
 
 
-def parse_stream_json(stdout: str) -> tuple[list[dict], str]:
-    """Parse stream-json output into (tools_used, text_output).
-
-    tools_used: list of {"tool": "Write", "file": ".meridian/WORKSPACE.md"}
-    text_output: the final result text (not intermediate narration between tool calls)
-    """
-    tools_used = []
-    result_text = ""
-
-    for line in stdout.strip().split('\n'):
-        if not line.strip():
-            continue
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-
-        # Collect tool usage from assistant messages
-        msg = entry.get("message", {})
-        content = msg.get("content", [])
-        if isinstance(content, list):
-            for block in content:
-                if block.get("type") == "tool_use":
-                    tool_entry = {"tool": block.get("name", "unknown")}
-                    input_data = block.get("input", {})
-                    file_path = input_data.get("file_path") or input_data.get("path") or ""
-                    if file_path:
-                        tool_entry["file"] = file_path
-                    tools_used.append(tool_entry)
-
-        # The result entry contains the final response text
-        if entry.get("type") == "result":
-            r = entry.get("result", "")
-            if r and isinstance(r, str):
-                result_text = r
-
-    return tools_used, result_text
-
-
 def get_git_diff_after(project_dir: Path) -> tuple[list[str], str]:
     """Get changed files and diff stat after agent runs."""
     files_changed = []
@@ -526,65 +488,44 @@ def run_workspace_agent(prompt: str, project_dir: Path) -> dict:
 
     Returns dict with: success, exit_code, tools_used, text_output
     """
-    env = build_headless_env()
-    run_info = {"success": False, "exit_code": -1, "tools_used": [], "text_output": ""}
+    env = claude_runner.build_env()
+    args = claude_runner.build_args()
+    result = claude_runner.run(prompt, args=args, env=env, cwd=str(project_dir), timeout=180)
 
-    try:
-        result = subprocess.run(
-            build_headless_args(),
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=180,
-            cwd=str(project_dir),
-            env=env,
-        )
-        run_info["exit_code"] = result.returncode
+    run_info = {
+        "success": result["success"],
+        "exit_code": result["exit_code"],
+        "tools_used": [],
+        "text_output": "",
+    }
 
-        # Log stderr for debugging
-        if result.stderr:
-            log(project_dir, f"claude stderr: {result.stderr[:300]}")
+    # Log stderr for debugging
+    if result["stderr"]:
+        log(project_dir, f"claude stderr: {result['stderr'][:300]}")
 
-        # Parse stream-json output for tool usage and text
-        tools_used, text_output = parse_stream_json(result.stdout or "")
+    # Parse stream-json output for tool usage and text
+    if result["stdout"]:
+        tools_used, text_output = claude_runner.parse_stream_json(result["stdout"])
         run_info["tools_used"] = tools_used
         run_info["text_output"] = text_output
 
-        # Save human-readable agent output for inspection
-        output_path = state_path(project_dir, "session-learner-output.md")
-        try:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            header = f"# Session Learner Output\n**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  \n**Exit code:** {result.returncode}\n\n---\n\n"
-            output_path.write_text(header + (text_output or "*(no output)*") + "\n")
-        except (IOError, OSError):
-            pass
+    # Save human-readable agent output for inspection
+    output_path = state_path(project_dir, "session-learner-output.md")
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        header = f"# Session Learner Output\n**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  \n**Exit code:** {result['exit_code']}\n\n---\n\n"
+        output_path.write_text(header + (run_info["text_output"] or "*(no output)*") + "\n")
+    except (IOError, OSError):
+        pass
 
-        if result.returncode != 0:
-            log(project_dir, f"claude exited with code {result.returncode}")
-            # Log last few lines of stdout for diagnosis
-            stdout_lines = (result.stdout or "").strip().split('\n')
-            for line in stdout_lines[-3:]:
-                log(project_dir, f"  stdout: {line[:300]}")
-            return run_info
+    if not result["success"]:
+        log(project_dir, f"claude exited with code {result['exit_code']}")
+        # Log last few lines of stdout for diagnosis
+        stdout_lines = result["stdout"].strip().split('\n')
+        for line in stdout_lines[-3:]:
+            log(project_dir, f"  stdout: {line[:300]}")
 
-        run_info["success"] = True
-        return run_info
-    except subprocess.TimeoutExpired:
-        log(project_dir, "claude timed out (180s)")
-        run_info["exit_code"] = -2
-        return run_info
-    except BrokenPipeError as e:
-        log(project_dir, f"BrokenPipeError: {e}")
-        run_info["exit_code"] = -4
-        return run_info
-    except FileNotFoundError:
-        log(project_dir, "claude CLI not found")
-        run_info["exit_code"] = -3
-        return run_info
-    except OSError as e:
-        log(project_dir, f"OSError: {e}")
-        run_info["exit_code"] = -5
-        return run_info
+    return run_info
 
 
 def log(project_dir: Path, message: str):

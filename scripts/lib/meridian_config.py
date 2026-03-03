@@ -1055,36 +1055,3 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
     parts.append("Skip items you already did this session. Then continue with your stop.")
 
     return "\n".join(parts)
-
-
-# =============================================================================
-# SUBPROCESS ISOLATION (headless claude -p)
-# =============================================================================
-def build_headless_env() -> dict:
-    """Build an environment dict for spawning isolated claude -p subprocesses.
-
-    Sets MERIDIAN_HEADLESS=1 so hooks exit immediately in the subprocess,
-    and removes CLAUDECODE and CLAUDE_CODE_ENTRYPOINT to avoid session interference.
-    """
-    env = os.environ.copy()
-    env["MERIDIAN_HEADLESS"] = "1"
-    env.pop("CLAUDECODE", None)
-    env.pop("CLAUDE_CODE_ENTRYPOINT", None)
-    return env
-
-
-def build_headless_args(model: str = "claude-opus-4-6", allowed_tools: str = "Write,Read,Edit") -> list[str]:
-    """Build the argument list for spawning an isolated claude -p subprocess.
-
-    Returns a command list suitable for subprocess.run() or subprocess.Popen().
-    """
-    return [
-        "claude", "-p",
-        "--model", model,
-        "--output-format", "stream-json",
-        "--verbose",
-        "--allowedTools", allowed_tools,
-        "--dangerously-skip-permissions",
-        "--no-session-persistence",
-        "--setting-sources", "user",
-    ]

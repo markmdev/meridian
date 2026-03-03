@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.4] - 2026-03-03
+
+### Added
+- **`claude_runner` shared module** — Reusable Python module for `claude -p` subprocess calls. Provides `build_env()`, `build_args()`, `run()`, `parse_stream_json()`, and `load_template()`. Ships in both `scripts/lib/` (plugin) and `.meridian/lib/` (scaffolding).
+
+### Changed
+- **Session learner** — Migrated to use `claude_runner` instead of inline subprocess code and `meridian_config` headless helpers.
+
+### Removed
+- **`build_headless_env()` / `build_headless_args()`** from `meridian_config.py` — Replaced by `claude_runner`.
+
 ## [0.7.3] - 2026-03-03
 
 ### Added

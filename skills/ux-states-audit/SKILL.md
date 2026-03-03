@@ -51,6 +51,9 @@ Use these patterns exclusively. Don't introduce a new loading spinner if one alr
 - Error states should say what went wrong and what the user can do (retry, go back, contact support)
 - Don't invent new UI primitives — use what already exists in the codebase
 
+## Reference files
+- `references/ux-patterns.md` — Framework-specific patterns for missing loading, empty, and error states. Detection patterns, bad/fix examples. Read before starting the audit.
+
 ## Report
 
 Summarize by component: which states were missing, what was added.

@@ -50,6 +50,9 @@ Before fixing anything, identify how this app surfaces errors to users — toast
 - Delete fallback branches — don't comment them out
 - When unsure if a fallback was intentional, flag it in your report rather than guessing
 
+## Reference files
+- `references/error-patterns.md` — Concrete anti-patterns with grep patterns, bad/good code examples, and false positive notes. Read this before starting the audit.
+
 ## Report
 
 After fixing, summarize by file: what was found, what the fix was. Be specific — file paths and the pattern removed.

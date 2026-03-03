@@ -57,6 +57,9 @@ Read how they're configured and how they're used in existing code. All fixes mus
 - Log context should include: what operation, what failed, relevant IDs (user, entity, request)
 - Don't add logging to every function — focus on boundaries (external calls, queue handlers, critical paths)
 
+## Reference files
+- `references/observability-patterns.md` — Detection patterns, bad/fix examples for debug artifacts, missing logging, missing context, untracked operations. Read before starting the audit.
+
 ## Report
 
 Summarize by file: what was removed, what was added or improved, what context was missing and is now included.

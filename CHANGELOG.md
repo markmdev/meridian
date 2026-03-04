@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.6] - 2026-03-03
+
+### Changed
+- **Planning skill description** — Optimized for triggering accuracy. Explicit "INSTEAD of EnterPlanMode" directive + methodology details (interviewing, parallel exploration, plan validation) improved eval recall from 0% to 95%.
+- **Audit skill references** — Rewritten to use structural anti-patterns instead of naive grep patterns for more consistent detection.
+
 ## [0.7.5] - 2026-03-03
 
 ### Fixed

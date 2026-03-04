@@ -17,12 +17,10 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from meridian_config import (
     get_project_config,
     get_extra_doc_dirs,
-    get_active_plan_path,
     is_headless,
     scan_docs_directory,
     state_path,
     WORKSPACE_FILE,
-    ACTIVE_PLAN_FILE,
     INJECTED_FILES_LOG,
 )
 
@@ -35,18 +33,6 @@ def get_injected_file_paths(base_dir: Path, project_config: dict) -> list[str]:
     workspace_path = base_dir / WORKSPACE_FILE
     if workspace_path.exists():
         files.append(str(workspace_path))
-
-    # Active plan
-    active_plan = get_active_plan_path(base_dir)
-    if active_plan:
-        _, plan_full = active_plan
-        plan_str = str(plan_full)
-        if plan_str not in files:
-            files.append(plan_str)
-
-    # Active plan state file (always include so subagents can check at runtime)
-    # May be populated mid-session after plan approval
-    files.append(str(state_path(base_dir, ACTIVE_PLAN_FILE)))
 
     # CODE_GUIDE
     code_guide_path = base_dir / ".meridian" / "docs" / "code-guide.md"

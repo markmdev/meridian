@@ -10,6 +10,8 @@ last-session.md. The context injector picks this up at next session start.
 import json
 import os
 import sys
+import time
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
@@ -18,8 +20,22 @@ from meridian_config import state_path, LAST_SESSION_FILE, TRANSCRIPT_PATH_STATE
 if is_headless():
     sys.exit(0)
 
+SESSION_TRANSCRIPT_DEBUG_LOG = "session-transcript-debug.log"
+
 MAX_ENTRY_CHARS = 2000
 MAX_DIALOGUE_CHARS = 30000
+
+
+def log(project_dir, msg):
+    """Append a debug line to the session-transcript log."""
+    try:
+        log_path = state_path(project_dir, SESSION_TRANSCRIPT_DEBUG_LOG)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        with open(log_path, "a") as f:
+            f.write(f"[{timestamp}] {msg}\n")
+    except (IOError, OSError):
+        pass
 
 
 def extract_dialogue(transcript_path: str) -> list[dict]:
@@ -120,16 +136,22 @@ def main():
     except json.JSONDecodeError:
         sys.exit(0)
 
-    if input_data.get("hook_event_name", "") != "SessionEnd":
-        sys.exit(0)
-
+    event_name = input_data.get("hook_event_name", "")
     transcript_path = input_data.get("transcript_path", "")
+
     claude_project_dir = os.environ.get("CLAUDE_PROJECT_DIR")
 
     if not claude_project_dir:
+        # Can't log without project dir — no state path available
         sys.exit(0)
 
     base_dir = Path(claude_project_dir)
+
+    log(base_dir, f"START event={event_name} transcript={Path(transcript_path).name if transcript_path else 'none'}")
+
+    if event_name != "SessionEnd":
+        log(base_dir, f"SKIP wrong event: {event_name}")
+        sys.exit(0)
 
     # Fall back to saved transcript path if not provided
     if not transcript_path:
@@ -138,20 +160,32 @@ def main():
             transcript_path = saved.read_text().strip()
 
     if not transcript_path or not Path(transcript_path).exists():
+        log(base_dir, f"SKIP no transcript path or file missing: {transcript_path}")
         sys.exit(0)
 
     # Extract dialogue
     entries = extract_dialogue(transcript_path)
+    log(base_dir, f"extracted {len(entries)} dialogue entries")
 
     if not entries:
+        log(base_dir, "SKIP no dialogue entries found")
         sys.exit(0)
 
     # Write to state directory
     output_path = state_path(base_dir, LAST_SESSION_FILE)
     output_path.write_text(format_dialogue(entries))
+    log(base_dir, f"wrote {len(entries)} entries to {output_path}")
 
     sys.exit(0)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        try:
+            project_dir = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
+            log(project_dir, f"CRASH {type(e).__name__}: {e}")
+        except Exception:
+            pass
+        raise

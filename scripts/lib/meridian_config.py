@@ -744,13 +744,6 @@ def build_injected_context(base_dir: Path) -> tuple[str, dict]:
     # Description is optional — appears above the file to explain its purpose.
     files_to_inject = []
 
-    # Active plan file (if set)
-    active_plan = get_active_plan_path(base_dir)
-    if active_plan:
-        meta["plan"] = True
-        plan_rel, plan_full = active_plan
-        files_to_inject.append((plan_rel, plan_full, "Active implementation plan. Follow this plan during implementation."))
-
     # Get project config for addons and pebble
     project_config = get_project_config(base_dir)
 

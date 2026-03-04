@@ -1,7 +1,11 @@
+.meridian/.gitignore
 .meridian/docs/code-guide.md
 .meridian/docs/README.md
+.meridian/lib/__init__.py
+.meridian/lib/claude_runner.py
 .meridian/prompts/agent-operating-manual.md
 .meridian/prompts/coderabbit-task.md
+.meridian/prompts/pebble-rules.md
 .meridian/prompts/work-until-loop.md
 .meridian/scripts/learner-log.py
 .meridian/scripts/setup-work-until.sh

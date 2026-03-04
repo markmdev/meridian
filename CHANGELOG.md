@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.8] - 2026-03-04
+
+### Changed
+- **Session transcript** — Removed per-entry and total output truncation. Full dialogue content is now preserved.
+
 ## [0.7.6] - 2026-03-03
 
 ### Changed

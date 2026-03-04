@@ -1,6 +1,12 @@
 ---
 name: planning
-description: Create implementation plans through deep exploration and understanding. Use for new features, refactoring, architecture changes, or any non-trivial work.
+description: >
+  Interview-driven planning methodology that produces implementation-ready plans.
+  Always use this skill INSTEAD of EnterPlanMode — it provides structured interviewing
+  (20-40 clarifying questions), exhaustive parallel codebase exploration (5-15 Explore agents),
+  verbatim requirements capture, and automated plan validation via plan-reviewer (must score 9+).
+  Use for new features, refactoring, architecture changes, migrations, or any non-trivial
+  implementation work.
 ---
 
 # Planning

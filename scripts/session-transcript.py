@@ -21,9 +21,6 @@ if is_headless():
 
 SESSION_TRANSCRIPT_DEBUG_LOG = "session-transcript-debug.log"
 
-MAX_ENTRY_CHARS = 2000
-MAX_DIALOGUE_CHARS = 30000
-
 
 def log(project_dir, msg):
     """Append a debug line to the session-transcript log."""
@@ -105,26 +102,11 @@ def extract_dialogue(transcript_path: str) -> list[dict]:
 
 
 def format_dialogue(entries: list[dict]) -> str:
-    """Format dialogue entries as clean markdown.
-
-    Caps total output at MAX_DIALOGUE_CHARS, keeping the most recent entries.
-    Individual entries are capped at MAX_ENTRY_CHARS.
-    """
-    # Build lines from the end (most recent first) to stay within budget
+    """Format dialogue entries as clean markdown. Full content preserved."""
     lines = []
-    total = 0
-    for entry in reversed(entries):
+    for entry in entries:
         role = entry["role"].capitalize()
-        text = entry["text"][:MAX_ENTRY_CHARS]
-        line = f"**{role}:** {text}\n"
-        if total + len(line) > MAX_DIALOGUE_CHARS:
-            break
-        lines.append(line)
-        total += len(line)
-
-    lines.reverse()
-    if len(lines) < len(entries):
-        lines.insert(0, "*(earlier dialogue truncated)*\n")
+        lines.append(f"**{role}:** {entry['text']}\n")
 
     return "# Last Session\n\n" + "\n".join(lines)
 

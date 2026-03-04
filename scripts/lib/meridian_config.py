@@ -798,6 +798,20 @@ def build_injected_context(base_dir: Path) -> tuple[str, dict]:
 
     # Pebble live context (if enabled)
     if project_config.get('pebble_enabled', False):
+        # Pebble rules (behavioral — must be followed when Pebble is active)
+        # Check plugin root first (.meridian/prompts/ relative to repo root)
+        pebble_rules_path = Path(__file__).parent.parent.parent / ".meridian" / "prompts" / "pebble-rules.md"
+        if not pebble_rules_path.exists():
+            # Fallback: check project directory
+            pebble_rules_path = base_dir / ".meridian" / "prompts" / "pebble-rules.md"
+        if pebble_rules_path.exists():
+            try:
+                rules_content = pebble_rules_path.read_text()
+                parts.append(rules_content.rstrip())
+                parts.append("")
+            except IOError:
+                pass
+
         # Get live Pebble context (in-progress, ready issues)
         pebble_context = get_pebble_context(base_dir)
         if pebble_context:

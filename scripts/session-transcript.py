@@ -10,7 +10,6 @@ last-session.md. The context injector picks this up at next session start.
 import json
 import os
 import sys
-import time
 from datetime import datetime
 from pathlib import Path
 

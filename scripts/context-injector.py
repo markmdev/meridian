@@ -2,7 +2,7 @@
 """
 Context Injector — SessionStart Hook
 
-Injects project context (workspace, code guide, plans, file tree) into the
+Injects project context (workspace, docs, git state, Pebble) into the
 conversation via additionalContext. Triggers on: startup, compact, clear.
 """
 

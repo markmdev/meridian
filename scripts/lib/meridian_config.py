@@ -584,26 +584,6 @@ def scan_nested_git_repos(base_dir: Path, max_depth: int = 3) -> str:
 # =============================================================================
 # CONTEXT INJECTION HELPERS
 # =============================================================================
-def get_active_plan_path(base_dir: Path) -> tuple[str, Path] | None:
-    """Get the active plan's relative path and resolved Path.
-
-    Returns (rel_path, full_path) or None if no active plan is set.
-    """
-    try:
-        content = state_path(base_dir, ACTIVE_PLAN_FILE).read_text().strip()
-        if not content:
-            return None
-        if content.startswith('/'):
-            full_path = Path(content)
-        else:
-            full_path = base_dir / content
-        if full_path.exists():
-            return content, full_path
-    except IOError:
-        pass
-    return None
-
-
 def build_injected_context(base_dir: Path) -> tuple[str, dict]:
     """Build the full injected context string with XML-wrapped file contents.
 
@@ -621,7 +601,6 @@ def build_injected_context(base_dir: Path) -> tuple[str, dict]:
         "docs": 0,
         "api_docs": 0,
         "last_session": False,
-        "plan": False,
         "pebble": False,
         "manual": False,
         "soul": False,
@@ -740,32 +719,8 @@ def build_injected_context(base_dir: Path) -> tuple[str, dict]:
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         pass
 
-    # Build ordered file list: (rel_path, full_path, description)
-    # Description is optional — appears above the file to explain its purpose.
-    files_to_inject = []
-
     # Get project config for addons and pebble
     project_config = get_project_config(base_dir)
-
-    # Inject each file with XML tags (deduplicate by resolved path)
-    injected_paths = set()
-    for rel_path, full_path, desc in files_to_inject:
-        resolved = full_path.resolve()
-        if resolved in injected_paths:
-            continue
-        injected_paths.add(resolved)
-        try:
-            content = full_path.read_text()
-            if desc:
-                parts.append(f"**{desc}**")
-            parts.append(f'<file path="{rel_path}">')
-            parts.append(content.rstrip())
-            parts.append('</file>')
-            parts.append("")
-        except IOError as e:
-            meta["errors"].append(f"Could not read {rel_path}: {e}")
-            parts.append(f'<file path="{rel_path}" error="Could not read file" />')
-            parts.append("")
 
     # Documentation directories — scan for frontmatter summaries
     doc_dirs = [

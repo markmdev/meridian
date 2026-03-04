@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.7.9] - 2026-03-04
+
+### Added
+- **Instruction reminder hook** — injects a short reminder to follow CLAUDE.md instructions on every user message. Prevents instruction drift during long sessions.
+
 ## [0.7.8] - 2026-03-04
 
 ### Changed

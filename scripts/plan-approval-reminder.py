@@ -38,26 +38,15 @@ def main():
     config = get_project_config(base_dir)
     pebble_enabled = config.get('pebble_enabled', False)
 
-    # Build plan management instructions (always runs)
+    active_plan_path = str(state_path(base_dir, ACTIVE_PLAN_FILE))
+
     plan_instructions = (
-        f"[SYSTEM]: Plan approved. **Archive the plan to the project folder:**\n\n"
-        f"1. **Copy and rename the plan** — pick a descriptive kebab-case name based on the plan content:\n"
-        f"   ```bash\n"
-        f"   mkdir -p .meridian/plans && cp ~/.claude/plans/[slug].md .meridian/plans/descriptive-name.md\n"
-        f"   ```\n"
-        f"   Examples: `add-user-auth.md`, `refactor-payment-api.md`, `fix-race-condition.md`\n\n"
-        f"2. **Update active plan tracking** (use ABSOLUTE path to the renamed file):\n"
-        f"   - Write the absolute plan path to `{state_path(base_dir, ACTIVE_PLAN_FILE)}`\n\n"
+        f"Plan approved. Archive it: `mkdir -p .meridian/plans && cp ~/.claude/plans/[slug].md .meridian/plans/descriptive-name.md`\n"
+        f"Write the absolute path of the archived plan to `{active_plan_path}`."
     )
 
-    # Add Pebble scaffolder instructions if enabled
     if pebble_enabled:
-        plan_instructions += (
-            f"3. **Invoke the `pebble-scaffolder` agent** to document the work.\n\n"
-            f"- Scope: `task`, `bug`, or `follow-up`\n"
-            f"- Parent: epic ID if part of larger work, otherwise none\n\n"
-            f"Skip scaffolder only for trivial 5-minute fixes."
-        )
+        plan_instructions += "\nInvoke the `pebble-scaffolder` agent to document the work."
 
     reason = plan_instructions
 

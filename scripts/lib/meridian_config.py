@@ -611,9 +611,6 @@ def build_injected_context(base_dir: Path) -> tuple[str, dict]:
     # Header
     parts.append("<injected-project-context>")
     parts.append("")
-    parts.append("This context contains critical project information you MUST understand before working.")
-    parts.append("Read and internalize it before responding to the user.")
-    parts.append("")
 
     # Current datetime
     from datetime import datetime
@@ -848,19 +845,7 @@ def build_injected_context(base_dir: Path) -> tuple[str, dict]:
         parts.append('</work-until-loop>')
         parts.append("")
 
-    # Footer with acknowledgment request
-    parts.append("You have received the complete project context above.")
-    parts.append("This information is CRITICAL for working correctly on this project.")
-    parts.append("")
-    parts.append("Before doing anything else:")
-    parts.append("1. Embody SOUL.md — this defines who you are and how you work")
-    parts.append("2. Confirm you understand any in-progress tasks and their current state")
-    parts.append("3. Confirm you will follow the CODE_GUIDE conventions")
-    parts.append("4. Confirm you will operate according to the agent-operating-manual")
-    parts.append("")
-    parts.append("Acknowledge this context by briefly stating what you understand about")
-    parts.append("the current project state.")
-    parts.append("")
+    # Footer
     parts.append("</injected-project-context>")
 
     return "\n".join(parts), meta
@@ -972,26 +957,21 @@ def clear_loop_state(base_dir: Path) -> bool:
 
 def build_stop_prompt(base_dir: Path, config: dict) -> str:
     """
-    Build a minimal stop hook prompt.
-
-    Trusts SOUL.md and agent-operating-manual.md for details.
-    This is just a checklist trigger, not re-training.
+    Build a checklist of tasks to complete. No mention of stopping — the agent
+    should treat these as work items, not a wind-down signal.
 
     Args:
         base_dir: Project root directory
         config: Project config from get_project_config()
 
     Returns:
-        The stop prompt string
+        The checklist prompt string
     """
-    from datetime import datetime
     pebble_enabled = config.get('pebble_enabled', False)
+    extra_items = config.get('stop_checklist_extra', [])
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
-    parts = [f"**Before stopping** ({now}):\n"]
+    parts = ["**Complete these tasks:**\n"]
 
-    # Core checklist - agent knows HOW from SOUL.md and operating manual
-    parts.append("**Checklist:**")
     parts.append("- Run **code-reviewer** and **code-health-reviewer** in parallel if you made significant code changes")
 
     if pebble_enabled:
@@ -999,6 +979,12 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
 
     parts.append("- Run tests/lint/build if you made code changes")
     parts.append("- Update relevant documentation (CLAUDE.md, docs, workspace) if you made significant changes")
+
+    # User-configured extra items
+    if isinstance(extra_items, list):
+        for item in extra_items:
+            if isinstance(item, str) and item.strip():
+                parts.append(f"- {item.strip()}")
 
     # Check for uncommitted changes
     try:
@@ -1016,6 +1002,6 @@ def build_stop_prompt(base_dir: Path, config: dict) -> str:
         pass
 
     parts.append("")
-    parts.append("Skip items you already did this session. Then continue with your stop.")
+    parts.append("Skip items you already completed. Do the rest now.")
 
     return "\n".join(parts)

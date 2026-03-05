@@ -88,18 +88,18 @@ def build_loop_prompt(base_dir: Path, config: dict, state: dict) -> str:
     phrase = state.get('completion_phrase')
     prompt = state.get('prompt', '')
 
-    parts.append(f"🔄 **WORK-UNTIL LOOP** — Iteration {iteration}")
+    parts.append(f"**WORK-UNTIL LOOP** — Iteration {iteration}")
     if max_iter > 0:
         parts.append(f" of {max_iter}")
     parts.append("\n\n")
 
-    # Add standard stop prompt
+    # Add standard checklist
     parts.append(build_stop_prompt(base_dir, config))
     parts.append("\n\n")
 
     # Add loop-specific instructions
     parts.append("---\n\n")
-    parts.append("**LOOP STATUS**: You are in a work-until loop. After completing the above checks, continue working on your task.\n\n")
+    parts.append("**LOOP STATUS**: You are in a work-until loop. After completing the above tasks, continue working.\n\n")
 
     if phrase:
         parts.append(f"**TO EXIT LOOP**: Output `<complete>{phrase}</complete>` when the statement \"{phrase}\" is TRUE.\n")
@@ -156,7 +156,7 @@ def main():
 
     # Check for max iterations
     if max_iterations > 0 and iteration >= max_iterations:
-        print(f"🛑 Work-until loop: Max iterations ({max_iterations}) reached.", file=sys.stderr)
+        print(f"Work-until loop: Max iterations ({max_iterations}) reached.", file=sys.stderr)
         clear_loop_state(base_dir)
         reset_action_counter(base_dir)
         sys.exit(0)  # Allow stop
@@ -166,7 +166,7 @@ def main():
     if transcript_path and completion_phrase:
         output = get_last_assistant_output(transcript_path)
         if output and check_completion_phrase(output, completion_phrase):
-            print(f"✅ Work-until loop: Detected <complete>{completion_phrase}</complete>", file=sys.stderr)
+            print(f"Work-until loop: Detected <complete>{completion_phrase}</complete>", file=sys.stderr)
             clear_loop_state(base_dir)
             reset_action_counter(base_dir)
             sys.exit(0)  # Allow stop
@@ -184,9 +184,9 @@ def main():
 
     # Build system message
     if completion_phrase:
-        sys_msg = f"🔄 Work-until iteration {next_iteration} | To complete: <complete>{completion_phrase}</complete> (only when TRUE)"
+        sys_msg = f"Work-until iteration {next_iteration} | To complete: <complete>{completion_phrase}</complete> (only when TRUE)"
     else:
-        sys_msg = f"🔄 Work-until iteration {next_iteration} | No completion phrase — runs until max iterations"
+        sys_msg = f"Work-until iteration {next_iteration} | No completion phrase — runs until max iterations"
 
     output = {
         "decision": "block",

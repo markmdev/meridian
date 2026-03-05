@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.8.0] - 2026-03-04
+
+### Added
+- **PreCompact hooks** — Session learner and session transcript now fire on PreCompact. Session learner runs async as a checkpoint before compaction. Session transcript writes pre-compaction dialogue to `last-session.md`, which context-injector picks up on SessionStart(compact) to restore conversation history after compaction.
+- **Configurable stop checklist** — New `stop_checklist_extra` config key lets users add custom items to the quality checklist.
+- **Configurable instruction reminders** — New `instruction_reminders` config key lets users add custom reminders injected on every message.
+
+### Changed
+- **Stop checklist reframed** — Removed all "stopping" language. Checklist now reads as a task list ("Complete these tasks") instead of a wind-down signal ("Before stopping"). Prevents agents from deferring work.
+- **Context injection streamlined** — Removed ceremonial header ("MUST understand before working") and footer ("Embody SOUL.md", "Confirm you understand", "Acknowledge this context"). Context is injected without requiring the agent to waste a turn parroting it back.
+- **Plan approval simplified** — Condensed verbose archive instructions to two lines.
+- **Work-until loop** — Removed all emojis from system messages and prompts.
+- **Action counter** — Only resets when the checklist actually fires or on session start. No longer resets on trivial-task skip, so actions accumulate across stop attempts.
+
+### Removed
+- **Pebble nudge from plan-mode-tracker** — Plan mode no longer injects Pebble reminders.
+
 ## [0.7.9] - 2026-03-04
 
 ### Added

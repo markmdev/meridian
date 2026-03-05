@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """
-Session Learner — SessionEnd Hook
+Session Learner — SessionEnd + PreCompact Hook
 
 Extracts session transcript and spawns a headless Claude session to:
 1. Update the workspace — maintain WORKSPACE.md as a slim current-state notepad
 2. Learn from corrections — save user corrections as permanent CLAUDE.md instructions
 3. Maintain docs — create/update long-term reference docs
+
+Fires on SessionEnd (session over) and PreCompact (checkpoint before context compaction).
+The lock prevents concurrent runs — if PreCompact is still running when SessionEnd fires, the
+SessionEnd run will skip (lock held). This is acceptable since PreCompact already captured the work.
 """
 
 import json
@@ -553,8 +557,8 @@ def main():
 
     log(project_dir, f"START event={hook_event} transcript={Path(transcript_path).name if transcript_path else 'none'}")
 
-    # Only handle SessionEnd
-    if hook_event != "SessionEnd":
+    # Only handle SessionEnd and PreCompact
+    if hook_event not in ("SessionEnd", "PreCompact"):
         log(project_dir, f"SKIP wrong event: {hook_event}")
         log_skip(project_dir, "wrong_event", hook_event=hook_event)
         sys.exit(0)
@@ -615,7 +619,7 @@ def main():
         # Log to JSONL
         log_entry = {
             "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-            "trigger": "end",
+            "trigger": "compact" if hook_event == "PreCompact" else "end",
             "transcript_entries": len(entries),
             "meaningful_entries": len(meaningful),
             "duration_seconds": round(duration, 1),

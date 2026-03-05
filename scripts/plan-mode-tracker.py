@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Add lib to path for imports
 sys.path.insert(0, str(Path(__file__).parent / "lib"))
-from meridian_config import get_project_config, is_headless, log_hook_output, state_path, PLAN_MODE_STATE
+from meridian_config import is_headless, log_hook_output, state_path, PLAN_MODE_STATE
 
 PROJECT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", "."))
 
@@ -43,12 +43,7 @@ def main():
 
     if previous_mode != current_mode:
         if current_mode == "plan":
-            config = get_project_config(PROJECT_DIR)
-            pebble_enabled = config.get('pebble_enabled', False)
-
             context = "Plan mode activated. Activate the `/planning` skill NOW — before doing anything else. It defines your planning methodology."
-            if pebble_enabled:
-                context += "\nPebble is enabled — proactively use it to track this work."
 
             output = {
                 "hookSpecificOutput": {

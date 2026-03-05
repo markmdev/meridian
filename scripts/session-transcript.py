@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-Session Transcript — SessionEnd Hook
+Session Transcript — SessionEnd + PreCompact Hook
 
 Extracts the user/assistant dialogue from the session transcript (no thinking,
 no tool calls, no tool results) and writes it to the state directory as
-last-session.md. The context injector picks this up at next session start.
+last-session.md.
+
+On SessionEnd: extracts full post-compaction dialogue for next session injection.
+On PreCompact: extracts dialogue since last compact boundary — this gets injected
+back via context-injector on SessionStart(compact), restoring pre-compaction context.
 """
 
 import json
@@ -34,18 +38,36 @@ def log(project_dir, msg):
         pass
 
 
-def extract_dialogue(transcript_path: str) -> list[dict]:
-    """Extract user and assistant text messages from the full transcript.
+def find_last_compact_boundary(transcript_path: str) -> int:
+    """Find the line number of the last compact_boundary entry. Returns -1 if none."""
+    last_boundary = -1
+    with open(transcript_path) as f:
+        for i, line in enumerate(f):
+            try:
+                entry = json.loads(line)
+                if entry.get("type") == "system" and entry.get("subtype") == "compact_boundary":
+                    last_boundary = i
+            except (json.JSONDecodeError, KeyError):
+                continue
+    return last_boundary
+
+
+def extract_dialogue(transcript_path: str, start_after_line: int = -1) -> list[dict]:
+    """Extract user and assistant text messages from the transcript.
 
     Deduplicates streaming assistant entries by requestId (keeps last version).
     Skips thinking blocks, tool calls, tool results, system messages, and
     hook/command injection noise.
+
+    If start_after_line >= 0, only processes entries after that line number.
     """
     raw_entries = []
     assistant_by_request = {}  # requestId -> (index, entry)
 
     with open(transcript_path) as f:
-        for line in f:
+        for i, line in enumerate(f):
+            if i <= start_after_line:
+                continue
             try:
                 raw = json.loads(line)
             except json.JSONDecodeError:
@@ -130,7 +152,7 @@ def main():
 
     log(base_dir, f"START event={event_name} transcript={Path(transcript_path).name if transcript_path else 'none'}")
 
-    if event_name != "SessionEnd":
+    if event_name not in ("SessionEnd", "PreCompact"):
         log(base_dir, f"SKIP wrong event: {event_name}")
         sys.exit(0)
 
@@ -145,8 +167,11 @@ def main():
         sys.exit(0)
 
     # Extract dialogue
-    entries = extract_dialogue(transcript_path)
-    log(base_dir, f"extracted {len(entries)} dialogue entries")
+    # PreCompact: only extract since last compact boundary (or session start)
+    # SessionEnd: extract everything since last compact boundary
+    start_after = find_last_compact_boundary(transcript_path)
+    entries = extract_dialogue(transcript_path, start_after_line=start_after)
+    log(base_dir, f"extracted {len(entries)} dialogue entries (start_after_line={start_after}, event={event_name})")
 
     if not entries:
         log(base_dir, "SKIP no dialogue entries found")

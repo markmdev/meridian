@@ -57,8 +57,7 @@ def main():
     if min_actions > 0:
         action_count = get_action_counter(base_dir)
         if action_count < min_actions:
-            reset_action_counter(base_dir)  # Reset so trivial tasks don't accumulate
-            sys.exit(0)  # Allow stop without prompts
+            sys.exit(0)  # Allow stop — counter keeps accumulating
 
     # Build the stop prompt using shared helper
     reason = build_stop_prompt(base_dir, config)
@@ -69,7 +68,7 @@ def main():
     output = {
         "decision": "block",
         "reason": reason,
-        "systemMessage": "[Meridian] Running pre-stop checklist."
+        "systemMessage": "[Meridian] Checklist triggered."
     }
 
     log_hook_output(base_dir, "stop-checklist", output)

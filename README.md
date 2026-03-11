@@ -2,495 +2,221 @@
 
 # Meridian
 
-**Behavioral guardrails for Claude Code** — enforced workflows, persistent context, and quality gates for complex tasks.
+Meridian makes Claude Code more reliable on real projects.
 
-**Current version:** `0.6.0` (2026-02-28) | [Changelog](CHANGELOG.md)
+It adds persistent project context, smarter session handoff, and lightweight workflow enforcement so Claude is less likely to lose the plot halfway through a long task.
 
-> If Meridian helps your work, please **star the repo** and share it.
-> Follow updates: [X (@markmdev)](http://x.com/markmdev) • [LinkedIn](http://linkedin.com/in/markmdev)
+## What problem it solves
 
----
+Claude Code is great at short bursts. It gets shakier when work stretches across a big repo, multiple sessions, or a lot of moving pieces.
 
-## The Problem
+Common failure modes:
 
-Claude Code is powerful, but on complex tasks it struggles with:
+- Context gets lost after compaction or a fresh session
+- Important project docs exist, but Claude does not read the right ones at the right time
+- Instructions in `CLAUDE.md` drift out of focus during long runs
+- Work stops in an awkward half-finished state with missing docs, review, or cleanup
+- The same mistakes repeat because nothing turns session learnings into project memory
 
-| Problem | What happens |
-|---------|--------------|
-| **Context loss** | After compaction, Claude forgets decisions, requirements, and what it was working on |
-| **No built-in memory** | Claude can't remember lessons learned — it repeats the same mistakes because it doesn't know it already made them |
-| **Forgets prompt details** | With large context, Claude starts ignoring parts of your `CLAUDE.md` instructions |
-| **Shallow planning** | Plans lack depth, miss integration steps, and break during implementation |
-| **No task continuity** | When you return to a task next session, Claude doesn't know what was done, decided, or tried |
+Meridian closes those gaps without asking you to completely change how you work.
 
-You can write instructions in `CLAUDE.md`, but with large context Claude starts forgetting details from the prompt.
+## What Meridian gives you
 
----
+- Better session continuity: important project context is re-injected when a session starts or compacts
+- A real project workspace: `WORKSPACE.md`, project docs, and supporting prompts stay available across sessions
+- Smarter doc routing: docs in `.meridian/docs/` can advertise when they should be read
+- Instruction reinforcement: Meridian can remind Claude to follow your local guidance during long sessions
+- End-of-task quality pressure: the stop checklist nudges Claude to finish the boring but important parts
+- Session learning: a background learner can update workspace/docs based on what actually happened
 
-## What Meridian Does
+Meridian is intentionally opinionated, but it stays behind the scenes. You still talk to Claude normally.
 
-Meridian uses Claude Code's hooks system to enforce behaviors automatically:
+## Best fit
 
-| Capability | How it works |
-|------------|--------------|
-| **Context survives compaction** | Hooks re-inject task state, guidelines, and your docs after every compaction |
-| **Session continuity** | Agent workspace (`WORKSPACE.md`) tracks decisions, discoveries, and context across sessions — Claude picks up where it left off |
-| **Pre-compaction warning** | Monitors token usage and prompts Claude to save context before compaction happens |
-| **Detailed plans that work** | Planning skill guides Claude through thorough discovery, design, and integration planning |
-| **Quality gates** | Plan-reviewer and code-reviewer agents validate work before proceeding |
-| **Your custom docs injected** | Add docs to `.meridian/docs/` with `summary` + `read_when` frontmatter — they're auto-discovered and injected when relevant |
+Meridian is most useful if you use Claude Code for:
 
-**Your behavior doesn't change.** You talk to Claude the same way. Meridian works behind the scenes.
+- multi-hour or multi-day implementation work
+- medium or large repositories
+- tasks where losing decisions or next steps is expensive
+- projects that benefit from structured docs and a running workspace file
 
----
+If you mostly use Claude Code for tiny one-off edits, Meridian is probably overkill.
 
-## When Meridian Shines
+## Quick start
 
-Meridian is designed for **large, complex, long-running tasks** where:
-- Work spans multiple sessions
-- Context loss would be costly
-- Quality matters
-- You want Claude to learn from past mistakes
-
-For simple tasks (quick edits, one-off questions), Meridian won't help much — but it won't hurt either. It stays out of the way.
-
----
-
-## Architecture
-
-```mermaid
-flowchart TB
-    subgraph Claude["Claude Code"]
-        User[Developer]
-    end
-
-    subgraph Hooks["Hooks (Enforce Workflow)"]
-        H1[SessionStart]
-        H2[PreToolUse]
-        H3[PostToolUse]
-        H4[Stop]
-    end
-
-    subgraph Skills["Skills (Structured Workflows)"]
-        S1[planning]
-    end
-
-    subgraph Agents["Agents (Quality Gates)"]
-        A1[plan-reviewer]
-        A2[code-reviewer]
-        A3[docs-researcher]
-    end
-
-    subgraph Files[".meridian/ (Persistent State)"]
-        F1[WORKSPACE.md]
-        F2[api-docs/]
-        F3[CODE_GUIDE.md]
-    end
-
-    User -->|talks to| Claude
-    Claude -->|triggers| Hooks
-    H1 -->|injects context| Files
-    H2 -->|enforces review| Agents
-    H3 -->|reminds task creation| Skills
-    H4 -->|requires updates| Files
-    Skills -->|read/write| Files
-    Agents -->|validate against| Files
-```
-
-### How Components Work Together
-
-```mermaid
-sequenceDiagram
-    participant Dev as Developer
-    participant CC as Claude Code
-    participant Hook as Hooks
-    participant Skill as Skills
-    participant Agent as Agents
-    participant Files as .meridian/
-
-    Note over Dev,Files: Session Start
-    Dev->>CC: Opens project
-    CC->>Hook: SessionStart triggers
-    Hook->>Files: Reads tasks, guides, context
-    Hook->>CC: Injects context
-    Hook->>CC: Blocks until acknowledged
-
-    Note over Dev,Files: Planning Phase
-    Dev->>CC: Describes complex task
-    CC->>Skill: Uses planning skill
-    Skill->>CC: Guides through methodology
-    CC->>Hook: Tries to exit plan mode
-    Hook->>Agent: Spawns plan-reviewer
-    Agent->>Files: Reads CODE_GUIDE, context
-    Agent->>CC: Returns score + findings
-    alt Score < 9
-        CC->>CC: Iterates on plan
-    else Score >= 9
-        Hook->>CC: Allows exit
-    end
-
-    Note over Dev,Files: Implementation Phase
-    CC->>Hook: PreToolUse triggers
-    Hook->>Files: Checks token count
-    alt Approaching limit
-        Hook->>CC: Prompts to save context
-        CC->>Files: Updates workspace
-    end
-    CC->>CC: Implements plan
-
-    Note over Dev,Files: Completion
-    Dev->>CC: Requests stop
-    CC->>Hook: Stop triggers
-    Hook->>CC: Blocks until updates done
-    CC->>Agent: Spawns code-reviewer
-    Agent->>Files: Reviews changes
-    Agent->>CC: Returns issues (if any)
-    CC->>Files: Updates task status
-    CC->>Files: Updates workspace
-    Hook->>CC: Allows stop
-```
-
----
-
-## Quick Start
-
-### Install
+### 1. Install the plugin
 
 ```bash
-# 1. Install the plugin
 /plugin marketplace add markmdev/claude-plugins
 /plugin install meridian@markmdev
+```
 
-# 2. Scaffold project files
-cd /path/to/your/project
+### 2. Scaffold the project files
+
+Inside the repo you want to use with Meridian:
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
 ```
 
-### Update
+That creates a `.meridian/` folder with the project-side files Meridian uses.
+
+### 3. Restart or reload Claude Code
+
+Meridian hooks are provided by the plugin. The scaffolded `.meridian/` directory gives the plugin project-specific files to read from.
+
+## Updating
+
+Update the project scaffolding:
 
 ```bash
-# Update project scaffolding (.meridian/)
 meridian-update
+```
 
-# Update hooks, agents, skills
+Or:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/markmdev/meridian/main/install.sh | bash
+```
+
+Update the plugin itself:
+
+```bash
 /plugin update meridian@markmdev
 ```
 
-### Check installed version
+Check the installed project version:
 
 ```bash
 cat .meridian/.version
 ```
 
----
+## What gets installed
 
-## Why Not Just CLAUDE.md?
+Meridian has two halves:
 
-| | `CLAUDE.md` | Meridian |
-|-|-------------|----------|
-| **Large context** | Claude forgets prompt details as context grows | Hooks reinforce key behaviors throughout the session |
-| **Task continuity** | None — each session starts fresh | Context files track progress, decisions, next steps |
-| **Quality gates** | None | Plan review + code review before proceeding |
-| **Custom docs** | Must be read manually each session | Docs in `.meridian/docs/` with `read_when` frontmatter hints, auto-discovered and injected |
+### Plugin-managed runtime
 
-`CLAUDE.md` is a static prompt. Meridian hooks actively enforce behaviors and inject context throughout the session.
+Installed through Claude Code's plugin system:
 
----
+- hooks
+- agents
+- commands
+- skills
+- Python helper scripts
 
-## Components Deep Dive
+These live with the plugin and are updated with `/plugin update`.
 
-<details>
-<summary><strong>Hooks — Enforce Workflow</strong></summary>
+### Project scaffolding
 
-Hooks are Python scripts triggered at Claude Code lifecycle events. They can inject context, block actions, or modify behavior.
+Installed into your repo by `install.sh`:
 
-| Hook | Trigger | What it does |
-|------|---------|--------------|
-| `context-injector.py` | SessionStart | Injects workspace, tasks, CODE_GUIDE into context |
-| `plan-review.py` | PreToolUse (ExitPlanMode) | Requires plan-reviewer before implementation |
-| `action-counter.py` | PostToolUse | Tracks actions for stop hook threshold |
-| `plan-approval-reminder.py` | PostToolUse (ExitPlanMode) | Reminds to create Pebble issues (if enabled) |
-| `stop-checklist.py` | Stop | Requires context updates and code review |
-| `plan-mode-tracker.py` | UserPromptSubmit | Prompts planning skill when entering Plan mode |
-| `session-cleanup.py` | SessionEnd | Cleans up session state files |
+```text
+.meridian/
+├── SOUL.md
+├── WORKSPACE.md
+├── config.yaml
+├── docs/
+├── prompts/
+├── scripts/
+└── lib/
+```
 
-Hooks are managed by the plugin system and share utilities from `lib/meridian_config.py`.
+The installer preserves project state on update, including:
 
-</details>
+- `WORKSPACE.md`
+- `.meridian/workspace/`
+- `.meridian/plans/`
+- `.meridian/config.yaml`
 
-<details>
-<summary><strong>Skills — Structured Workflows</strong></summary>
+## How it works
 
-Skills are reusable instruction sets that activate when invoked.
+Meridian hooks into Claude Code lifecycle events and adds a little structure at the moments where Claude usually drifts.
 
-### Planning Skill
+Current behavior includes:
 
-Guides Claude through comprehensive planning so plans don't break during implementation:
-1. **Requirements Interview** — Up to 40 questions across multiple rounds to deeply understand the task
-2. **Deep Discovery** — Use direct tools (Glob, Grep, Read) to research the codebase; Explore agents only for conceptual questions
-3. **Design** — Choose approach, define target state, verify assumptions against actual code
-4. **Decomposition** — Break into subtasks with clear dependencies
-5. **Integration** — Explicitly plan how modules connect (mandatory for multi-module plans)
-6. **Documentation** — Each phase must include CLAUDE.md and human docs steps (mandatory)
+- Session start: inject relevant project context
+- User prompt submit: track activity, watch for planning mode, reinforce instructions
+- Stop: run checklist-style reminders before Claude wraps up
+- Pre-compact: checkpoint transcript and session learnings before compaction
+- Session end: write last-session context and run the learner
 
-Plans describe **what and why**, not how. The plan-reviewer agent validates plans against the actual codebase before implementation begins.
+The goal is not to micromanage Claude. The goal is to keep it oriented.
 
-### Prompt Writing Skill
+## Core files you will care about
 
-General-purpose guidance for writing effective prompts for any AI system:
-- **Remove redundancy** — Merge overlapping content, deduplicate examples
-- **Remove noise** — Cut excessive dividers, wrapper tags, verbose explanations
-- **Sharpen instructions** — Make them direct and actionable
-- **Keep load-bearing content** — Workflow steps, quality criteria, rules that matter
+### `.meridian/WORKSPACE.md`
 
-Works for Claude Code artifacts (skills, agents, hooks) and any other AI prompts.
+The running handoff for the project. Keep it current, short, and operational.
 
+### `.meridian/docs/`
 
-</details>
+Put durable project docs here. Meridian scans these docs and can steer Claude toward the right one when a task matches its frontmatter hints.
 
-<details>
-<summary><strong>Agents — Quality Gates</strong></summary>
-
-Agents are specialized subagents that validate work. All reviewers use an **issue-based system** — no scores, just issues or no issues. Loop until all issues are resolved.
-
-### Plan Reviewer
-
-Validates plans before implementation:
-- Verifies file paths and API assumptions against codebase
-- Checks for missing steps, dependencies, integration plan, documentation steps
-- Trusts plan claims about packages/versions (user may have private access)
-- Returns score (must reach 9+ to proceed) + findings
-
-### Code Reviewer
-
-Deep code review that finds real bugs:
-1. Loads project context (workspace, CODE_GUIDE, active plan)
-2. Gets changes via git diff
-3. For each changed file: reads full file, traces data flow, checks callers/imports
-4. Classifies issues: p0 (crashes/security), p1 (bugs), p2 (minor)
-5. Returns structured findings — the main agent handles issue tracking
-
-Focuses on issues that actually matter, not checklist items or style preferences.
-
-### Docs Researcher
-
-Researches external tools, APIs, and products:
-- Builds comprehensive knowledge docs in `.meridian/api-docs/`
-- Covers current versions, API operations, rate limits, best practices, gotchas
-- Uses relevant MCPs or skills if available for web research
-- Run before using any external library not already documented
-
-### Implement
-
-Executes detailed implementation specs autonomously:
-- Takes a specific spec and implements it precisely
-- Reports ambiguity instead of asking questions (non-blocking for parallel execution)
-- Runs typecheck/tests and fixes failures up to 3 iterations
-- Spawn multiple in parallel for independent tasks
-
-### Pebble Scaffolder
-
-Creates Pebble issue hierarchy from plans (when Pebble enabled):
-- Creates epic for overall plan
-- Creates task per phase as children of epic
-- Adds dependencies between sequential phases
-- Invoked automatically after plan approval
-
-</details>
-
-<details>
-<summary><strong>Configuration</strong></summary>
-
-### Project Config (`.meridian/config.yaml`)
+Minimal frontmatter:
 
 ```yaml
-# Plan review behavior
-plan_review_min_actions: 20  # Skip plan review if < N actions (default: 20)
+---
+summary: What this doc covers
+read_when:
+  - keyword or situation
+  - another keyword
+---
+```
 
-# Pebble issue tracking
+### `.meridian/config.yaml`
+
+Project-level behavior toggles.
+
+Current built-in options include:
+
+```yaml
 pebble_enabled: false
-
-# Stop hook behavior
-stop_hook_min_actions: 15  # Skip stop hook if < N actions since last user input
-
-# Session learner
-session_learner_mode: "project"  # "project" (default) or "assistant"
+stop_hook_min_actions: 15
+session_learner_mode: project
 ```
 
-### CODE_GUIDE System
+Recent versions also support extra stop-checklist items and custom instruction reminders.
 
-- **Baseline** (`CODE_GUIDE.md`) — Default standards for Next.js/React + Node/TS
-- **Hackathon Addon** — Relaxes rules for fast prototypes
-- **Production Addon** — Tightens rules for production systems
+## Typical workflow
 
-Precedence: Baseline → Project Type Addon
+1. Install the plugin once.
+2. Run the scaffold installer in a repo.
+3. Keep `WORKSPACE.md` and `.meridian/docs/` useful.
+4. Use Claude Code normally.
+5. Let Meridian keep context, docs, and session hygiene from falling apart.
 
-</details>
+## Worktrees
 
-<details>
-<summary><strong>File Structure</strong></summary>
+Meridian stores ephemeral session state in `~/.meridian/state/<hash>/`, not inside the repo. That means `.meridian/` can be shared across worktrees while each worktree still gets isolated runtime state.
 
-```
-your-project/
-├── .meridian/
-│   ├── config.yaml                   # Project configuration
-│   ├── WORKSPACE.md                  # Agent's living knowledge base (always injected)
-│   ├── workspace/                    # Workspace sub-pages (linked from WORKSPACE.md)
-│   ├── CODE_GUIDE.md                 # Coding standards
-│   ├── SOUL.md                       # Agent identity
-│   ├── api-docs/                     # External API documentation
-│   ├── docs/                         # Project knowledge docs (auto-discovered)
-│   ├── prompts/                      # Injected prompts
-│   │   └── agent-operating-manual.md
-│   ├── scripts/                      # User-facing utilities
-│   │   ├── state-dir.sh              # Resolve state directory
-│   │   ├── setup-work-until.sh       # Work-until loop setup
-│   │   └── learner-log.py            # Session learner log viewer
-│   └── plans/                        # Archived implementation plans
-│   # Note: session state lives in ~/.meridian/state/ (not inside .meridian/)
-│
-│   # Plugin files (managed by /plugin — don't edit directly):
-│   # hooks/hooks.json, scripts/*.py, agents/*.md, commands/*.md, skills/*/
-└── your-code/
-```
-
-</details>
-
----
-
-## Work-Until Loop
-
-The `/work-until` command creates an iterative loop where Claude keeps working on a task until a completion condition is met.
-
-### Usage
-
-```bash
-# Basic: work until phrase is true
-/work-until Fix all failing tests --completion-phrase "All tests pass"
-
-# With iteration limit
-/work-until Implement auth feature --completion-phrase "Feature complete" --max-iterations 10
-
-# Just iteration limit (no phrase)
-/work-until Refactor the API layer --max-iterations 5
-```
-
-### How It Works
-
-1. **Start**: `/work-until` creates a loop state file with your task
-2. **Work**: Claude works on the task normally
-3. **Stop blocked**: When Claude tries to stop, the hook intercepts
-4. **Check completion**: Hook looks for `<complete>PHRASE</complete>` in output
-5. **Continue or exit**:
-   - If phrase found (and TRUE) → loop ends
-   - If max iterations reached → loop ends
-   - Otherwise → task is resent, Claude continues
-
-### Key Points
-
-- **Workspace preserves history**: Between iterations, Claude writes to its workspace, so it knows what was tried
-- **Normal stop checks still run**: Workspace updates, tests/lint/build — all enforced each iteration
-- **Completion phrase must be TRUE**: Claude cannot lie to escape the loop
-- **Monitor progress**: `cat $(.meridian/scripts/state-dir.sh)/loop-state` shows current iteration
-
-### Example Flow
-
-```
-You: /work-until Fix the auth bug --completion-phrase "All auth tests pass" --max-iterations 5
-
-Claude: [Works on fix, runs tests, some fail]
-Claude: [Tries to stop]
-→ Hook blocks: "Iteration 2 of 5 — continue working"
-
-Claude: [Reads workspace, sees what was tried]
-Claude: [Fixes another issue, runs tests, all pass]
-Claude: <complete>All auth tests pass</complete>
-→ Hook allows stop: "✅ Completion phrase detected"
-```
-
----
-
-## Git Worktrees
-
-Since v0.4.0, Meridian stores session state (counters, flags, locks) in `~/.meridian/state/` instead of inside `.meridian/`. This means you can symlink the entire `.meridian/` directory across worktrees — shared docs, plans, and workspace with isolated session state.
-
-### Setup
-
-```bash
-# Create a worktree as usual
-git worktree add ../my-feature feature-branch
-
-# Symlink .meridian/ from the main worktree
-ln -s /absolute/path/to/main/.meridian ../my-feature/.meridian
-```
-
-That's it. Each worktree gets its own session state automatically (based on its absolute path), while sharing all docs, plans, workspace, and config.
-
-### What's shared vs isolated
-
-| Content | Shared? | Why |
-|---------|---------|-----|
-| `docs/` | Yes | Reference material should be visible everywhere |
-| `plans/` | Yes | Plans are project-wide |
-| `workspace/` | Yes | Accumulated knowledge benefits all sessions |
-| `WORKSPACE.md` | Yes | Project knowledge base |
-| `config.yaml` | Yes | Project settings |
-| `CODE_GUIDE.md` | Yes | Coding standards |
-| Session state | No | Counters, flags, locks are per-session (in `~/.meridian/state/`) |
-
-### Notes
-
-- The session learner updates the shared `WORKSPACE.md` — lessons from any worktree flow to all others
-- Concurrent workspace updates from parallel sessions are rare; Claude Code's file conflict detection handles the edge case
-- The plugin handles hooks, agents, and skills automatically — no need to symlink `.claude/` across worktrees
-
----
+If you work heavily with git worktrees, this is a very nice quality-of-life improvement.
 
 ## FAQ
 
-**Who is Meridian for?**
+### Does this replace `CLAUDE.md`?
 
-Anyone using Claude Code for complex, multi-session work. Solo developers and teams alike benefit from enforced workflows and persistent context.
+No. `CLAUDE.md` is still your core instruction file. Meridian helps those instructions stay alive in practice during longer sessions.
 
-**Does Meridian change how I interact with Claude?**
+### Does Meridian change how I prompt Claude?
 
-No. You talk to Claude the same way. Meridian works behind the scenes through hooks.
+Not much. It is designed to improve behavior without forcing a whole new user workflow.
 
-**What happens on simple tasks?**
+### Is Meridian only for huge repos?
 
-Nothing. Hooks fire but don't block anything meaningful. The overhead is minimal.
+No, but the payoff is much bigger once tasks are large enough that session continuity and docs routing matter.
 
-**Can I customize the CODE_GUIDE?**
+### Can I customize it?
 
-Yes. Edit `.meridian/CODE_GUIDE.md` to add project-specific rules. It's injected every session.
+Yes. The main entry points are:
 
-**Can I disable features?**
-
-Yes. In `.meridian/config.yaml`:
-```yaml
-pebble_enabled: false              # Disable Pebble issue tracking integration
-stop_hook_min_actions: 15           # Skip stop hook if < N actions (default: 15)
-plan_review_min_actions: 20         # Skip plan review if < N actions (default: 20)
-session_learner_mode: "assistant"   # "project" (default) or "assistant"
-```
-
-**How is this different from subagents?**
-
-Subagents don't share live context, re-read docs (token waste), and can't be resumed after interrupts. Meridian keeps Claude as the primary agent and injects context directly.
-
----
+- `.meridian/config.yaml`
+- `.meridian/docs/`
+- `.meridian/prompts/`
+- your normal `CLAUDE.md`
 
 ## Contributing
 
-PRs and issues welcome at [github.com/markmdev/meridian](https://github.com/markmdev/meridian)
+Issues and PRs are welcome.
 
-**License:** MIT
-
----
-
-## Star & Share
-
-If Meridian improves your Claude Code sessions:
-
-- **Star this repo** so others can find it
-- Share your experience on [X (@markmdev)](http://x.com/markmdev) or [LinkedIn](http://linkedin.com/in/markmdev)
+If you are making a meaningful behavior change, update the docs and [CHANGELOG.md](CHANGELOG.md) in the same PR.
